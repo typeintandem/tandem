@@ -1,0 +1,70 @@
+#! /bin/bash
+
+SCRIPTPATH=$( cd $(dirname $0) ; pwd -P )
+
+# Configuration
+MOUNT_PATH="/home/tdm/tandem"
+DOCKERFILE_LOCATION=$SCRIPTPATH/docker/images
+
+# Colors
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+function remove() {
+  echo -e "${YELLOW}This will remove the '$1' docker image${NC}"
+  read -p "Do you want to proceed? [y/n] " -r
+  if [[ $REPLY =~ ^[Yy]$ ]] ; then
+    docker rmi $1
+  else
+    exit 1
+  fi
+}
+
+function buildAndRun() {
+  IMAGE=$1
+  IMAGE_PATH=$DOCKERFILE_LOCATION/$IMAGE
+  # If the image has not been built yet, build it
+  if [ -z $(docker images -q $IMAGE) ] ; then
+    echo -e "${YELLOW}'$IMAGE' has not been built yet. This utility will build it first.${NC}"
+    echo "Image to build:      $IMAGE"
+    echo "Dockerfile location: $IMAGE_PATH"
+    echo
+    read -p "Do you want to proceed? [y/n] " -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]] ; then
+      echo -e "${BLUE}Building the $IMAGE Docker image...${NC}"
+      docker build -t $1 $IMAGE_PATH
+    else
+      exit 1
+    fi
+  fi
+
+  # Run the container and automatically remove the container after exiting
+  # The tandem repository is mounted inside the container for development
+  #
+  # NOTE: A custom seccomp file needs to be used for containers that require
+  #       chrome to run
+  echo -e "${BLUE}Running $IMAGE...${NC}"
+  echo
+  if [ $IMAGE == "chrome-exp" ] ; then
+    docker run -ti --rm \
+      -v $SCRIPTPATH:$MOUNT_PATH \
+      --security-opt seccomp=$SCRIPTPATH/docker/seccomp/chrome.json \
+      $IMAGE
+  else
+    docker run -ti --rm \
+      -v $SCRIPTPATH:$MOUNT_PATH \
+      -p 8080:8080 \
+      $IMAGE
+  fi
+}
+
+if [ ! -z "$2" ] && ([ "$1" == "-r" ] || [ "$1" == "--remove" ]) ; then
+  remove $2
+elif [ ! -z "$1" ] ; then
+  buildAndRun $1
+else
+  echo "Usage: $0 <image> | [-r | --remove] <image>"
+  exit 1
+fi
