@@ -34,7 +34,7 @@ function buildAndRun() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]] ; then
       echo -e "${BLUE}Building the $IMAGE Docker image...${NC}"
-      docker build -t $1 $IMAGE_PATH
+      docker build -t $IMAGE $IMAGE_PATH
     else
       exit 1
     fi
@@ -49,13 +49,19 @@ function buildAndRun() {
   echo
   if [ $IMAGE == "chrome-exp" ] ; then
     docker run -ti --rm \
-      -v $SCRIPTPATH:$MOUNT_PATH \
+      --volume $SCRIPTPATH:$MOUNT_PATH \
       --security-opt seccomp=$SCRIPTPATH/docker/seccomp/chrome.json \
       $IMAGE
+  elif [ $IMAGE == "server" ] ; then
+    docker run -ti --rm \
+      --volume $SCRIPTPATH:$MOUNT_PATH \
+      --publish 8080:8080 \
+      --env FLASK_DEBUG=1 \
+      $IMAGE \
+      python3 $MOUNT_PATH/server/main.py
   else
     docker run -ti --rm \
-      -v $SCRIPTPATH:$MOUNT_PATH \
-      -p 8080:8080 \
+      --volume $SCRIPTPATH:$MOUNT_PATH \
       $IMAGE
   fi
 }
