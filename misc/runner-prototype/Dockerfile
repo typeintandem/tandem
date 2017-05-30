@@ -13,8 +13,8 @@ RUN \
   rm google-chrome-beta_current_amd64.deb
 
 # Create tdm user
-RUN useradd --create-home --shell /bin/bash tdm
-RUN adduser tdm sudo
+RUN useradd --create-home --shell /bin/bash tdm && \
+  adduser tdm sudo
 
 # Log in as tdm
 USER tdm
