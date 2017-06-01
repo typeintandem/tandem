@@ -1,0 +1,9 @@
+# Tandem Recorder
+
+## Setup
+Run `npm i` to install dependencies.
+
+## Development
+- `npm run build` to start a listening webpack build process.
+- `npm start` to launch the electron app.
+These will need to be run in seperate terminal processes.

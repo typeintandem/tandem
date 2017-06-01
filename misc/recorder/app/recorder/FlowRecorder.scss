@@ -1,0 +1,37 @@
+div.center {
+  text-align: center;
+}
+
+webview {
+  height: 100%;
+}
+
+div > span {
+  height: 5vh;
+  display: block;
+}
+
+#overlay {
+    position: fixed; /* Sit on top of the page content */
+    width: 100%; /* Full width (cover the whole page) */
+    height: 100%; /* Full height (cover the whole page) */
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.3); /* Black background with opacity */
+    z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+    cursor: not-allowed; /* Add a pointer on hover */
+
+    #spinner {
+      position: absolute;
+      top: 50vh;
+      left: 48vw;
+    }
+    #spinner2 {
+      position: absolute;
+      top: 35vh;
+      left: 42vw;
+      cursor: pointer;
+    }
+}

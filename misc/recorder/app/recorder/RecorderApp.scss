@@ -1,0 +1,53 @@
+$title_size: 24px;
+
+$card_h1_size: 70px;
+$card_h2_size: 30px;
+$card_h3_size: 25px;
+$card_h4_size: 20px;
+
+$global_spacing: 24px;
+$half_global_spacing: 12px;
+
+#recorder {
+  font-family: 'Open Sans', sans-serif;
+  background-color: #ececec;
+  min-height: 100vh;
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+#header {
+  .title {
+    color: #fff;
+    font-size: $title_size;
+  }
+}
+
+.carousel {
+
+  .card {
+    width: 60%;
+    margin: auto;
+    padding: $global_spacing;
+    text-align: center;
+
+    * {
+      padding: $half_global_spacing;
+    }
+
+    h1 {
+      font-size: $card_h1_size;
+    }
+    h2 {
+      font-size: $card_h2_size;
+    }
+    h3 {
+      font-size: $card_h3_size;
+    }
+    h4 {
+      font-size: $card_h4_size;
+    }
+  }
+}
