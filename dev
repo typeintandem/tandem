@@ -64,6 +64,16 @@ function buildAndRun() {
       --env FLASK_DEBUG=1 \
       $IMAGE \
       python3 $MOUNT_PATH/server/main.py
+  elif [ $IMAGE == "postgresql" ] ; then
+    docker run \
+      --interactive \
+      --tty \
+      --rm \
+      --volume db-data:/var/lib/postgresql \
+      --volume db-config:/etc/postgresql \
+      --volume db-logs:/var/log/postgresql \
+      --publish 5432:5432 \
+      $IMAGE
   else
     docker run \
       --interactive \
