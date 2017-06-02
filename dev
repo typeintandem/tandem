@@ -74,6 +74,14 @@ function buildAndRun() {
       --volume db-logs:/var/log/postgresql \
       --publish 5432:5432 \
       $IMAGE
+  elif [ $IMAGE == "redis" ] ; then
+    docker run \
+      --interactive \
+      --tty \
+      --rm \
+      --volume redis-data:/home/tdm/data \
+      --publish 6379:6379 \
+      $IMAGE
   else
     docker run \
       --interactive \
