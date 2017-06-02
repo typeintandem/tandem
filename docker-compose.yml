@@ -1,0 +1,59 @@
+version: '3'
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: server
+    depends_on:
+      - postgresql
+      - redis
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/home/tdm/tandem
+    environment:
+      - FLASK_DEBUG=1
+    entrypoint:
+      - python3
+      - /home/tdm/tandem/server/main.py
+
+  postgresql:
+    build:
+      context: .
+      dockerfile: postgresql/Dockerfile
+    image: postgresql
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+      - db-config:/etc/postgresql
+      - db-logs:/var/log/postgresql
+
+  redis:
+    build:
+      context: .
+      dockerfile: redis/Dockerfile
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/home/tdm/data
+
+  runner-prototype:
+    build:
+      context: .
+      dockerfile: misc/runner-prototype/Dockerfile
+    image: misc/runner
+    # docker-compose doesn't support seccomp files yet
+    # https://github.com/docker/compose/issues/2813
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - .:/home/tdm/tandem
+
+volumes:
+  db-data:
+  db-config:
+  db-logs:
+  redis-data:
