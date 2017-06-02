@@ -54,34 +54,6 @@ function buildAndRun() {
       --volume $SCRIPTPATH:$MOUNT_PATH \
       --security-opt seccomp=$SCRIPTPATH/$IMAGE/seccomp/chrome.json \
       $IMAGE
-  elif [ $IMAGE == "server" ] ; then
-    docker run \
-      --interactive \
-      --tty \
-      --rm \
-      --volume $SCRIPTPATH:$MOUNT_PATH \
-      --publish 8080:8080 \
-      --env FLASK_DEBUG=1 \
-      $IMAGE \
-      python3 $MOUNT_PATH/server/main.py
-  elif [ $IMAGE == "postgresql" ] ; then
-    docker run \
-      --interactive \
-      --tty \
-      --rm \
-      --volume db-data:/var/lib/postgresql \
-      --volume db-config:/etc/postgresql \
-      --volume db-logs:/var/log/postgresql \
-      --publish 5432:5432 \
-      $IMAGE
-  elif [ $IMAGE == "redis" ] ; then
-    docker run \
-      --interactive \
-      --tty \
-      --rm \
-      --volume redis-data:/home/tdm/data \
-      --publish 6379:6379 \
-      $IMAGE
   else
     docker run \
       --interactive \

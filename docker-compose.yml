@@ -40,18 +40,6 @@ services:
     volumes:
       - redis-data:/home/tdm/data
 
-  runner-prototype:
-    build:
-      context: .
-      dockerfile: misc/runner-prototype/Dockerfile
-    image: misc/runner
-    # docker-compose doesn't support seccomp files yet
-    # https://github.com/docker/compose/issues/2813
-    security_opt:
-      - seccomp:unconfined
-    volumes:
-      - .:/home/tdm/tandem
-
 volumes:
   db-data:
   db-config:
