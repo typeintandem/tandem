@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import WebView from 'react-electron-web-view';
 import PropTypes from 'prop-types';
+import { Spin } from 'antd';
 
 import constants from '../constants';
 import FlowList from './FlowList';
@@ -58,7 +59,14 @@ class FlowRecorder extends Component {
     };
     let overlay;
     if (!this.state.ready) {
-      overlay = <div id="overlay" />;
+      overlay = (
+        <div id="overlay">
+          <Spin
+            id="spinner"
+            tip="Please Wait..."
+            size="large"/>
+        </div>
+      );
     }
     return (
       <div className="center">
@@ -70,7 +78,7 @@ class FlowRecorder extends Component {
           ref={(view) => { this.webview = view; }}
           onDidFinishLoad={this.onDidFinishLoad}
           onDidStartLoading={() => { this.setState({ ready: false }); }}
-          onDidNavigateInPage={() => {this.onDidFinishLoad}}
+          onDidNavigateInPage={this.onDidFinishLoad}
           onIpcMessage={this.handleMessage}
           preload="./bundle.guest.js"
         />

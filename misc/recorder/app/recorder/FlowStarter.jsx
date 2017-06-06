@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { title } from '../constants';
+import { Card, Form, Button, Input } from 'antd';
+
+import './FlowStarter.scss';
 
 class FlowStarter extends Component {
   static get propTypes() {
@@ -29,16 +31,18 @@ class FlowStarter extends Component {
 
   render() {
     return (
-      <div>
-        <div className="app-header">
-          <h1>{title}</h1>
-        </div>
-        <span>Website:</span>
-        <form onSubmit={this.handleSubmit}>
-          <input type="text" value={this.state.value} onChange={this.handleChange} />
-          <input type="submit" value="Start Recording" />
-        </form>
+      <Card className="card center">
+        <Form onSubmit={this.handleSubmit} className="login-form">
+          <h2>Enter your URL</h2>
+      <div className="login-form-width-restrict">
+          <Input type="text" placeholder="http://www.yelp.com" value={this.state.value} onChange={this.handleChange} style={{ padding: '20px', marginTop: '20px' }} />
+
+          <Button type="primary" htmlType="submit" className="login-form-button" style={{width: '60%', height: '50px', marginTop: '50px' }}>
+            Start Recording
+          </Button>
       </div>
+        </Form>
+      </Card>
     );
   }
 }
