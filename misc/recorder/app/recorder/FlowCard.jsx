@@ -18,7 +18,7 @@ class FlowCard extends Component {
     let i = 0;
     let word = '';
     const rows = [];
-    while (i < actions.length - 1) {
+    while (i < actions.length)  {
       const curr = actions[i];
       if (curr.action === constants.EventType.KEYUP) {
         word += curr.key;
