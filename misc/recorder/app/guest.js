@@ -20,7 +20,7 @@ window.attachHooks = () => {
   window.addEventListener('click', (e) => {
     const el = findElement(e.target);
     if (el == null) return;
-    ipcRenderer.sendToHost('CLICK', e.button, el.tagName, el.id, el.class);
+    ipcRenderer.sendToHost('CLICK', e.button, el.tagName, el.id, el.className, el.textContent);
   });
   ipcRenderer.sendToHost('READY', '--- Event hooks attached ---');
 };

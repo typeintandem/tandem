@@ -15,7 +15,7 @@ div > span {
     position: fixed; /* Sit on top of the page content */
     width: 100%; /* Full width (cover the whole page) */
     height: 100%; /* Full height (cover the whole page) */
-    top: 0;
+    top: 64px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -27,5 +27,11 @@ div > span {
       position: absolute;
       top: 50vh;
       left: 48vw;
+    }
+    #spinner2 {
+      position: absolute;
+      top: 35vh;
+      left: 42vw;
+      cursor: pointer;
     }
 }

@@ -1,6 +1,7 @@
-import { Layout, Carousel, Button, Dropdown } from 'antd';
+import { Card, Layout, Carousel, Button, Dropdown, Progress } from 'antd';
 import React, { Component } from 'react';
 
+import FlowCard from './FlowCard';
 import FlowStarter from './FlowStarter';
 import FlowRecorder from './FlowRecorder';
 import Splash from './Splash';
@@ -16,9 +17,13 @@ export default class RecorderApp extends Component {
     this.state = {
       website: null,
       flowList: null,
+      done: false,
+      percent: 0,
+      timeout: null,
     };
 
     this.setFlowList = this.setFlowList.bind(this);
+    this.handleDoneClicked = this.handleDoneClicked.bind(this);
   }
 
   setFlowList(flowList) {
@@ -26,8 +31,19 @@ export default class RecorderApp extends Component {
   }
 
   innerComponent() {
-    if (this.state.website) {
+    if (this.state.website && !this.state.done) {
       return <FlowRecorder setFlow={this.setFlowList} website={this.state.website} />;
+    }
+    if (this.state.website && this.state.done) {
+      const completeText = this.state.percent >= 100 ? 'You\'re all Set!' : '...';
+      return (
+        <div id="overlay">
+          <Card id="spinner2">
+            <Progress type="circle" percent={this.state.percent} />
+            <h1>{completeText}</h1>
+          </Card>
+        </div>
+      );
     }
     return (
       <Content style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -39,17 +55,43 @@ export default class RecorderApp extends Component {
     );
   }
 
+  handleDoneClicked() {
+    this.setState({ done: true });
+    this.state.timeout = setTimeout(() => {
+      clearTimeout(this.state.timeout);
+      const percent = this.state.percent;
+      this.setState({ percent: percent + 1 });
+      if (percent < 100) {
+        this.handleDoneClicked();
+      }
+    }, 30);
+  }
+
   navBarComponent() {
     if (!this.state.website) {
       return null;
     }
-    const overlay = <p>{this.state.flowList ? this.state.flowList.toString() : 'No Flows.' }</p>;
+    const overlay = <FlowCard flowList={this.state.flowList} />;
     return (
-      <div style={{ marginLeft: 'auto' }}>
-        <Dropdown overlay={overlay}>
-          <Button type="primary" style={{ marginRight: '20px' }} shape="circle" icon="down" />
+      <div
+        style={{ marginLeft: 'auto' }}
+      >
+        <Dropdown
+          overlay={overlay}
+        >
+          <Button
+            type="primary"
+            style={{ marginRight: '20px' }}
+            shape="circle"
+            icon="down"
+          />
         </Dropdown>
-        <Button type="primary" shape="circle" icon="check" />
+        <Button
+          type="primary"
+          shape="circle"
+          icon="check"
+          onClick={this.handleDoneClicked}
+        />
       </div>
     );
   }
@@ -59,7 +101,10 @@ export default class RecorderApp extends Component {
     return (
       <div id="recorder">
         <Layout className="layout">
-          <Header id="header" style={{ display: 'flex', alignItems: 'center', position: 'fixed', width: '100%', height: '64px' }}>
+          <Header
+            id="header"
+            style={{ display: 'flex', alignItems: 'center', position: 'fixed', width: '100%', height: '64px' }}
+          >
             <div className="title" >{constants.appName}</div>
             {this.navBarComponent()}
           </Header>

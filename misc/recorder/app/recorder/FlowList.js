@@ -10,7 +10,6 @@ export default class FlowList {
     this.actions.push(new Action(action, key, target));
   }
 
-  // TODO: Serialize any other information
   toString() {
     return `${this.actions.toString()} - ${this.finalUrl}`;
   }

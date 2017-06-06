@@ -36,10 +36,25 @@ class FlowRecorder extends Component {
       console.log(event.args[0]);
     }
     if (event.channel === constants.EventType.CLICK) {
+      let targetString = `<${event.args[1]}`;
+      if (event.args[2]) {
+        targetString += ` id="${event.args[2]}"`;
+      }
+      if (event.args[3]) {
+        targetString += ` class="${event.args[3]}"`;
+      }
+      let text = event.args[4];
+      if (text && text !== '') {
+        if (text.length > 10) {
+          text = `${text.substr(0, 10)}...`;
+        }
+        targetString += ` />${text}</${event.args[2]}`;
+      }
+      targetString += '>';
       this.flowList.addAction(
         constants.EventType.CLICK, /* action */
         event.args[0], /* key */
-        `<${event.args[1]} id=${event.args[2]} class=${event.args[3]}`, /* target */
+        targetString,
       );
       console.log(this.flowList);
     }
