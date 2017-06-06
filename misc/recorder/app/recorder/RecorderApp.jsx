@@ -4,8 +4,9 @@ import React, { Component } from 'react';
 import FlowStarter from './FlowStarter';
 import FlowRecorder from './FlowRecorder';
 import Splash from './Splash';
-import './RecorderApp.scss';
 import constants from '../constants';
+
+import './RecorderApp.scss';
 
 const { Header, Content } = Layout;
 
@@ -14,12 +15,19 @@ export default class RecorderApp extends Component {
     super(props);
     this.state = {
       website: null,
+      flowList: null,
     };
+
+    this.setFlowList = this.setFlowList.bind(this);
+  }
+
+  setFlowList(flowList) {
+    this.setState({ flowList });
   }
 
   innerComponent() {
     if (this.state.website) {
-      return <FlowRecorder website={this.state.website} />;
+      return <FlowRecorder setFlow={this.setFlowList} website={this.state.website} />;
     }
     return (
       <Content style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -35,7 +43,7 @@ export default class RecorderApp extends Component {
     if (!this.state.website) {
       return null;
     }
-    const overlay = <h1>Hello World</h1>;
+    const overlay = <p>{this.state.flowList ? this.state.flowList.toString() : 'No Flows.' }</p>;
     return (
       <div style={{ marginLeft: 'auto' }}>
         <Dropdown overlay={overlay}>

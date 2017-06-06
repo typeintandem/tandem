@@ -11,6 +11,7 @@ class FlowRecorder extends Component {
   static get propTypes() {
     return {
       website: PropTypes.string.isRequired,
+      setFlow: PropTypes.func.isRequired,
     };
   }
 
@@ -50,6 +51,7 @@ class FlowRecorder extends Component {
       );
       console.log(this.flowList);
     }
+    this.props.setFlow(this.flowList);
   }
 
   render() {

@@ -25,7 +25,7 @@ class FlowStarter extends Component {
   }
 
   handleSubmit(event) {
-    this.props.onSubmit(this.state.value);
+    this.props.onSubmit(`http://${this.state.value}`);
     event.preventDefault();
   }
 
@@ -34,13 +34,13 @@ class FlowStarter extends Component {
       <Card className="card center">
         <Form onSubmit={this.handleSubmit} className="login-form">
           <h2>Enter your URL</h2>
-      <div className="login-form-width-restrict">
-          <Input type="text" placeholder="http://www.yelp.com" value={this.state.value} onChange={this.handleChange} style={{ padding: '20px', marginTop: '20px' }} />
+          <div className="login-form-width-restrict">
+            <Input addonBefore="http://" type="text" placeholder="www.yelp.com" value={this.state.value} onChange={this.handleChange} style={{ padding: '20px', marginTop: '0px' }} />
 
-          <Button type="primary" htmlType="submit" className="login-form-button" style={{width: '60%', height: '50px', marginTop: '50px' }}>
-            Start Recording
-          </Button>
-      </div>
+            <Button type="primary" htmlType="submit" className="login-form-button" style={{ width: '60%', height: '50px', marginTop: '60px' }}>
+              Start Recording
+            </Button>
+          </div>
         </Form>
       </Card>
     );
