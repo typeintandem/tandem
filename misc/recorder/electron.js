@@ -13,27 +13,17 @@ const url = require('url');
 let mainWindow;
 
 function createWindow() {
-  // Create the browser window at maximum screen dimensions.
-  const { screen } = electron;
-  const dimensions = screen.getPrimaryDisplay().size;
-  mainWindow = new BrowserWindow({
-    width: dimensions.x,
-    height: dimensions.y,
-    minWidth: 800,
-    minHeight: 600,
-    title: __dirname,
-  });
+  // Create the browser window maximized.
+  mainWindow = new BrowserWindow();
+  mainWindow.maximize();
 
   // and load the index.html of the app.
-  const startUrl = process.env.ELECTRON_START_URL || url.format({
+  const startUrl = url.format({
     pathname: path.join(__dirname, './build/index.html'),
     protocol: 'file:',
     slashes: true,
   });
   mainWindow.loadURL(startUrl);
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {

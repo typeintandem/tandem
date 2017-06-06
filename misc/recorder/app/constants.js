@@ -1,3 +1,8 @@
 export default {
-  title: 'Tandem Recorder',
+  title: 'Recorder',
+  EventType: {
+    CLICK: 'CLICK',
+    KEYUP: 'KEYUP',
+    READY: 'READY',
+  },
 };

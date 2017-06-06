@@ -12,10 +12,6 @@ export default class RecorderApp extends Component {
     };
   }
 
-  setWebsite(website) {
-    this.setState({ website });
-  }
-
   render() {
     let innerComponent;
     if (this.state.website) {

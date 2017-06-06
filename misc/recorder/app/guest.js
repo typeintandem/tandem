@@ -15,12 +15,12 @@ const findElement = (node) => {
 
 window.attachHooks = () => {
   window.addEventListener('keyup', (e) => {
-    ipcRenderer.sendToHost(`Keyup - ${e.key}`);
+    ipcRenderer.sendToHost('KEYUP', e.key);
   });
   window.addEventListener('click', (e) => {
     const el = findElement(e.target);
     if (el == null) return;
-    ipcRenderer.sendToHost(`Click: <${el.tagName}> id: ${el.id} className: ${el.className}`);
+    ipcRenderer.sendToHost('CLICK', e.button, el.tagName, el.id, el.class);
   });
-  ipcRenderer.sendToHost('--- Event hooks attached ---');
+  ipcRenderer.sendToHost('READY', '--- Event hooks attached ---');
 };
