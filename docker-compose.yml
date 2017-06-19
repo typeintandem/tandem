@@ -26,9 +26,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db-data:/var/lib/postgresql
-      - db-config:/etc/postgresql
-      - db-logs:/var/log/postgresql
+      - psql-data:/var/lib/postgresql
+      - psql-config:/etc/postgresql
+      - psql-logs:/var/log/postgresql
 
   redis:
     build:
@@ -38,10 +38,10 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/home/tdm/data
+      - redis-data:/var/lib/redis
 
 volumes:
-  db-data:
-  db-config:
-  db-logs:
+  psql-data:
+  psql-config:
+  psql-logs:
   redis-data:
