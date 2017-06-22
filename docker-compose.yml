@@ -1,0 +1,47 @@
+version: '3'
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: server
+    depends_on:
+      - postgresql
+      - redis
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/home/tdm/tandem
+    environment:
+      - FLASK_DEBUG=1
+    entrypoint:
+      - python3
+      - /home/tdm/tandem/server/main.py
+
+  postgresql:
+    build:
+      context: .
+      dockerfile: postgresql/Dockerfile
+    image: postgresql
+    ports:
+      - "5432:5432"
+    volumes:
+      - psql-data:/var/lib/postgresql
+      - psql-config:/etc/postgresql
+      - psql-logs:/var/log/postgresql
+
+  redis:
+    build:
+      context: .
+      dockerfile: redis/Dockerfile
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/var/lib/redis
+
+volumes:
+  psql-data:
+  psql-config:
+  psql-logs:
+  redis-data:

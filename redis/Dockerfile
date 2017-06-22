@@ -9,6 +9,11 @@ RUN apt-get update && apt-get install -y \
 RUN useradd --create-home --shell /bin/bash tdm && \
   adduser tdm sudo
 
+# Redis is configured to persist its data here
+# (give the tdm user ownership of /var/lib/tdm)
+RUN mkdir /var/lib/redis && \
+  chown tdm:tdm /var/lib/redis
+
 # Log in as tdm
 USER tdm
 WORKDIR /home/tdm
@@ -22,11 +27,8 @@ RUN wget http://download.redis.io/releases/redis-3.2.9.tar.gz && \
 # Use our own configuration
 COPY redis/redis.conf /home/tdm/redis.conf
 
-# Redis is configured to persist its data here
-RUN mkdir /home/tdm/data
-
-# Make sure the data is persisted across container restarts
-VOLUME ["/home/tdm/data"]
+# Make sure the redis directory is persisted across container restarts
+VOLUME ["/var/lib/redis"]
 
 # Redis uses port 6379
 EXPOSE 6379

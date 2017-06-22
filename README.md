@@ -6,9 +6,18 @@ Development Environment
 We use Docker to manage dependencies in our development environment. Install
 [Docker](https://www.docker.com/community-edition) to get started.
 
-The `dev` script is used to manage building container images and running
-containers. To run a Docker image, just run `./dev <image name>` from this
-directory. This repository will be mounted inside the container in `~`.
+**Useful commands:**
+
+| Action                      | Command                                  |
+|:----------------------------|:-----------------------------------------|
+| Start all services          | `docker-compose up -d`                   |
+| Shutdown all services       | `docker-compose down`                    |
+| Tail logs (with timestamps) | `docker-compose logs -tf <service-name>` |
+
+All images that need to be built will be built automatically when
+`docker-compose up` is run for the first time.
+
+To define a new service, add its definition in `docker-compose.yml`.
 
 To add a new Docker image, create a `Dockerfile` in a new directory.
 The name of the directory should be the name you want for the image.
