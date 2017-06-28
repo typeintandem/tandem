@@ -4,9 +4,9 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from tandem import settings
 
-DeclarativeBase = declarative_base()
 
-
-def initialize():
-    engine = create_engine(URL(**settings.POSTGRES_DATABASE))
-    DeclarativeBase.metadata.create_all(engine)
+class PostgreSQL():
+    def __init__(self):
+        self.DeclarativeBase = declarative_base()
+        engine = create_engine(URL(**settings.POSTGRES_DATABASE))
+        self.DeclarativeBase.metadata.create_all(engine)
