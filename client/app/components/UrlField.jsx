@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import './UrlField.scss';
 
-class UrlField extends React.PureComponent {
+export default class UrlField extends React.PureComponent {
   static get propTypes() {
     return {
       url: PropTypes.string.isRequired,
@@ -18,6 +18,3 @@ class UrlField extends React.PureComponent {
     );
   }
 }
-
-export default UrlField;
-

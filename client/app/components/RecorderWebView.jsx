@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import './RecorderWebView.scss';
 
-class RecorderWebView extends React.PureComponent {
+export default class RecorderWebView extends React.PureComponent {
   static get propTypes() {
     return {
       url: PropTypes.string.isRequired,
@@ -21,5 +21,3 @@ class RecorderWebView extends React.PureComponent {
     );
   }
 }
-
-export default RecorderWebView;

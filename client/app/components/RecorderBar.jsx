@@ -6,7 +6,7 @@ import UrlField from 'components/UrlField';
 
 import './RecorderBar.scss';
 
-class RecorderBar extends React.PureComponent {
+export default class RecorderBar extends React.PureComponent {
   static get propTypes() {
     return {
       url: PropTypes.string,
@@ -37,6 +37,3 @@ class RecorderBar extends React.PureComponent {
     );
   }
 }
-
-export default RecorderBar;
-
