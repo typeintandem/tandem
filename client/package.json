@@ -1,0 +1,47 @@
+{
+  "name": "tandem",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./app/electron.js",
+  "scripts": {
+    "start": "$(npm bin)/webpack-dev-server --hot --progress --colors --watch --config webpack/config/main.js",
+    "build-web": "$(npm bin)/webpack --progress --colors --config webpack/config/main.js",
+    "build-electron": "$(npm bin)/webpack --progress --colors --config webpack/config/electron.js",
+    "watch-electron": "$(npm bin)/webpack --progress --colors --watch --config webpack/config/electron.js",
+    "build": "npm run build-web && npm run build-electron",
+    "electron": "$(npm bin)/electron .",
+    "test": "$(npm bin)/eslint . --ext .js,.jsx",
+    "clean": "rm -r build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "antd": "^2.12.0",
+    "electron": "^1.6.11",
+    "prop-types": "^15.5.10",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1",
+    "react-electron-web-view": "^2.0.1",
+    "react-router-dom": "^4.1.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.25.0",
+    "babel-loader": "^7.1.1",
+    "babel-plugin-import": "^1.2.1",
+    "babel-preset-env": "^1.6.0",
+    "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.4",
+    "eslint": "^4.2.0",
+    "eslint-config-airbnb": "^15.0.2",
+    "eslint-import-resolver-webpack": "^0.8.3",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-react": "^7.1.0",
+    "html-webpack-plugin": "^2.29.0",
+    "node-sass": "^4.5.3",
+    "sass-loader": "^6.0.6",
+    "style-loader": "^0.18.2",
+    "webpack": "^3.2.0",
+    "webpack-dev-server": "^2.5.1"
+  }
+}
