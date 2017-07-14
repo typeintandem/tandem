@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import FlowCheck from './pages/FlowCheck';
 
 /* eslint-disable */
 ReactDOM.render((
-  <BrowserRouter>
+  <HashRouter>
     <FlowCheck />
-  </BrowserRouter>
+  </HashRouter>
 ), document.getElementById('app'));
 /* eslint-enable */
