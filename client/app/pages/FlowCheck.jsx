@@ -1,7 +1,7 @@
 import React from 'react';
 import { Switch, Route } from 'react-router-dom';
 
-import RecorderApp from 'recorder-app'; // eslint-disable-line
+import RecorderApp from 'recorder-app';
 
 import Navbar from '../components/Navbar';
 import DashboardApp from './dashboard/DashboardApp';

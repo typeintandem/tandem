@@ -12,7 +12,7 @@
   "settings": {
     "import/resolver": {
       "webpack": {
-        "config": "webpack/config/main.js"
+        "config": "webpack/config/dashboard.js"
       }
     }
   }

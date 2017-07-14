@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Button from 'components/Button';
-import UrlField from 'components/UrlField';
+import URLField from 'components/URLField';
 
 import './RecorderBar.scss';
 
@@ -25,7 +25,7 @@ export default class RecorderBar extends React.PureComponent {
     return (
       <div className="recorder-bar">
         <div className="recorder-bar__url-field">
-          <UrlField url={this.props.url} />
+          <URLField url={this.props.url} />
         </div>
         <div className="recorder-bar__button">
           <Button onClick={this.props.clickDone}>Done</Button>

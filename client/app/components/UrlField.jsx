@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import './UrlField.scss';
+import './URLField.scss';
 
-export default class UrlField extends React.PureComponent {
+export default class URLField extends React.PureComponent {
   static get propTypes() {
     return {
       url: PropTypes.string.isRequired,

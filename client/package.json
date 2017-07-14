@@ -4,8 +4,8 @@
   "description": "",
   "main": "./app/electron.js",
   "scripts": {
-    "start": "$(npm bin)/webpack-dev-server --hot --progress --colors --watch --config webpack/config/main.js",
-    "build-web": "$(npm bin)/webpack --progress --colors --config webpack/config/main.js",
+    "start": "$(npm bin)/webpack-dev-server --hot --progress --colors --watch --config webpack/config/dashboard.js",
+    "build-web": "$(npm bin)/webpack --progress --colors --config webpack/config/dashboard.js",
     "build-electron": "$(npm bin)/webpack --progress --colors --config webpack/config/electron.js",
     "watch-electron": "$(npm bin)/webpack --progress --colors --watch --config webpack/config/electron.js",
     "build": "npm run build-web && npm run build-electron",
