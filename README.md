@@ -33,10 +33,9 @@ files outside of `~/tandem`.
 Run the following commands within the `client/` folder.
 
 * `npm install`: Install dependencies
-* `npm run build-electron`: Build electron app
-* `npm run watch-electron`: Build & watch electron app
-* `npm run electron`: Run electron app
-* `npm run build-web`: Build web app
 * `npm start`: Build, watch, and serve web app on dev server
+* `npm run start-electron`: Build & watch electron app
+* `npm run build`: Build web app & electron app
+* `npm run electron`: Run electron app
 * `npm test`: Run tests
 * `npm run clean`: Clean build folder
