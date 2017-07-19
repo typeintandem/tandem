@@ -4,5 +4,5 @@ POSTGRES_DATABASE = {
     'port': '5432',
     'username': 'tdm',
     'password': 'tdm',
-    'database': 'db',
+    'database': 'tdm',
 }

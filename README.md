@@ -12,6 +12,8 @@ We use Docker to manage dependencies in our development environment. Install
 | Start all services          | `docker-compose up -d`                   |
 | Shutdown all services       | `docker-compose down`                    |
 | Tail logs (with timestamps) | `docker-compose logs -tf <service-name>` |
+| List all containers         | `docker ps`                              |
+| Start bash in a container   | `docker exec -it <container> /bin/bash`  |
 
 All images that need to be built will be built automatically when
 `docker-compose up` is run for the first time.

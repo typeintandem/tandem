@@ -2,10 +2,10 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship
 
-from tandem.database.instances import postgres
+from tandem.database.postgresql import DeclarativeBase
 
 
-class Flow(postgres.DeclarativeBase):
+class Flow(DeclarativeBase):
     __tablename__ = 'flows'
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String(255))
