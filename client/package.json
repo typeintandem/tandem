@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "antd": "^2.12.0",
+    "classnames": "^2.2.5",
     "electron": "^1.6.11",
     "html-webpack-plugin": "^2.29.0",
     "prop-types": "^15.5.10",
@@ -29,6 +30,7 @@
     "babel-plugin-import": "^1.2.1",
     "babel-preset-env": "^1.6.0",
     "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
     "css-loader": "^0.28.4",
     "eslint": "^4.2.0",
     "eslint-config-airbnb": "^15.0.2",

@@ -1,0 +1,19 @@
+.dashboard-view__menu {
+  align-items: center;
+  display: flex;
+  height: 55px;
+  background-color: #bdc3c7;
+}
+
+.dashboard-view__flow-list {
+  background-color: #ecf0f1;
+  padding: 10px 0 20px 0;
+  height: calc(100vh - 145px);
+}
+
+.dashboard-view__menu {
+  padding: 0 30px;
+}
+.dashboard-view__menu__item {
+  margin: 0 10px;
+}
