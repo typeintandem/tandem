@@ -2,3 +2,5 @@ Flask
 SQLAlchemy
 psycopg2
 flake8
+requests
+websocket-client
