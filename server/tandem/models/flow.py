@@ -20,3 +20,10 @@ class Flow(postgres.DeclarativeBase):
 
     def add_action(self, action):
         pass
+
+    def get_by_id(flow_id):
+        pass
+
+    def get_by_ids(flow_ids):
+        return [instance for instance in postgres.new_session().
+                query(Flow).filter(Flow.id.in_(flow_ids))]
