@@ -45,6 +45,10 @@ services:
       context: .
       dockerfile: server/Dockerfile-runner
     image: runner
+    # docker-compose doesn't support seccomp files yet
+    # https://github.com/docker/compose/issues/2813
+    security_opt:
+      - seccomp:unconfined
     depends_on:
       - redis
     volumes:
