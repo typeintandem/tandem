@@ -1,0 +1,19 @@
+.navbar {
+  align-items: center;
+  background-color: #ececec;
+  display: flex;
+  height: 70px;
+}
+
+.navbar__logo {
+  background-color: #2ecc71;
+  height: 40px;
+  margin: 0 25px;
+  width: 150px;
+}
+
+.navbar__menu__item {
+  margin: 0 10px;
+  color: #2c3e50;
+  text-decoration: none;
+}
