@@ -1,4 +1,4 @@
-import tandem.models
+from tandem.models.base import BaseModel
 from tandem.database import postgresql
 
-postgresql.create_all()
+BaseModel.metadata.create_all(postgresql.engine)

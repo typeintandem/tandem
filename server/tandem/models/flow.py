@@ -1,30 +1,11 @@
-from sqlalchemy import Column, Integer, String, dialects, orm
+from sqlalchemy import orm, schema, types
+from tandem.models.base import BaseModel
 
-from tandem.database import postgresql
 
-
-class Flow(postgresql.DeclarativeBase):
+class Flow(BaseModel):
     __tablename__ = 'flows'
-    id = Column('id', Integer, primary_key=True)
-    name = Column('name', String(255))
-    frequency = Column('frequency', Integer)
-    viewport = Column(
-        'viewport',
-        dialects.postgresql.ARRAY(Integer, dimensions=1)
-    )
+    id = schema.Column('id', types.Integer, primary_key=True)
+    name = schema.Column('name', types.String(255))
+    frequency = schema.Column('frequency', types.Integer)
+    viewport = schema.Column('viewport', types.ARRAY(types.Integer, dimensions=1))
     actions = orm.relationship("Action")
-
-    def __init__(self, name, frequency, viewport):
-        self.name = name
-        self.frequency = frequency
-        self.viewport = viewport
-
-    def add_action(self, action):
-        pass
-
-    def get_by_id(flow_id):
-        pass
-
-    def get_by_ids(flow_ids):
-        return [instance for instance in postgresql.new_session().
-                query(Flow).filter(Flow.id.in_(flow_ids))]
