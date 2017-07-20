@@ -106,6 +106,18 @@ class Connection:
         root_node_id = document_dom['root']['nodeId']
         return self._request('DOM.querySelectorAll', {'nodeId': root_node_id, 'selector': query})
 
+    def get_attributes(self, node_id):
+        return self._request('DOM.getAttributes', {'nodeId': node_id})
+
+    def resolve_node(self, node_id):
+        return self._request('DOM.resolveNode', {'nodeId': node_id})
+
+    def call_function_on(self, object_id, function):
+        return self._request('Runtime.callFunctionOn', {'objectId': object_id, 'functionDeclaration': function})
+
+    def get_properties(self, object_id):
+        return self._request('Runtime.getProperties', {'objectId': object_id})
+
 
 class WebPage:
     def __init__(self, page_id, page_url, websocket_url):

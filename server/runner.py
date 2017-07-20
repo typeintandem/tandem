@@ -8,6 +8,9 @@ from tandem.models.flow import Flow
 from tandem.utilities.web_driver import WebDriver
 from tandem.utilities.job_queue_driver import WorkerDriver
 
+class TestFailure(BaseException):
+    def __init__(self, reason):
+        self.reason = reason
 
 def runner_main():
     worker_id = uuid.uuid4()
@@ -56,21 +59,53 @@ def handle_flow(flow_id):
     print('Finished handling flow {}'.format(flow_id), flush=True)
 
 
+def find_matching_href_node_id(query, href, active_page):
+    matching_nodes = active_page.query_selector_all(query)
+    attributes = [active_page.get_attributes(node_id) for node_id in matching_nodes['nodeIds']]
+
+    for node_index in range(len(attributes)):
+        attrs = attributes[node_index]['attributes']
+        for i in range(len(attrs) // 2):
+            idx = i * 2
+            if attrs[idx] == 'href' and attrs[idx + 1] == href:
+                return matching_nodes['nodeIds'][node_index]
+
+    return None
+
+
 def run(flow):
     driver = WebDriver()
     pages = driver.pages
     page = pages[list(pages)[0]]
 
-    # 1. Navigate to starting page
-    with page.connect() as active_page:
-        active_page.enable_page_events()
-        active_page.goto('https://github.com')
-        active_page.wait_for('Page.frameStoppedLoading', 3)
-        active_page.disable_page_events()
+    try:
+        with page.connect() as active_page:
+            # 1. Navigate to starting page
+            active_page.enable_page_events()
+            active_page.goto('https://github.com')
+            active_page.wait_for('Page.frameStoppedLoading', 3)
+            active_page.disable_page_events()
 
-    # 2. Run actions
+            # 2. Run actions
+            # a) Click "Sign in"
+            sign_in_node = find_matching_href_node_id('a.text-bold.site-header-link', '/login', active_page)
 
-    # 3. Assertion
+            if sign_in_node is None:
+                raise TestFailure('Could not find the sign in link.')
+
+            resp = active_page.resolve_node(sign_in_node)
+            object_id = resp['object']['objectId']
+
+            # Perform the click
+            active_page.enable_page_events()
+            active_page.call_function_on(object_id, 'function() { this.click(); }')
+            active_page.wait_for('Page.frameStoppedLoading', 3)
+            active_page.disable_page_events()
+
+            # 3. Assertion
+
+    except TestFailure:
+        pass
 
 if __name__ == '__main__':
     runner_main()
