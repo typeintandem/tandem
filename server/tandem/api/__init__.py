@@ -1,8 +1,10 @@
+import time
 from flask import Blueprint, jsonify, request
 from tandem.utilities.job_queue_driver import JobSubmitDriver
 from tandem.database import postgresql
 from tandem.models.action import Action, ActionType
 from tandem.models.flow import Flow
+from tandem.models.run import Run
 
 api_blueprint = Blueprint('api', __name__)
 queue_driver = JobSubmitDriver()
@@ -13,10 +15,18 @@ def api_handler():
     return jsonify('You\'ve hit the api!')
 
 
-@api_blueprint.route('/run/<id>', methods=['GET'])
+@api_blueprint.route('/runs/<id>', methods=['GET'])
+def get_runs(id):
+    return jsonify([run.as_dict() for run in Run.query.filter_by(flow_id=id)])
+
+
+@api_blueprint.route('/run/<id>', methods=['POST'])
 def run_flow(id):
     flow_id = int(id)
     queue_driver.submit_flow_job(flow_id)
+    new_run = Run(flow_id=flow_id, submit_time=time.time())
+    postgresql.session.add(new_run)
+    postgresql.session.commit()
     return jsonify({})
 
 
