@@ -49,7 +49,11 @@ def handle_flow(flow_id):
     with Popen(chrome_cmd) as chrome:
         try:
             sleep(1)
-            run(flow_id)
+            succeeded, failure_ex = run(flow_id)
+            if succeeded:
+                print('Test passed!', flush=True)
+            else:
+                print('Test failed! - ' + failure_ex.reason, flush=True)
             # Write to DB
             # Notify server if needed
         finally:
@@ -59,20 +63,29 @@ def handle_flow(flow_id):
     print('Finished handling flow {}'.format(flow_id), flush=True)
 
 
-def find_matching_attribute(matching_nodes, match_type, match_value, active_page):
-    attributes = [active_page.get_attributes(node_id) for node_id in matching_nodes['nodeIds']]
+def find_node_with_most_matches(matching_nodes, matching_attributes, active_page):
+    node_ids = matching_nodes['nodeIds']
+    num_nodes = len(node_ids)
 
-    for node_index in range(len(attributes)):
-        attrs = attributes[node_index]['attributes']
+    attributes = [active_page.get_attributes(node_id)['attributes'] for node_id in node_ids]
+    attribute_match_count = [0 for node_id in node_ids]
+    max_index = 0
+
+    for node_index in range(num_nodes):
+        attrs = attributes[node_index]
         for i in range(len(attrs) // 2):
             idx = i * 2
-            if attrs[idx] == match_type and attrs[idx + 1] == match_value:
-                return matching_nodes['nodeIds'][node_index]
+            attribute_name = attrs[idx]
+            attribute_value = attrs[idx + 1]
+            if attribute_name in matching_attributes and attribute_value == matching_attributes[attribute_name]:
+                attribute_match_count[node_index] += 1
+        if attribute_match_count[node_index] > attribute_match_count[max_index]:
+            max_index = node_index
 
-    return None
+    return node_ids[max_index] if attribute_match_count[max_index] > 0 else None
 
 
-def click(query, match_type, match_value, wait_navigate, active_page, focus=False):
+def click(query, matching_attributes, wait_navigate, active_page, focus=False):
     matching_nodes = active_page.query_selector_all(query)
     matches = len(matching_nodes['nodeIds'])
 
@@ -80,7 +93,7 @@ def click(query, match_type, match_value, wait_navigate, active_page, focus=Fals
         raise TestFailure('Could not find the element to click!')
 
     sign_in_node = matching_nodes['nodeIds'][0] if matches == 1 else \
-        find_matching_attribute(matching_nodes, match_type, match_value, active_page)
+        find_node_with_most_matches(matching_nodes, matching_attributes, active_page)
 
     if sign_in_node is None:
         raise TestFailure('Could not find the element to click!')
@@ -131,29 +144,29 @@ def run(flow):
 
             # 2. Run actions
             # a) Click "Sign in"
-            click('a.text-bold.site-header-link', 'href', '/login', True, active_page)
+            click('a.text-bold.site-header-link', {'href': '/login'}, True, active_page)
 
             # b) Type in username
             type('geoffxy', active_page)
 
             # c) Focus password field
-            click('#password', None, None, False, active_page, focus=True)
+            click('#password', {}, False, active_page, focus=True)
 
             # d) Type in password
             type('abc123', active_page)
 
             # e) Click sign in
-            click('.btn.btn-primary.btn-block', 'type', 'submit', True, active_page)
+            click('.btn.btn-primary.btn-block', {'type': 'submit'}, True, active_page)
 
             # 3. Assertion
             driver.reload_pages()
             page_assertion(page.url, 'https://github.com/session')
 
-        # Record test passed
-        print('Test passed!', flush=True)
+        # Return that the test passed
+        return (True, None)
 
     except TestFailure as ex:
-        print('Test failed! - ' + ex.reason, flush=True)
+        return (False, ex)
 
 if __name__ == '__main__':
     runner_main()
