@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Button from 'components/Button';
-import URLField from 'components/URLField';
+import Input from 'components/Input';
 
 import './RecorderBar.scss';
 
@@ -10,29 +10,58 @@ export default class RecorderBar extends React.PureComponent {
   static get propTypes() {
     return {
       url: PropTypes.string,
-      clickDone: PropTypes.func.isRequired,
-      clickSteps: PropTypes.func.isRequired,
+      editable: PropTypes.bool.isRequired,
+      showSteps: PropTypes.bool.isRequired,
+      onDone: PropTypes.func.isRequired,
+      onSteps: PropTypes.func.isRequired,
     };
   }
 
-  static get defaultProps() {
-    return {
-      url: '',
+  constructor(props) {
+    super(props);
+    this.state = {
+      url: this.props.url || '',
     };
+  }
+
+  handleDone() {
+    if (this.state.url !== null && this.state.url.trim() !== '') {
+      console.log("done!");
+      console.log(this.state.url);
+      this.props.onDone(this.state.url);
+    }
   }
 
   render() {
+    const renderDone = () => {
+      if (!this.props.editable) {
+        return null;
+      }
+      return (
+        <div className="recorder-bar__button">
+          <Button onClick={() => { this.handleDone(); }}>Done</Button>
+        </div>
+      );
+    };
+
+    const renderSteps = () => {
+      if(!this.props.showSteps) {
+        return null;
+      }
+      return (
+        <div className="recorder-bar__button">
+          <Button onClick={this.props.onSteps}>Steps</Button>
+        </div>
+      );
+    }
+
     return (
       <div className="recorder-bar">
         <div className="recorder-bar__url-field">
-          <URLField url={this.props.url} />
+          <Input disabled={this.props.url !== null} text={this.state.url} onChange={(value) => { this.setState({ url: value }); }} />
         </div>
-        <div className="recorder-bar__button">
-          <Button onClick={this.props.clickDone}>Done</Button>
-        </div>
-        <div className="recorder-bar__button">
-          <Button onClick={this.props.clickSteps}>Steps</Button>
-        </div>
+        { renderDone() }
+        { renderSteps() }
       </div>
     );
   }

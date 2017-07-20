@@ -22,7 +22,13 @@ export default class RecorderApp extends React.Component {
 
     return (
       <div className="recorder">
-        <RecorderBar url={this.state.url} clickDone={() => {}} clickSteps={() => {}} />
+        <RecorderBar
+          editable={this.state.url === null}
+          url={this.state.url}
+          showSteps={this.state.url !== null}
+          onDone={(value) => { this.setState({ url: value }); }}
+          onSteps={() => {}}
+        />
         { renderSetup() }
         { renderWebView() }
       </div>
