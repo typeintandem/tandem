@@ -6,3 +6,9 @@ POSTGRES_DATABASE = {
     'password': 'tdm',
     'database': 'tdm',
 }
+
+REDIS = {
+    'host': 'redis',
+    'port': 6379,
+    'db': 0
+}

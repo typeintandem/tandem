@@ -3,7 +3,7 @@ services:
   server:
     build:
       context: .
-      dockerfile: server/Dockerfile
+      dockerfile: server/Dockerfile-server
     image: server
     depends_on:
       - postgresql
@@ -39,6 +39,23 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/var/lib/redis
+
+  runner:
+    build:
+      context: .
+      dockerfile: server/Dockerfile-runner
+    image: runner
+    # docker-compose doesn't support seccomp files yet
+    # https://github.com/docker/compose/issues/2813
+    security_opt:
+      - seccomp:unconfined
+    depends_on:
+      - redis
+    volumes:
+      - .:/home/tdm/tandem
+    entrypoint:
+      - python3
+      - /home/tdm/tandem/server/runner.py
 
 volumes:
   psql-data:
