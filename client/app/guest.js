@@ -1,6 +1,7 @@
 /* global Node */
 /* global window */
 import { ipcRenderer } from 'electron';
+import constants from './constants';
 
 const findElement = (node) => {
   let curr = node;
@@ -15,12 +16,13 @@ const findElement = (node) => {
 
 window.attachHooks = () => {
   window.addEventListener('keyup', (e) => {
-    ipcRenderer.sendToHost('KEYUP', e.key);
+    ipcRenderer.sendToHost(constants.RecorderWebView.EventType.KEYUP, e.key);
   });
   window.addEventListener('click', (e) => {
     const el = findElement(e.target);
     if (el == null) return;
-    ipcRenderer.sendToHost('CLICK', e.button, el.tagName, el.id, el.className, el.textContent);
+    ipcRenderer.sendToHost(constants.RecorderWebView.EventType.CLICK, e.button, el.tagName,
+      el.id, el.className, el.textContent);
   });
-  ipcRenderer.sendToHost('READY', '--- Event hooks attached ---');
+  ipcRenderer.sendToHost(constants.RecorderWebView.EventType.READY, '--- Event hooks attached ---');
 };
