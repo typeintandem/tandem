@@ -1,0 +1,43 @@
+.flow-card {
+  padding: 15px;
+  margin: 0 50px;
+  border-bottom: 1px #95a5a6 solid;
+  background-color: #ecf0f1;
+  align-items: center;
+  display: flex;
+}
+
+.flow-card__icon {
+  background-color: #2ecc71;
+  border-radius: 30px;
+  height: 30px;
+  width: 30px;
+  margin: 0 15px 0 5px;
+}
+
+.flow-card__icon--running {
+  background-color: #f39c12;
+}
+
+.flow-card__icon--failed {
+  background-color: #e74c3c;
+}
+
+.flow-card__menu__item {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+.flow-card__text {
+  flex-grow: 1;
+  display: inline-block;
+  margin: 0 10px;
+}
+
+.flow-card__text__name {
+  font-size: 1.5rem;
+}
+
+.flow-card__text__last-run {
+  font-size: 1rem;
+}
