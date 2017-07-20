@@ -1,17 +1,18 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, dialects, orm
 
-from tandem.database.postgresql import DeclarativeBase
+from tandem.database import postgresql
 
 
-class Flow(DeclarativeBase):
+class Flow(postgresql.DeclarativeBase):
     __tablename__ = 'flows'
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String(255))
     frequency = Column('frequency', Integer)
-    viewport = Column('viewport', postgresql.ARRAY(Integer, dimensions=1))
-    actions = relationship("Action")
+    viewport = Column(
+        'viewport',
+        dialects.postgresql.ARRAY(Integer, dimensions=1)
+    )
+    actions = orm.relationship("Action")
 
     def __init__(self, name, frequency, viewport):
         self.name = name
@@ -25,5 +26,5 @@ class Flow(DeclarativeBase):
         pass
 
     def get_by_ids(flow_ids):
-        return [instance for instance in postgres.new_session().
+        return [instance for instance in postgresql.new_session().
                 query(Flow).filter(Flow.id.in_(flow_ids))]
