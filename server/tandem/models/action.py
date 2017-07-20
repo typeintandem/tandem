@@ -16,11 +16,11 @@ class ActionType(enum.Enum):
 
 class Action(BaseModel):
     __tablename__ = 'actions'
-    id = schema.Column('id', types.Integer, primary_key=True)
-    type = schema.Column('type', types.Enum(ActionType))
-    pre_delay = schema.Column('pre_delay', types.Integer)
-    post_delay = schema.Column('post_delay', types.Integer)
-    timestamp = schema.Column('timestamp', types.Integer)
-    attributes = schema.Column('attributes', types.JSON)
-    step = schema.Column('step', types.Integer)
+    id = schema.Column(types.Integer, primary_key=True)
+    type = schema.Column(types.Enum(ActionType))
+    pre_delay = schema.Column(types.Integer)
+    post_delay = schema.Column(types.Integer)
+    timestamp = schema.Column(types.Integer)
+    attributes = schema.Column(types.JSON)
+    step = schema.Column(types.Integer)
     flow_id = schema.Column(types.Integer, schema.ForeignKey(Flow.__table__.c.id))
