@@ -21,8 +21,13 @@ window.attachHooks = () => {
   window.addEventListener('click', (e) => {
     const el = findElement(e.target);
     if (el == null) return;
-    ipcRenderer.sendToHost(constants.RecorderWebView.EventType.CLICK, e.button, el.tagName,
-      el.id, el.className, el.textContent);
+    const attributes = {
+      tagType: el.tagName,
+      id: el.id,
+      className: el.className,
+      text: el.textContent,
+    };
+    ipcRenderer.sendToHost(constants.RecorderWebView.EventType.CLICK, attributes);
   });
   ipcRenderer.sendToHost(constants.RecorderWebView.EventType.READY, '--- Event hooks attached ---');
 };
