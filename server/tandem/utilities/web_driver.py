@@ -61,9 +61,9 @@ class Connection:
         self._message_id += 1
 
         request = {
-            "id": request_id,
-            "method": method,
-            "params": params,
+            'id': request_id,
+            'method': method,
+            'params': params,
         }
 
         # Condition used to wait for response
