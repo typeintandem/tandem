@@ -18,15 +18,20 @@ export default class RecorderApp extends React.Component {
       actions: [],
       finalURL: null,
       showOutro: false,
+      saving: false,
+      hasAssert: false,
     };
   }
 
   completeFlow(name, frequency) {
     const actions = this.state.actions;
-    actions.push(new Action(
-      constants.ActionType.ASSERT_URL,
-      this.state.finalURL,
-    ));
+    if (!this.state.hasAssert) {
+      actions.push(new Action(
+        constants.ActionType.ASSERT_URL,
+        this.state.finalURL,
+      ));
+      this.setState({ hasAssert: true });
+    }
 
     const flow = new Flow(
       name,
@@ -34,13 +39,29 @@ export default class RecorderApp extends React.Component {
       this.state.url,
       actions,
     );
-    // TODO: Send flow to API
 
-    this.setState({
-      url: null,
-      actions: [],
-      finalURL: null,
-      showOutro: false,
+    this.setState({ saving: true });
+    fetch('http://localhost:8080/api/flow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(flow),
+    }).then((response) => {
+      this.setState({ saving: false });
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      this.setState({
+        url: null,
+        actions: [],
+        finalURL: null,
+        showOutro: false,
+        hasAssert: false,
+      });
+    }).catch((error) => {
+      this.setState({ saving: false });
+      alert(`Error posting, try again: ${error.message}`);
     });
   }
 

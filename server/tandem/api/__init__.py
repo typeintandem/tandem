@@ -44,7 +44,8 @@ def create_flow():
             action['type'] = ActionType(action['type'])
         return Action(flow_id=new_flow.id, step=step+1,  **action)
 
-    new_actions = [build_action(step, req.get('actions')[step]) for step in range(len(req.get('actions')))]
+    new_actions = [build_action(step, req.get('actions')[step])
+                   for step in range(len(req.get('actions')))]
     postgresql.session.add_all(new_actions)
 
     postgresql.session.commit()
@@ -58,4 +59,5 @@ def get_flows():
 
 @api_blueprint.route('/actions/<id>', methods=['GET'])
 def get_actions(id):
-    return jsonify([action.as_dict() for action in Action.query.filter_by(flow_id=id)])
+    return jsonify([action.as_dict() for action in
+                    Action.query.filter_by(flow_id=id)])
