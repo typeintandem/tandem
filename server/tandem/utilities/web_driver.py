@@ -1,14 +1,96 @@
 import json
 import requests
 import websocket
+from threading import Thread, Semaphore, Lock
 
 
-def send_websocket_request(url, payload):
-    ws = websocket.create_connection(url)
-    ws.send(payload)
-    response = ws.recv()
-    ws.close()
-    return response
+class Connection:
+    def __init__(self, websocket_url):
+        self._websocket_url = websocket_url
+        self._message_id = 0
+        self._ws = None
+        self._read_thread = None
+        self._pending_requests = {}
+        self._pending_requests_lock = Lock()
+
+    def __enter__(self):
+        self._ws = websocket.create_connection(self._websocket_url)
+        self._recv_thread = Thread(target = self._handle_messages)
+        self._recv_thread.start()
+        return self
+
+    def __exit__(self, *args):
+        self._ws.close()
+        self._recv_thread.join()
+        self._ws = None
+
+    def _handle_messages(self):
+        try:
+            while True:
+                message = json.loads(self._ws.recv())
+                if 'id' in message:
+                    # Response
+                    request_id = message['id']
+                    with self._pending_requests_lock:
+                        if request_id in self._pending_requests:
+                            response_list, cond = self._pending_requests[request_id]
+                            response_list.append(message['result'])
+                            cond.release()
+                        else:
+                            print('Received a message with id {} that has no waiting thread'.format(request_id), flush=True)
+                elif 'method' in message:
+                    # Event
+                    pass
+                else:
+                    pass
+        except:
+            pass
+
+    def _request(self, method, params={}):
+        request_id = self._message_id
+        self._message_id += 1
+
+        request = {
+            "id": request_id,
+            "method": method,
+            "params": params,
+        }
+
+        # Condition used to wait for response
+        cond = Semaphore(0)
+
+        # Store pending request
+        with self._pending_requests_lock:
+            self._pending_requests[request_id] = ([], cond)
+
+        # Actually send the request
+        self._ws.send(json.dumps(request))
+
+        # Wait for a response
+        cond.acquire()
+
+        response = None
+
+        # Extract the response
+        with self._pending_requests_lock:
+            response = self._pending_requests[request_id][0][0]
+            self._pending_requests.pop(request_id, None)
+
+        return response
+
+    def goto(self, url):
+        return self._request('Page.navigate', {'url': url})
+
+    def enable_page_events(self):
+        return self._request('Page.enable', {})
+
+    def disable_page_events(self):
+        return self._request('Page.disable', {})
+
+    def query_selector_all(self, query):
+        document_dom = self._request('DOM.getDocument', {})
+        root_node_id = document_dom['root']['nodeId']
+        return self._request('DOM.querySelectorAll', {'nodeId': root_node_id, 'selector': query})
 
 
 class WebPage:
@@ -16,16 +98,6 @@ class WebPage:
         self._page_id = page_id
         self._page_url = page_url
         self._websocket_url = websocket_url
-        self._message_id = 0
-
-    def _request_action(self, method, params={}):
-        self._message_id += 1
-        request = {
-            "id": self._message_id,
-            "method": method,
-            "params": params,
-        }
-        return send_websocket_request(self._websocket_url, json.dumps(request))
 
     @property
     def id(self):
@@ -38,13 +110,8 @@ class WebPage:
     def copy(self, web_page):
         self._page_url = web_page._page_url
 
-    def goto(self, url):
-        response = self._request_action("Page.navigate", {"url": url})
-        return response
-
-    # Add more actions here
-    # Then call them with page.action(params)
-
+    def connect(self):
+        return Connection(self._websocket_url)
 
 class WebDriver:
     def __init__(self, host="localhost", port="9222"):

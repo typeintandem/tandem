@@ -50,6 +50,7 @@ def handle_flow(flow_id):
             # Write to DB
             # Notify server if needed
         finally:
+            print('Calling chrome.terminate()', flush=True)
             chrome.terminate()
 
     print('Finished handling flow {}'.format(flow_id), flush=True)
@@ -60,15 +61,14 @@ def run(flow):
     pages = driver.pages
     page = pages[list(pages)[0]]
 
-    print('before - ' + page.url, flush=True)
-    page.goto("https://www.facebook.com")
-    print('after - ' + page.url, flush=True)
+    # 1. Navigate to starting page
+    with page.connect() as active_page:
+        resp = active_page.goto("https://github.com")
+        resp2 = active_page.enable_page_events()
 
-    driver.reload_pages()
+    # 2. Run actions
 
-    print(page.url, flush=True)
-    page.goto("https://github.com")
-
+    # 3. Assertion
 
 if __name__ == '__main__':
     runner_main()
