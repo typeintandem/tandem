@@ -21,11 +21,18 @@ window.attachHooks = () => {
   window.addEventListener('click', (e) => {
     const el = findElement(e.target);
     if (el == null) return;
+    const attributesNodeMap = el.attributes;
+    const elementAttributes = {};
+    for (let i = 0; i < attributesNodeMap.length; i += 1) {
+      elementAttributes[attributesNodeMap[i].name] = attributesNodeMap[i].value;
+    }
+
     const attributes = {
       tagType: el.tagName,
       id: el.id,
       className: el.className,
       text: el.textContent,
+      attributes: elementAttributes,
     };
     ipcRenderer.sendToHost(constants.RecorderWebView.EventType.CLICK, attributes);
   });
