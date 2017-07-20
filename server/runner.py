@@ -115,7 +115,8 @@ def find_node_with_most_matches(matching_nodes,
             else None)
 
 
-def click(query, matching_attributes, wait_navigate, active_page, focus=False):
+def click(query, matching_attributes, active_page):
+    print('Clicking ' + query, flush=True)
     matching_nodes = active_page.query_selector_all(query)
     matches = len(matching_nodes['nodeIds'])
 
@@ -138,19 +139,10 @@ def click(query, matching_attributes, wait_navigate, active_page, focus=False):
     object_id = resp['object']['objectId']
 
     # Perform the click
-    if wait_navigate:
-        active_page.enable_page_events()
-
-    if focus:
-        resp = active_page.call_function_on(object_id,
-                                            'function() { this.focus(); }')
-    else:
-        resp = active_page.call_function_on(object_id,
-                                            'function() { this.click(); }')
-
-    if wait_navigate:
-        active_page.wait_for('Page.frameStoppedLoading', 3)
-        active_page.disable_page_events()
+    active_page.enable_page_events()
+    resp = active_page.call_function_on(object_id, 'function() { this.click(); this.focus(); }')
+    active_page.wait_for('Page.frameStoppedLoading', 3)
+    active_page.disable_page_events()
 
 
 def type(string, active_page):
@@ -171,38 +163,7 @@ def run(flow, actions):
 
     try:
         with page.connect() as active_page:
-            '''
-            # 1. Navigate to starting page
-            active_page.enable_page_events()
-            active_page.goto('https://github.com')
-            active_page.wait_for('Page.frameStoppedLoading', 3)
-            active_page.disable_page_events()
-
-            # 2. Run actions
-            # a) Click "Sign in"
-            click('a.text-bold.site-header-link',
-                  {'href': '/login'}, True, active_page)
-
-            # b) Type in username
-            type('geoffxy', active_page)
-
-            # c) Focus password field
-            click('#password', {}, False, active_page, focus=True)
-
-            # d) Type in password
-            type('abc123', active_page)
-
-            # e) Click sign in
-            click('.btn.btn-primary.btn-block',
-                  {'type': 'submit'}, True, active_page)
-
-            # 3. Assertion
-            driver.reload_pages()
-            page_assertion(page.url, 'https://github.com/session')
-            '''
-
             # Go to initial page
-            print(flow, flush=True)
             active_page.enable_page_events()
             active_page.goto(flow.url)
             active_page.wait_for('Page.frameStoppedLoading', 3)
@@ -210,19 +171,15 @@ def run(flow, actions):
 
             # Run actions
             for action in actions:
-                print(action, flush=True)
                 if action.type == ActionType.click:
                     id = action.attributes['id']
                     tag = action.attributes['tagType']
-                    should_focus = tag == 'INPUT'
-                    should_wait = tag == 'A'
-
                     if len(id) > 0:
-                        click('#' + id, {}, should_wait, active_page, should_focus)
+                        click(id, {}, active_page)
                     else:
                         class_string = action.attributes['className'].replace(' ', '.')
-                        query_string = tag.lower() + class_string
-                        click(query_string, action.attributes['attributes'], should_wait, active_page, should_focus)
+                        query_string = tag.lower() + '.' + class_string
+                        click(query_string, action.attributes['attributes'], active_page)
 
                 elif action.type == ActionType.key_press:
                     type(action.attributes, active_page)

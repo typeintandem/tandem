@@ -45,7 +45,7 @@
     },
     {
       "type": "ASSERT_URL",
-      "attributes": "https://github.com/sessions"
+      "attributes": "https://github.com/session"
     }
   ]
 }
