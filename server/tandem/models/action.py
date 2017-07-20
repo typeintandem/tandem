@@ -10,9 +10,6 @@ class ActionType(enum.Enum):
     key_press = 'KEY_PRESS'
     assert_url = 'ASSERT_URL'
 
-    def __str__(self):
-        return str(self.value)
-
 
 class Action(BaseModel):
     __tablename__ = 'actions'
@@ -24,3 +21,9 @@ class Action(BaseModel):
     attributes = schema.Column(types.JSON)
     step = schema.Column(types.Integer)
     flow_id = schema.Column(types.Integer, schema.ForeignKey(Flow.__table__.c.id))
+
+    def as_dict(self):
+        res = super().as_dict()
+        if self.type:
+            res['type'] = str(res['type'].value)
+        return res

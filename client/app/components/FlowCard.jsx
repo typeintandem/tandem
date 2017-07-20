@@ -14,17 +14,35 @@ export default class FlowCard extends React.PureComponent {
     };
   }
 
+  renderSubtext() {
+    const getStr = () => {
+      const runs = this.props.flow.runs;
+      if (runs.length <= 0) {
+        return 'Never executed';
+      } else if (runs.some(run => !run.start_time)) {
+        return 'Waiting to be checked';
+      } else if (runs.some(run => !run.complete_time)) {
+        return 'Checking now';
+      }
+      return `Last Checked: ${runs[runs.length - 1].complete_time}`;
+    };
+
+    return (
+      <div className="flow-card__text__last-run">{ getStr() }</div>
+    );
+  }
+
   render() {
     return (
       <div className="flow-card">
-        <div className={cn('flow-card__icon', { 'flow-card__icon--failed': this.props.flow.status === 'fail', 'flow-card__icon--running': this.props.flow.status === 'running' })} />
+        <div className={cn('flow-card__icon', { 'flow-card__icon--running': this.props.flow.runs.some(run => !run.complete_time) })} />
         <div className="flow-card__text">
           <div className="flow-card__text__name">{ this.props.flow.name }</div>
-          <div className="flow-card__text__last-run">{ this.props.flow.status === 'running' ? 'Running now' : `Last Checked: ${this.props.flow.lastRun}` }</div>
+          { this.renderSubtext() }
         </div>
         <div className="flow-card__menu">
-          <Button className="flow-card__menu__item" onClick={this.props.editFlow}>Edit</Button>
-          <Button className="flow-card__menu__item" onClick={this.props.runFlow}>Run</Button>
+          {/* <Button className="flow-card__menu__item" onClick={this.props.editFlow}>Edit</Button> */}
+          <Button className="flow-card__menu__item" onClick={() => this.props.runFlow(this.props.flow)}>Run</Button>
         </div>
       </div>
     );

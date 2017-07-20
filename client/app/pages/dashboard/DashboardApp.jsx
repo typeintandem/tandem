@@ -4,21 +4,30 @@ import DashboardView from 'components/DashboardView';
 export default class DashboardApp extends React.Component {
   constructor() {
     super();
+
+    fetch('http://localhost:8080/api/flows', { method: 'GET' })
+      .then(response => response.json())
+      .then(flows => Promise.all(flows.map(flow => (
+        fetch(`http://localhost:8080/api/runs/${flow.id}`, { method: 'GET' })
+          .then(response => response.json())
+          .then(runs => Object.assign({}, flow, { runs }))))))
+      .then(flows => this.setState({ flows }));
+
     this.state = {
-      flows: [
-        { id: 3, name: 'Another Flow', lastRun: '', status: 'running' },
-        { id: 1, name: 'Login Flow', lastRun: '2 minutes ago', status: 'pass' },
-        { id: 2, name: 'Checkout Flow', lastRun: '5 minutes ago', status: 'fail' },
-      ],
+      flows: [],
     };
+  }
+
+  runFlow(flow) {
+    fetch(`http://localhost:8080/api/run/${flow.id}`, { method: 'POST' });
   }
 
   render() {
     return (
       <DashboardView
         flows={this.state.flows}
-        runFlow={() => {}}
-        runFlows={() => {}}
+        runFlow={flow => this.runFlow(flow)}
+        runFlows={() => this.state.flows.forEach(flow => this.runFlow(flow))}
         editFlow={() => {}}
       />
     );
