@@ -10,6 +10,7 @@ export default class Input extends React.Component {
       type: PropTypes.string,
       onChange: PropTypes.func,
       placeholder: PropTypes.string,
+      disabled: PropTypes.bool,
     };
   }
 
@@ -19,6 +20,7 @@ export default class Input extends React.Component {
       placeholder: '',
       type: 'text',
       onChange: () => {},
+      disabled: false,
     };
   }
 
@@ -43,6 +45,7 @@ export default class Input extends React.Component {
         value={this.state.text}
         placeholder={this.props.placeholder}
         onChange={(event) => { this.handleChange(event); }}
+        disabled={this.props.disabled}
       />
     );
   }
