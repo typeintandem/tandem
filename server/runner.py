@@ -63,8 +63,10 @@ def run(flow):
 
     # 1. Navigate to starting page
     with page.connect() as active_page:
-        resp = active_page.goto("https://github.com")
-        resp2 = active_page.enable_page_events()
+        active_page.enable_page_events()
+        active_page.goto('https://github.com')
+        active_page.wait_for('Page.frameStoppedLoading', 3)
+        active_page.disable_page_events()
 
     # 2. Run actions
 

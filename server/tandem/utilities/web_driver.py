@@ -1,7 +1,7 @@
 import json
 import requests
 import websocket
-from threading import Thread, Semaphore, Lock
+from threading import Thread, Semaphore, Lock, Condition
 
 
 class Connection:
@@ -10,8 +10,12 @@ class Connection:
         self._message_id = 0
         self._ws = None
         self._read_thread = None
+
         self._pending_requests = {}
         self._pending_requests_lock = Lock()
+
+        self._waiting_events = {}
+        self._waiting_events_lock = Lock()
 
     def __enter__(self):
         self._ws = websocket.create_connection(self._websocket_url)
@@ -40,7 +44,10 @@ class Connection:
                             print('Received a message with id {} that has no waiting thread'.format(request_id), flush=True)
                 elif 'method' in message:
                     # Event
-                    pass
+                    event_name = message['method']
+                    with self._waiting_events_lock:
+                        if event_name in self._waiting_events:
+                            self._waiting_events[event_name].notify_all()
                 else:
                     pass
         except:
@@ -77,6 +84,13 @@ class Connection:
             self._pending_requests.pop(request_id, None)
 
         return response
+
+    def wait_for(self, event_name, timeout):
+        with self._waiting_events_lock:
+            cond = None
+            if event_name not in self._waiting_events:
+                self._waiting_events[event_name] = Condition(self._waiting_events_lock)
+            self._waiting_events[event_name].wait(timeout)
 
     def goto(self, url):
         return self._request('Page.navigate', {'url': url})
