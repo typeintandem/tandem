@@ -29,6 +29,7 @@ module.exports = () => ({
   resolve: {
     alias: {
       components: path.resolve(__dirname, '../../app/components'),
+      models: path.resolve(__dirname, '../../app/models'),
       pages: path.resolve(__dirname, '../../app/pages'),
       'recorder-app': './recorder/DownloadApp',
     },

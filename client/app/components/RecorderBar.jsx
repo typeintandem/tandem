@@ -6,14 +6,15 @@ import Input from 'components/Input';
 
 import './RecorderBar.scss';
 
-export default class RecorderBar extends React.PureComponent {
+export default class RecorderBar extends React.Component {
   static get propTypes() {
     return {
       url: PropTypes.string,
       editable: PropTypes.bool.isRequired,
-      showSteps: PropTypes.bool.isRequired,
-      onDone: PropTypes.func.isRequired,
+      showNavigationOptions: PropTypes.bool.isRequired,
+      onGo: PropTypes.func.isRequired,
       onSteps: PropTypes.func.isRequired,
+      onDone: PropTypes.func.isRequired,
     };
   }
 
@@ -30,26 +31,37 @@ export default class RecorderBar extends React.PureComponent {
     };
   }
 
-  handleDone() {
+  handleGo() {
     if (this.state.url !== null && this.state.url.trim() !== '') {
-      this.props.onDone(this.state.url);
+      this.props.onGo(this.state.url);
     }
   }
 
   render() {
-    const renderDone = () => {
+    const renderGo = () => {
       if (!this.props.editable) {
         return null;
       }
       return (
         <div className="recorder-bar__button">
-          <Button onClick={() => { this.handleDone(); }}>Done</Button>
+          <Button onClick={() => { this.handleGo(); }}>Go</Button>
+        </div>
+      );
+    };
+
+    const renderDone = () => {
+      if (!this.props.showNavigationOptions) {
+        return null;
+      }
+      return (
+        <div className="recorder-bar__button">
+          <Button onClick={this.props.onDone}>Done</Button>
         </div>
       );
     };
 
     const renderSteps = () => {
-      if (!this.props.showSteps) {
+      if (!this.props.showNavigationOptions) {
         return null;
       }
       return (
@@ -68,6 +80,7 @@ export default class RecorderBar extends React.PureComponent {
             onChange={(value) => { this.setState({ url: value }); }}
           />
         </div>
+        { renderGo() }
         { renderDone() }
         { renderSteps() }
       </div>
