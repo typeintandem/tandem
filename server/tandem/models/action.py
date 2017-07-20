@@ -1,8 +1,7 @@
 import enum
-
 from sqlalchemy import Column, Integer, ForeignKey, Enum, JSON
 
-from tandem.database.postgresql import DeclarativeBase
+from tandem.database import postgresql
 from tandem.models.flow import Flow
 
 
@@ -13,7 +12,7 @@ class ActionType(enum.Enum):
     assert_url = 'ASSERT_URL'
 
 
-class Action(DeclarativeBase):
+class Action(postgresql.DeclarativeBase):
     __tablename__ = 'actions'
     id = Column('id', Integer, primary_key=True)
     type = Column('type', Enum(ActionType))
