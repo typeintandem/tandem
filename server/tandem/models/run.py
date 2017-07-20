@@ -4,7 +4,7 @@ from tandem.models.flow import Flow
 
 
 class Run(BaseModel):
-    __tablename__ = 'run'
+    __tablename__ = 'runs'
     id = schema.Column(types.Integer, primary_key=True)
     flow_id = schema.Column(types.Integer, schema.ForeignKey(Flow.__table__.c.id))
     result = schema.Column(types.JSON)
