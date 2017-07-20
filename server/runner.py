@@ -1,9 +1,13 @@
 import uuid
 import signal
+import json
 from subprocess import Popen
 from random import random
 from time import sleep
 
+from tandem.models.flow import Flow
+from tandem.models.run import Run
+from tandem.models.action import Action, ActionType
 from tandem.utilities.web_driver import WebDriver
 from tandem.utilities.job_queue_driver import WorkerDriver
 
@@ -37,12 +41,30 @@ def runner_main():
                   flush=True)
 
 
+def retrieve_flow(flow_id):
+    flows = [flow for flow in Flow.query.filter_by(id=flow_id)]
+    actions = [action for action in Action.query.filter_by(flow_id=flow_id)]
+    return flows[0], actions if len(flows) == 1 else None
+
+
+def retrieve_run(run_id):
+    runs = [run.as_dict() for run in Run.query.filter_by(id=run_id)]
+    return runs[0] if len(runs) == 1 else None
+
+
 def handle_flow(flow_id):
     # 1. Read from DB
     # 2. Start a new instance of headless chrome
     # 4. Run the test
     # 6. Write the result of the test
     # 7. Shutdown chrome
+
+    flow, actions = retrieve_flow(flow_id)
+
+    if flow is None:
+        print('Flow doesn\'t exist: {}'.format(flow_id), flush=True)
+        return
+
     chrome_cmd = ['google-chrome',
                   '--headless',
                   '--disable-gpu',
@@ -51,7 +73,7 @@ def handle_flow(flow_id):
     with Popen(chrome_cmd) as chrome:
         try:
             sleep(1)
-            succeeded, failure_ex = run(flow_id)
+            succeeded, failure_ex = run(flow, actions)
             if succeeded:
                 print('Test passed!', flush=True)
             else:
@@ -142,13 +164,14 @@ def page_assertion(actual_url, expected_url):
                           actual_url + ' <> ' + expected_url)
 
 
-def run(flow):
+def run(flow, actions):
     driver = WebDriver()
     pages = driver.pages
     page = pages[list(pages)[0]]
 
     try:
         with page.connect() as active_page:
+            '''
             # 1. Navigate to starting page
             active_page.enable_page_events()
             active_page.goto('https://github.com')
@@ -176,6 +199,37 @@ def run(flow):
             # 3. Assertion
             driver.reload_pages()
             page_assertion(page.url, 'https://github.com/session')
+            '''
+
+            # Go to initial page
+            print(flow, flush=True)
+            active_page.enable_page_events()
+            active_page.goto(flow.url)
+            active_page.wait_for('Page.frameStoppedLoading', 3)
+            active_page.disable_page_events()
+
+            # Run actions
+            for action in actions:
+                print(action, flush=True)
+                if action.type == ActionType.click:
+                    id = action.attributes['id']
+                    tag = action.attributes['tagType']
+                    should_focus = tag == 'INPUT'
+                    should_wait = tag == 'A'
+
+                    if len(id) > 0:
+                        click('#' + id, {}, should_wait, active_page, should_focus)
+                    else:
+                        class_string = action.attributes['className'].replace(' ', '.')
+                        query_string = tag.lower() + class_string
+                        click(query_string, action.attributes['attributes'], should_wait, active_page, should_focus)
+
+                elif action.type == ActionType.key_press:
+                    type(action.attributes, active_page)
+
+                elif action.type == ActionType.assert_url:
+                    driver.reload_pages()
+                    page_assertion(page.url, action.attributes)
 
         # Return that the test passed
         return (True, None)
