@@ -5,6 +5,8 @@ import PropTypes from 'prop-types';
 import constants from '../constants';
 import Action from '../models/Action';
 
+import Overlay from './Overlay';
+
 import './RecorderWebView.scss';
 
 export default class RecorderWebView extends React.Component {
@@ -51,8 +53,15 @@ export default class RecorderWebView extends React.Component {
   }
 
   render() {
+    const renderOverlay = () =>
+      (this.state.ready ?
+        null :
+        <Overlay />
+      );
+
     return (
       <div>
+        { renderOverlay() }
         <WebView
           className="recorder-web-view"
           src={this.props.url}
