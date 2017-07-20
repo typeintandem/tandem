@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Overlay from 'components/Overlay';
 import RecorderBar from 'components/RecorderBar';
 import RecorderOutro from 'components/RecorderOutro';
 import RecorderSetup from 'components/RecorderSetup';
@@ -73,6 +74,12 @@ export default class RecorderApp extends React.Component {
 
 
   render() {
+    const renderOverlay = () =>
+      (!this.state.saving ?
+        null :
+        <Overlay />
+      );
+
     const renderSetup = () =>
       (this.state.url ? null : <RecorderSetup />);
 
@@ -96,6 +103,7 @@ export default class RecorderApp extends React.Component {
 
     return (
       <div className="recorder">
+        { renderOverlay() }
         <RecorderBar
           editable={this.state.url === null}
           url={this.state.url}
