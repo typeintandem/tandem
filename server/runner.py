@@ -4,13 +4,14 @@ from subprocess import Popen
 from random import random
 from time import sleep
 
-from tandem.models.flow import Flow
 from tandem.utilities.web_driver import WebDriver
 from tandem.utilities.job_queue_driver import WorkerDriver
+
 
 class TestFailure(BaseException):
     def __init__(self, reason):
         self.reason = reason
+
 
 def runner_main():
     worker_id = uuid.uuid4()
@@ -32,7 +33,8 @@ def runner_main():
             print('Received flow id: {}'.format(flow_id), flush=True)
             handle_flow(flow_id)
             queue_driver.mark_flow_job_completed(flow_id)
-            print('Finished processing flow id: {}'.format(flow_id), flush=True)
+            print('Finished processing flow id: {}'.format(flow_id),
+                  flush=True)
 
 
 def handle_flow(flow_id):
@@ -63,11 +65,14 @@ def handle_flow(flow_id):
     print('Finished handling flow {}'.format(flow_id), flush=True)
 
 
-def find_node_with_most_matches(matching_nodes, matching_attributes, active_page):
+def find_node_with_most_matches(matching_nodes,
+                                matching_attributes,
+                                active_page):
     node_ids = matching_nodes['nodeIds']
     num_nodes = len(node_ids)
 
-    attributes = [active_page.get_attributes(node_id)['attributes'] for node_id in node_ids]
+    attributes = [active_page.get_attributes(node_id)['attributes']
+                  for node_id in node_ids]
     attribute_match_count = [0 for node_id in node_ids]
     max_index = 0
 
@@ -77,12 +82,15 @@ def find_node_with_most_matches(matching_nodes, matching_attributes, active_page
             idx = i * 2
             attribute_name = attrs[idx]
             attribute_value = attrs[idx + 1]
-            if attribute_name in matching_attributes and attribute_value == matching_attributes[attribute_name]:
+            if (attribute_name in matching_attributes and
+                    attribute_value == matching_attributes[attribute_name]):
                 attribute_match_count[node_index] += 1
-        if attribute_match_count[node_index] > attribute_match_count[max_index]:
+        if (attribute_match_count[node_index] >
+                attribute_match_count[max_index]):
             max_index = node_index
 
-    return node_ids[max_index] if attribute_match_count[max_index] > 0 else None
+    return (node_ids[max_index] if attribute_match_count[max_index] > 0
+            else None)
 
 
 def click(query, matching_attributes, wait_navigate, active_page, focus=False):
@@ -93,7 +101,9 @@ def click(query, matching_attributes, wait_navigate, active_page, focus=False):
         raise TestFailure('Could not find the element to click!')
 
     sign_in_node = matching_nodes['nodeIds'][0] if matches == 1 else \
-        find_node_with_most_matches(matching_nodes, matching_attributes, active_page)
+        find_node_with_most_matches(matching_nodes,
+                                    matching_attributes,
+                                    active_page)
 
     if sign_in_node is None:
         raise TestFailure('Could not find the element to click!')
@@ -101,7 +111,7 @@ def click(query, matching_attributes, wait_navigate, active_page, focus=False):
     resp = active_page.resolve_node(sign_in_node)
 
     if 'object' not in resp or 'objectId' not in resp['object']:
-        raise TestFailure ('Could not find the element to click!')
+        raise TestFailure('Could not find the element to click!')
 
     object_id = resp['object']['objectId']
 
@@ -110,9 +120,11 @@ def click(query, matching_attributes, wait_navigate, active_page, focus=False):
         active_page.enable_page_events()
 
     if focus:
-        resp = active_page.call_function_on(object_id, 'function() { this.focus(); }')
+        resp = active_page.call_function_on(object_id,
+                                            'function() { this.focus(); }')
     else:
-        resp = active_page.call_function_on(object_id, 'function() { this.click(); }')
+        resp = active_page.call_function_on(object_id,
+                                            'function() { this.click(); }')
 
     if wait_navigate:
         active_page.wait_for('Page.frameStoppedLoading', 3)
@@ -121,12 +133,13 @@ def click(query, matching_attributes, wait_navigate, active_page, focus=False):
 
 def type(string, active_page):
     for ch in string:
-        asd = active_page.dispatch_key_event('keyDown', ch)
+        active_page.dispatch_key_event('keyDown', ch)
 
 
 def page_assertion(actual_url, expected_url):
     if not actual_url == expected_url:
-        raise TestFailure('Expected url did not match actual url ' + actual_url + ' <> ' + expected_url)
+        raise TestFailure('Expected url did not match actual url ' +
+                          actual_url + ' <> ' + expected_url)
 
 
 def run(flow):
@@ -144,7 +157,8 @@ def run(flow):
 
             # 2. Run actions
             # a) Click "Sign in"
-            click('a.text-bold.site-header-link', {'href': '/login'}, True, active_page)
+            click('a.text-bold.site-header-link',
+                  {'href': '/login'}, True, active_page)
 
             # b) Type in username
             type('geoffxy', active_page)
@@ -156,7 +170,8 @@ def run(flow):
             type('abc123', active_page)
 
             # e) Click sign in
-            click('.btn.btn-primary.btn-block', {'type': 'submit'}, True, active_page)
+            click('.btn.btn-primary.btn-block',
+                  {'type': 'submit'}, True, active_page)
 
             # 3. Assertion
             driver.reload_pages()
@@ -167,6 +182,7 @@ def run(flow):
 
     except TestFailure as ex:
         return (False, ex)
+
 
 if __name__ == '__main__':
     runner_main()

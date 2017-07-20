@@ -19,7 +19,7 @@ class Connection:
 
     def __enter__(self):
         self._ws = websocket.create_connection(self._websocket_url)
-        self._recv_thread = Thread(target = self._handle_messages)
+        self._recv_thread = Thread(target=self._handle_messages)
         self._recv_thread.start()
         return self
 
@@ -37,11 +37,14 @@ class Connection:
                     request_id = message['id']
                     with self._pending_requests_lock:
                         if request_id in self._pending_requests:
-                            response_list, cond = self._pending_requests[request_id]
+                            response_list, cond = \
+                                self._pending_requests[request_id]
                             response_list.append(message['result'])
                             cond.release()
                         else:
-                            print('Received a message with id {} that has no waiting thread'.format(request_id), flush=True)
+                            print('Received a message with id {} that has ' +
+                                  'no waiting thread'.format(request_id),
+                                  flush=True)
                 elif 'method' in message:
                     # Event
                     event_name = message['method']
@@ -87,9 +90,9 @@ class Connection:
 
     def wait_for(self, event_name, timeout):
         with self._waiting_events_lock:
-            cond = None
             if event_name not in self._waiting_events:
-                self._waiting_events[event_name] = Condition(self._waiting_events_lock)
+                self._waiting_events[event_name] = \
+                    Condition(self._waiting_events_lock)
             self._waiting_events[event_name].wait(timeout)
 
     def goto(self, url):
@@ -104,7 +107,8 @@ class Connection:
     def query_selector_all(self, query):
         document_dom = self._request('DOM.getDocument', {})
         root_node_id = document_dom['root']['nodeId']
-        return self._request('DOM.querySelectorAll', {'nodeId': root_node_id, 'selector': query})
+        return self._request('DOM.querySelectorAll',
+                             {'nodeId': root_node_id, 'selector': query})
 
     def get_attributes(self, node_id):
         return self._request('DOM.getAttributes', {'nodeId': node_id})
@@ -113,10 +117,13 @@ class Connection:
         return self._request('DOM.resolveNode', {'nodeId': node_id})
 
     def call_function_on(self, object_id, function):
-        return self._request('Runtime.callFunctionOn', {'objectId': object_id, 'functionDeclaration': function})
+        return self._request('Runtime.callFunctionOn',
+                             {'objectId': object_id,
+                              'functionDeclaration': function})
 
     def dispatch_key_event(self, type, text):
-        return self._request('Input.dispatchKeyEvent', {'type': type, 'text': text})
+        return self._request('Input.dispatchKeyEvent',
+                             {'type': type, 'text': text})
 
     def get_navigation_history(self):
         return self._request('Page.getNavigationHistory', {})
@@ -142,11 +149,12 @@ class WebPage:
     def connect(self):
         return Connection(self._websocket_url)
 
+
 class WebDriver:
-    def __init__(self, host="localhost", port="9222"):
+    def __init__(self, host='localhost', port='9222'):
         self._host = host
         self._port = port
-        self._driver_url = "http://{0}:{1}".format(self._host, self._port)
+        self._driver_url = 'http://{0}:{1}'.format(self._host, self._port)
         self._web_pages = {}
 
         self.check_connection()
@@ -160,12 +168,12 @@ class WebDriver:
         requests.get(self._driver_url)
 
     def reload_pages(self):
-        response = requests.get("{0}/json".format(self._driver_url))
+        response = requests.get('{0}/json'.format(self._driver_url))
         pages = tuple(WebPage(
-                page["id"],
-                page["url"],
-                page["webSocketDebuggerUrl"] if 'webSocketDebuggerUrl' in page else None
-            ) for page in response.json() if page["type"] == "page")
+                page['id'],
+                page['url'],
+                page.get('webSocketDebuggerUrl', None)
+            ) for page in response.json() if page['type'] == 'page')
 
         new_web_pages = {}
         for page in pages:
