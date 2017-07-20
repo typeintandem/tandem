@@ -17,7 +17,7 @@ def api_handler():
 def run_flow(id):
     flow_id = int(id)
     queue_driver.submit_flow_job(flow_id)
-    return jsonify('Submitted!')
+    return jsonify({})
 
 
 @api_blueprint.route('/flow', methods=['POST'])
@@ -29,16 +29,16 @@ def create_flow():
     postgresql.session.add(new_flow)
     postgresql.session.flush()
 
-    def build_action(action):
+    def build_action(step, action):
         if action['type']:
             action['type'] = ActionType(action['type'])
-        return Action(flow_id=new_flow.id, **action)
+        return Action(flow_id=new_flow.id, step=step+1,  **action)
 
-    new_actions = [build_action(action) for action in req.get('actions')]
+    new_actions = [build_action(step, req.get('actions')[step]) for step in range(len(req.get('actions')))]
     postgresql.session.add_all(new_actions)
 
     postgresql.session.commit()
-    return jsonify('Done!')
+    return jsonify({})
 
 
 @api_blueprint.route('/flows', methods=['GET'])
