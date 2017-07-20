@@ -59,18 +59,61 @@ def handle_flow(flow_id):
     print('Finished handling flow {}'.format(flow_id), flush=True)
 
 
-def find_matching_href_node_id(query, href, active_page):
-    matching_nodes = active_page.query_selector_all(query)
+def find_matching_attribute(matching_nodes, match_type, match_value, active_page):
     attributes = [active_page.get_attributes(node_id) for node_id in matching_nodes['nodeIds']]
 
     for node_index in range(len(attributes)):
         attrs = attributes[node_index]['attributes']
         for i in range(len(attrs) // 2):
             idx = i * 2
-            if attrs[idx] == 'href' and attrs[idx + 1] == href:
+            if attrs[idx] == match_type and attrs[idx + 1] == match_value:
                 return matching_nodes['nodeIds'][node_index]
 
     return None
+
+
+def click(query, match_type, match_value, wait_navigate, active_page, focus=False):
+    matching_nodes = active_page.query_selector_all(query)
+    matches = len(matching_nodes['nodeIds'])
+
+    if matches == 0:
+        raise TestFailure('Could not find the element to click!')
+
+    sign_in_node = matching_nodes['nodeIds'][0] if matches == 1 else \
+        find_matching_attribute(matching_nodes, match_type, match_value, active_page)
+
+    if sign_in_node is None:
+        raise TestFailure('Could not find the element to click!')
+
+    resp = active_page.resolve_node(sign_in_node)
+
+    if 'object' not in resp or 'objectId' not in resp['object']:
+        raise TestFailure ('Could not find the element to click!')
+
+    object_id = resp['object']['objectId']
+
+    # Perform the click
+    if wait_navigate:
+        active_page.enable_page_events()
+
+    if focus:
+        resp = active_page.call_function_on(object_id, 'function() { this.focus(); }')
+    else:
+        resp = active_page.call_function_on(object_id, 'function() { this.click(); }')
+
+    if wait_navigate:
+        active_page.wait_for('Page.frameStoppedLoading', 3)
+        active_page.disable_page_events()
+
+
+def type(string, active_page):
+    for ch in string:
+        asd = active_page.dispatch_key_event('keyDown', ch)
+
+
+def page_assertion(actual_url, expected_url):
+    if not actual_url == expected_url:
+        raise TestFailure('Expected url did not match actual url ' + actual_url + ' <> ' + expected_url)
 
 
 def run(flow):
@@ -88,24 +131,29 @@ def run(flow):
 
             # 2. Run actions
             # a) Click "Sign in"
-            sign_in_node = find_matching_href_node_id('a.text-bold.site-header-link', '/login', active_page)
+            click('a.text-bold.site-header-link', 'href', '/login', True, active_page)
 
-            if sign_in_node is None:
-                raise TestFailure('Could not find the sign in link.')
+            # b) Type in username
+            type('geoffxy', active_page)
 
-            resp = active_page.resolve_node(sign_in_node)
-            object_id = resp['object']['objectId']
+            # c) Focus password field
+            click('#password', None, None, False, active_page, focus=True)
 
-            # Perform the click
-            active_page.enable_page_events()
-            active_page.call_function_on(object_id, 'function() { this.click(); }')
-            active_page.wait_for('Page.frameStoppedLoading', 3)
-            active_page.disable_page_events()
+            # d) Type in password
+            type('abc123', active_page)
+
+            # e) Click sign in
+            click('.btn.btn-primary.btn-block', 'type', 'submit', True, active_page)
 
             # 3. Assertion
+            driver.reload_pages()
+            page_assertion(page.url, 'https://github.com/session')
 
-    except TestFailure:
-        pass
+        # Record test passed
+        print('Test passed!', flush=True)
+
+    except TestFailure as ex:
+        print('Test failed! - ' + ex.reason, flush=True)
 
 if __name__ == '__main__':
     runner_main()

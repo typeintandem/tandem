@@ -115,8 +115,11 @@ class Connection:
     def call_function_on(self, object_id, function):
         return self._request('Runtime.callFunctionOn', {'objectId': object_id, 'functionDeclaration': function})
 
-    def get_properties(self, object_id):
-        return self._request('Runtime.getProperties', {'objectId': object_id})
+    def dispatch_key_event(self, type, text):
+        return self._request('Input.dispatchKeyEvent', {'type': type, 'text': text})
+
+    def get_navigation_history(self):
+        return self._request('Page.getNavigationHistory', {})
 
 
 class WebPage:
@@ -161,7 +164,7 @@ class WebDriver:
         pages = tuple(WebPage(
                 page["id"],
                 page["url"],
-                page["webSocketDebuggerUrl"]
+                page["webSocketDebuggerUrl"] if 'webSocketDebuggerUrl' in page else None
             ) for page in response.json() if page["type"] == "page")
 
         new_web_pages = {}
