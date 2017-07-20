@@ -17,6 +17,12 @@ export default class RecorderBar extends React.PureComponent {
     };
   }
 
+  static get defaultProps() {
+    return {
+      url: '',
+    };
+  }
+
   constructor(props) {
     super(props);
     this.state = {
@@ -26,8 +32,6 @@ export default class RecorderBar extends React.PureComponent {
 
   handleDone() {
     if (this.state.url !== null && this.state.url.trim() !== '') {
-      console.log("done!");
-      console.log(this.state.url);
       this.props.onDone(this.state.url);
     }
   }
@@ -45,7 +49,7 @@ export default class RecorderBar extends React.PureComponent {
     };
 
     const renderSteps = () => {
-      if(!this.props.showSteps) {
+      if (!this.props.showSteps) {
         return null;
       }
       return (
@@ -53,12 +57,16 @@ export default class RecorderBar extends React.PureComponent {
           <Button onClick={this.props.onSteps}>Steps</Button>
         </div>
       );
-    }
+    };
 
     return (
       <div className="recorder-bar">
         <div className="recorder-bar__url-field">
-          <Input disabled={this.props.url !== null} text={this.state.url} onChange={(value) => { this.setState({ url: value }); }} />
+          <Input
+            disabled={this.props.url !== null}
+            text={this.state.url}
+            onChange={(value) => { this.setState({ url: value }); }}
+          />
         </div>
         { renderDone() }
         { renderSteps() }
