@@ -9,7 +9,7 @@
       "attributes": {
         "tagType": "A",
         "id": "",
-        "className": "text-bold site-header-link",
+        "className": "text-bold text-white no-underline",
         "attributes": {
           "href": "/login"
         }

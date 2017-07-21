@@ -83,7 +83,7 @@ def handle_flow(flow_id, run_id):
 
     with Popen(chrome_cmd) as chrome:
         try:
-            sleep(1)
+            sleep(5)
             succeeded, failure_ex = run_flow(flow, actions)
             run.complete_time = time()
             if succeeded:
