@@ -1,6 +1,5 @@
 import uuid
 import signal
-import json
 from subprocess import Popen
 from random import random
 from time import sleep, time
@@ -54,12 +53,6 @@ def retrieve_run(run_id):
 
 
 def handle_flow(flow_id, run_id):
-    # 1. Read from DB
-    # 2. Start a new instance of headless chrome
-    # 4. Run the test
-    # 6. Write the result of the test
-    # 7. Shutdown chrome
-
     flow, actions = retrieve_flow(flow_id)
     run = retrieve_run(run_id)
 
@@ -83,6 +76,7 @@ def handle_flow(flow_id, run_id):
 
     with Popen(chrome_cmd) as chrome:
         try:
+            # Need to sleep to avoid overwhelming Chrome
             sleep(5)
             succeeded, failure_ex = run_flow(flow, actions)
             run.complete_time = time()
@@ -154,7 +148,8 @@ def click(query, matching_attributes, active_page):
 
     # Perform the click
     active_page.enable_page_events()
-    resp = active_page.call_function_on(object_id, 'function() { this.click(); this.focus(); }')
+    resp = active_page.call_function_on(
+        object_id, 'function() { this.click(); this.focus(); }')
     active_page.wait_for('Page.frameStoppedLoading', 3)
     active_page.disable_page_events()
 
@@ -191,9 +186,12 @@ def run_flow(flow, actions):
                     if len(id) > 0:
                         click(id, {}, active_page)
                     else:
-                        class_string = action.attributes['className'].replace(' ', '.')
+                        class_string = \
+                            action.attributes['className'].replace(' ', '.')
                         query_string = tag.lower() + '.' + class_string
-                        click(query_string, action.attributes['attributes'], active_page)
+                        click(query_string,
+                              action.attributes['attributes'],
+                              active_page)
 
                 elif action.type == ActionType.key_press:
                     type(action.attributes, active_page)
