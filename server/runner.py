@@ -3,8 +3,9 @@ import signal
 import json
 from subprocess import Popen
 from random import random
-from time import sleep
+from time import sleep, time
 
+from tandem.database import postgresql
 from tandem.models.flow import Flow
 from tandem.models.run import Run
 from tandem.models.action import Action, ActionType
@@ -31,12 +32,12 @@ def runner_main():
     signal.signal(signal.SIGTERM, should_exit)
 
     while not should_exit:
-        maybe_flow_id = queue_driver.get_flow_job_blocking(timeout)
-        if maybe_flow_id is not None:
-            flow_id = int(maybe_flow_id)
+        maybe_job = queue_driver.get_flow_job_blocking(timeout)
+        if maybe_job is not None:
+            flow_id, run_id = maybe_job
             print('Received flow id: {}'.format(flow_id), flush=True)
-            handle_flow(flow_id)
-            queue_driver.mark_flow_job_completed(flow_id)
+            handle_flow(flow_id, run_id)
+            queue_driver.mark_flow_job_completed(flow_id, run_id)
             print('Finished processing flow id: {}'.format(flow_id),
                   flush=True)
 
@@ -48,11 +49,11 @@ def retrieve_flow(flow_id):
 
 
 def retrieve_run(run_id):
-    runs = [run.as_dict() for run in Run.query.filter_by(id=run_id)]
+    runs = [run for run in Run.query.filter_by(id=run_id)]
     return runs[0] if len(runs) == 1 else None
 
 
-def handle_flow(flow_id):
+def handle_flow(flow_id, run_id):
     # 1. Read from DB
     # 2. Start a new instance of headless chrome
     # 4. Run the test
@@ -60,10 +61,20 @@ def handle_flow(flow_id):
     # 7. Shutdown chrome
 
     flow, actions = retrieve_flow(flow_id)
+    run = retrieve_run(run_id)
 
     if flow is None:
         print('Flow doesn\'t exist: {}'.format(flow_id), flush=True)
         return
+
+    if run is None:
+        print('Run doesn\'t exist: {}'.format(run_id), flush=True)
+        return
+
+    # Record run start time
+    run.start_time = time()
+    postgresql.session.add(run)
+    postgresql.session.commit()
 
     chrome_cmd = ['google-chrome',
                   '--headless',
@@ -73,13 +84,16 @@ def handle_flow(flow_id):
     with Popen(chrome_cmd) as chrome:
         try:
             sleep(1)
-            succeeded, failure_ex = run(flow, actions)
+            succeeded, failure_ex = run_flow(flow, actions)
+            run.complete_time = time()
             if succeeded:
                 print('Test passed!', flush=True)
+                run.result = {'status': 'SUCCESS'}
             else:
                 print('Test failed! - ' + failure_ex.reason, flush=True)
-            # Write to DB
-            # Notify server if needed
+                run.result = {'status': 'FAILED'}
+            postgresql.session.add(run)
+            postgresql.session.commit()
         finally:
             print('Calling chrome.terminate()', flush=True)
             chrome.terminate()
@@ -156,7 +170,7 @@ def page_assertion(actual_url, expected_url):
                           actual_url + ' <> ' + expected_url)
 
 
-def run(flow, actions):
+def run_flow(flow, actions):
     driver = WebDriver()
     pages = driver.pages
     page = pages[list(pages)[0]]

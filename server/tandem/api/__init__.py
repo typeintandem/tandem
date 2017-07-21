@@ -23,10 +23,10 @@ def get_runs(id):
 @api_blueprint.route('/run/<id>', methods=['POST'])
 def run_flow(id):
     flow_id = int(id)
-    queue_driver.submit_flow_job(flow_id)
     new_run = Run(flow_id=flow_id, submit_time=time.time())
     postgresql.session.add(new_run)
     postgresql.session.commit()
+    queue_driver.submit_flow_job(flow_id, int(new_run.id))
     return jsonify({})
 
 
