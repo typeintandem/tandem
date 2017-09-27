@@ -31,7 +31,7 @@ export default class DashboardView extends React.PureComponent {
         { this.renderHeroBanner() }
         <div className="dashboard-view__menu">
           <Link to={'recorder'}><Button className="dashboard-view__menu__item">New Flow</Button></Link>
-          <Button className="dashboard-view__menu__item" onClick={this.props.runFlows()}>Run All</Button>
+          <Button className="dashboard-view__menu__item" onClick={this.props.runFlows}>Run All</Button>
         </div>
         <div className="dashboard-view__flow-list">
           { this.props.flows.map(flow => (

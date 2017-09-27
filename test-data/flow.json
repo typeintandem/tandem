@@ -1,0 +1,51 @@
+{
+  "name": "GitHub Sign In",
+  "url": "https://github.com",
+  "frequency": 60,
+  "viewport": [50, 50],
+  "actions": [
+    {
+      "type": "CLICK",
+      "attributes": {
+        "tagType": "A",
+        "id": "",
+        "className": "text-bold text-white no-underline",
+        "attributes": {
+          "href": "/login"
+        }
+      }
+    },
+    {
+      "type": "KEY_PRESS",
+      "attributes": "geoffxy"
+    },
+    {
+      "type": "CLICK",
+      "attributes": {
+        "tagType": "INPUT",
+        "id": "#password",
+        "className": "",
+        "attributes": {}
+      }
+    },
+    {
+      "type": "KEY_PRESS",
+      "attributes": "abc123"
+    },
+    {
+      "type": "CLICK",
+      "attributes": {
+        "tagType": "INPUT",
+        "id": "",
+        "className": "btn btn-primary btn-block",
+        "attributes": {
+          "type": "submit"
+        }
+      }
+    },
+    {
+      "type": "ASSERT_URL",
+      "attributes": "https://github.com/session"
+    }
+  ]
+}
