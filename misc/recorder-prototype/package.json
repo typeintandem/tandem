@@ -1,8 +1,0 @@
-{
-  "name": "recorder",
-  "version": "0.1.0",
-  "main": "main.js",
-  "devDependencies": {
-    "electron": "^1.6.7"
-  }
-}
