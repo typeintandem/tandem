@@ -1,11 +1,13 @@
-from tandem.io.std_streams_handler import StdStreamsHandler
-from tandem.handlers.client_protocol import ClientProtocolHandler
+from tandem.io.std_streams import StdStreams
+from tandem.handlers.editor_protocol import EditorProtocolHandler
+from concurrent.futures import ThreadPoolExecutor
 
 
 class TandemAgent:
     def __init__(self):
-        self._client_protocol_handler = ClientProtocolHandler()
-        self._std_streams = StdStreamsHandler(self._client_protocol_handler)
+        self._std_streams = StdStreams(self._on_std_input)
+        self._editor_protocol = EditorProtocolHandler(self._std_streams)
+        self._main_executor = ThreadPoolExecutor(max_workers=1)
 
     def __enter__(self):
         self.start()
@@ -19,3 +21,8 @@ class TandemAgent:
 
     def stop(self):
         self._std_streams.stop()
+        self._main_executor.shutdown()
+
+    def _on_std_input(self, data):
+        # Do not call directly - called by _std_streams
+        self._main_executor.submit(self._editor_protocol.handle, data)
