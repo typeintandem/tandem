@@ -1,5 +1,5 @@
 from tandem.io.std_streams import StdStreams
-from tandem.handlers.editor_protocol import EditorProtocolHandler
+from tandem.protocol.editor.handler import EditorProtocolHandler
 from concurrent.futures import ThreadPoolExecutor
 
 

@@ -6,12 +6,14 @@ agent = None
 
 
 def signal_handler(signal, frame):
+    global agent
     if agent is None:
         return
     agent.stop()
 
 
 def main():
+    global agent
     signal.signal(signal.SIGINT, signal_handler)
     agent = TandemAgent()
 
