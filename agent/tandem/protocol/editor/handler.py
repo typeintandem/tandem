@@ -1,13 +1,11 @@
-import traceback
+import logging
 import tandem.protocol.editor.messages as m
 
 class EditorProtocolHandler:
     def __init__(self, std_streams):
         self._std_streams = std_streams
-        pass
 
     def handle_message(self, data):
-        # Handle message by echoing
         try:
             message = m.deserialize(data)
             response = m.serialize(message)
@@ -15,4 +13,5 @@ class EditorProtocolHandler:
         except m.EditorProtocolMarshalError:
             pass
         except:
-            traceback.print_exc()
+            logging.exception("Exception when handling editor protocol message:")
+            raise

@@ -1,24 +1,34 @@
-from tandem.executables.agent import TandemAgent
 import signal
+import logging
+import threading
+from tandem.executables.agent import TandemAgent
 
-
-agent = None
+should_shutdown = threading.Event()
 
 
 def signal_handler(signal, frame):
-    global agent
-    if agent is None:
-        return
-    agent.stop()
+    global should_shutdown
+    should_shutdown.set()
+
+
+def set_up_logging():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)-8s %(message)s',
+        datefmt='%Y-%m-%d %H:%M',
+        filename='/tmp/tandem-agent.log',
+        filemode='w',
+    )
 
 
 def main():
-    global agent
+    set_up_logging()
     signal.signal(signal.SIGINT, signal_handler)
-    agent = TandemAgent()
+    signal.signal(signal.SIGTERM, signal_handler)
 
-    print("Starting the Tandem Agent. Press Ctrl-C and then Ctrl-D to exit.")
-    agent.start()
+    # Run the agent until asked to terminate
+    with TandemAgent() as agent:
+        should_shutdown.wait()
 
 
 if __name__ == "__main__":

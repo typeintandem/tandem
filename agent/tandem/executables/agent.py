@@ -1,3 +1,4 @@
+import logging
 from tandem.io.std_streams import StdStreams
 from tandem.protocol.editor.handler import EditorProtocolHandler
 from concurrent.futures import ThreadPoolExecutor
@@ -18,10 +19,12 @@ class TandemAgent:
 
     def start(self):
         self._std_streams.start()
+        logging.info("Tandem Agent has started")
 
     def stop(self):
         self._std_streams.stop()
         self._main_executor.shutdown()
+        logging.info("Tandem Agent has shut down")
 
     def _on_std_input(self, data):
         # Do not call directly - called by _std_streams

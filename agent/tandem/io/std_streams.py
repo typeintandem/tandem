@@ -1,5 +1,5 @@
 import sys
-import traceback
+import logging
 from concurrent.futures import ThreadPoolExecutor
 
 class StdStreams:
@@ -18,6 +18,7 @@ class StdStreams:
         self._shutting_down = True
         self._reader.shutdown()
         self._writer.shutdown()
+        sys.stdout.close()
 
     def write(self, data):
         if self._shutting_down:
@@ -25,17 +26,20 @@ class StdStreams:
         self._writer.submit(self._stdout_write, data)
 
     def _stdout_write(self, data):
-        # Do not call directly - only executed by the _writer executor
+        # Do not call directly - only invoked by the _writer executor
         try:
             sys.stdout.write(data)
             sys.stdout.write("\n")
+            sys.stdout.flush()
         except:
-            traceback.print_exc()
+            logging.exception("Exception when writing data to stdout:")
+            raise
 
     def _stdin_read(self):
-        # Do not call directly - only executed by the _reader executor
+        # Do not call directly - only invoked by the _reader executor
         try:
             for line in sys.stdin:
                 self._handler_function(line)
         except:
-            traceback.print_exc()
+            logging.exception("Exception when reading from stdin:")
+            raise
