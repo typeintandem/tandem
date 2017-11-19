@@ -1,4 +1,5 @@
 import sys
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 class StdStreams:
@@ -25,9 +26,16 @@ class StdStreams:
 
     def _stdout_write(self, data):
         # Do not call directly - only executed by the _writer executor
-        sys.stdout.write(data)
+        try:
+            sys.stdout.write(data)
+            sys.stdout.write("\n")
+        except:
+            traceback.print_exc()
 
     def _stdin_read(self):
         # Do not call directly - only executed by the _reader executor
-        for line in sys.stdin:
-            self._handler_function(line)
+        try:
+            for line in sys.stdin:
+                self._handler_function(line)
+        except:
+            traceback.print_exc()

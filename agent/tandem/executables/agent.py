@@ -25,4 +25,4 @@ class TandemAgent:
 
     def _on_std_input(self, data):
         # Do not call directly - called by _std_streams
-        self._main_executor.submit(self._editor_protocol.handle, data)
+        self._main_executor.submit(self._editor_protocol.handle_message, data)
