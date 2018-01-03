@@ -1,17 +1,17 @@
 import sys
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from threading import Thread
 
 class StdStreams:
     def __init__(self, handler_function):
         self._handler_function = handler_function
-        self._reader = ThreadPoolExecutor(max_workers=1)
+        self._reader = Thread(target=self._stdin_read)
 
     def start(self):
-        self._reader.submit(self._stdin_read)
+        self._reader.start()
 
     def stop(self):
-        self._reader.shutdown()
+        self._reader.join()
         sys.stdout.close()
 
     def write(self, data):
@@ -20,7 +20,7 @@ class StdStreams:
         sys.stdout.flush()
 
     def _stdin_read(self):
-        # Do not call directly - only invoked by the _reader executor
+        # Do not call directly - only invoked by the _reader thread
         try:
             for line in sys.stdin:
                 self._handler_function(line)
