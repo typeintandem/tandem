@@ -1,5 +1,6 @@
 import socket
-from concurrent.futures import ThreadPoolExecutor
+import logging
+from threading import Thread
 
 class ConnectionAcceptor:
     def __init__(self, port, handler_function):
@@ -8,7 +9,7 @@ class ConnectionAcceptor:
             socket.AF_INET,
             socket.SOCK_STREAM,
         )
-        self._accept_executor = ThreadPoolExecutor(max_workers=1)
+        self._acceptor = Thread(target=self._accept_connections)
         self._handler_function = handler_function
 
     def __enter__(self):
@@ -21,13 +22,17 @@ class ConnectionAcceptor:
     def start(self):
         self._server_socket.bind(("", self._port))
         self._server_socket.listen()
-        self._accept_executor.submit(self._accept_connections)
+        self._acceptor.start()
 
     def stop(self):
         self._server_socket.close()
-        self._accept_executor.shutdown()
+        self._acceptor.join()
 
     def _accept_connections(self):
-        while True:
-            socket, address = self._server_socket.accept()
-            self._handler_function(socket, address)
+        # Do not call directly - only invoked by the _acceptor thread
+        try:
+            while True:
+                socket, address = self._server_socket.accept()
+                self._handler_function(socket, address)
+        except:
+            logging.info("ConnectionAcceptor is shutting down")
