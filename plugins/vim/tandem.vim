@@ -5,6 +5,10 @@ if !has('python')
   finish
 endif
 
-" TODO: Perform a check for a global python3 install (required).
+if !executable('python3')
+  :echom "ERROR: Global python3 install required."
+  finish
+endif
+
 " TODO: Use file path relative to .vim file
 pyfile tandem.py
