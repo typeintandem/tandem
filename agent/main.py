@@ -14,10 +14,10 @@ def signal_handler(signal, frame):
 def set_up_logging():
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s %(levelname)-8s %(message)s',
-        datefmt='%Y-%m-%d %H:%M',
-        filename='/tmp/tandem-agent.log',
-        filemode='w',
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        datefmt="%Y-%m-%d %H:%M",
+        filename="/tmp/tandem-agent.log",
+        filemode="w",
     )
 
 

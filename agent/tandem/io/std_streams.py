@@ -2,6 +2,7 @@ import sys
 import logging
 from threading import Thread
 
+
 class StdStreams:
     def __init__(self, handler_function):
         self._handler_function = handler_function
