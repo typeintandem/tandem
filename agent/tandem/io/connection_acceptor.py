@@ -2,8 +2,10 @@ import socket
 import logging
 from threading import Thread
 
+
 class ConnectionAcceptor:
-    def __init__(self, port, handler_function):
+    def __init__(self, host, port, handler_function):
+        self._host = host
         self._port = port
         self._server_socket = socket.socket(
             socket.AF_INET,
@@ -20,9 +22,14 @@ class ConnectionAcceptor:
         self.stop()
 
     def start(self):
-        self._server_socket.bind(("", self._port))
+        self._server_socket.bind((self._host, self._port))
+        self._port = self._server_socket.getsockname()[1]
         self._server_socket.listen()
         self._acceptor.start()
+        logging.info(
+            "Tandem Agent is listening for connections on {}:{}."
+            .format(self._host, self._port),
+        )
 
     def stop(self):
         self._server_socket.close()
@@ -33,6 +40,11 @@ class ConnectionAcceptor:
         try:
             while True:
                 socket, address = self._server_socket.accept()
+                host, port = address
+                logging.info(
+                    "Accepted a connection to {}:{}."
+                    .format(host, port),
+                )
                 self._handler_function(socket, address)
         except:
-            logging.info("ConnectionAcceptor is shutting down")
+            logging.info("Tandem Agent has stopped accepting connections.")

@@ -1,11 +1,15 @@
 import sys
+import time
+import random
 from subprocess import Popen, PIPE
 import tandem.protocol.editor.messages as m
 
 
-def start_agent():
+def start_agent(extra_args=None):
+    if extra_args is None:
+        extra_args = []
     return Popen(
-        ["python3", "main.py"],
+        ["python3", "main.py"] + extra_args,
         stdin=PIPE,
         stdout=PIPE,
         encoding="utf-8",
@@ -24,7 +28,7 @@ def print_raw_message(agent_stdout):
     print("Received: " + resp)
 
 
-def main():
+def basic_echo():
     # Spawn the agent process
     agent = start_agent()
 
@@ -44,6 +48,42 @@ def main():
     agent.stdin.close()
     agent.terminate()
     agent.wait()
+
+
+def ping_test():
+    starting_port = random.randint(60600, 61600)
+    agent1_port = str(starting_port)
+    agent2_port = str(starting_port+1)
+
+    agent1 = start_agent(["--port", agent1_port])
+    agent2 = start_agent([
+        "--port",
+        agent2_port,
+        "--log-file",
+        "/tmp/tandem-agent-2.log",
+    ])
+
+    # Wait for the agents to start accepting connections
+    time.sleep(1)
+
+    message = m.ConnectTo("localhost", int(agent1_port))
+    agent2.stdin.write(m.serialize(message))
+    agent2.stdin.write("\n")
+    agent2.stdin.flush()
+
+    # Wait for the connection to be made
+    time.sleep(3)
+
+    agent1.stdin.close()
+    agent1.terminate()
+    agent1.wait()
+    agent2.stdin.close()
+    agent2.terminate()
+    agent2.wait()
+
+
+def main():
+    ping_test()
 
 
 if __name__ == "__main__":

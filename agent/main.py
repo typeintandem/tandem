@@ -1,6 +1,7 @@
 import signal
 import logging
 import threading
+import argparse
 from tandem.executables.agent import TandemAgent
 
 should_shutdown = threading.Event()
@@ -11,23 +12,43 @@ def signal_handler(signal, frame):
     should_shutdown.set()
 
 
-def set_up_logging():
+def set_up_logging(log_location):
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%Y-%m-%d %H:%M",
-        filename="/tmp/tandem-agent.log",
+        filename=log_location,
         filemode="w",
     )
 
 
 def main():
-    set_up_logging()
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
+    parser = argparse.ArgumentParser(description="Starts the Tandem agent.")
+    parser.add_argument(
+        "--host",
+        default="",
+        help="The host address to bind to.",
+    )
+    parser.add_argument(
+        "--port",
+        default=0,
+        type=int,
+        help="The port to listen on.",
+    )
+    parser.add_argument(
+        "--log-file",
+        default="/tmp/tandem-agent.log",
+        help="The location of the log file.",
+    )
+    args = parser.parse_args()
+
+    set_up_logging(args.log_file)
+
     # Run the agent until asked to terminate
-    with TandemAgent() as agent:
+    with TandemAgent(args.host, args.port) as agent:
         should_shutdown.wait()
 
 

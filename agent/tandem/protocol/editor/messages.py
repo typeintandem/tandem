@@ -9,6 +9,7 @@ class EditorProtocolMarshalError:
 class EditorProtocolMessageType(enum.Enum):
     UserChangedEditorText = "user-changed-editor-text"
     ApplyText = "apply-text"
+    ConnectTo = "connect-to"
 
 
 class UserChangedEditorText:
@@ -49,6 +50,27 @@ class ApplyText:
         return ApplyText(payload["contents"])
 
 
+class ConnectTo:
+    """
+    Sent by the plugin to the agent to tell it to connect
+    to another agent.
+    """
+    def __init__(self, host, port):
+        self.type = EditorProtocolMessageType.ConnectTo
+        self.host = host
+        self.port = port
+
+    def to_payload(self):
+        return {
+            "host": self.host,
+            "port": self.port,
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return ConnectTo(payload["host"], payload["port"])
+
+
 def serialize(message):
     as_dict = {
         "type": message.type.value,
@@ -59,19 +81,18 @@ def serialize(message):
 
 
 def deserialize(data):
-    try:
-        as_dict = json.loads(data)
-        type = as_dict["type"]
-        payload = as_dict["payload"]
+    as_dict = json.loads(data)
+    type = as_dict["type"]
+    payload = as_dict["payload"]
 
-        if type == EditorProtocolMessageType.UserChangedEditorText.value:
-            return UserChangedEditorText.from_payload(payload)
+    if type == EditorProtocolMessageType.ConnectTo.value:
+        return ConnectTo.from_payload(payload)
 
-        elif type == EditorProtocolMessageType.ApplyTextBuffer.value:
-            return ApplyTextBuffer.from_payload(payload)
+    elif type == EditorProtocolMessageType.UserChangedEditorText.value:
+        return UserChangedEditorText.from_payload(payload)
 
-        else:
-            raise EditorProtocolMarshalError
+    elif type == EditorProtocolMessageType.ApplyTextBuffer.value:
+        return ApplyTextBuffer.from_payload(payload)
 
-    except JSONDecodeError:
+    else:
         raise EditorProtocolMarshalError

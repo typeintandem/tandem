@@ -73,4 +73,3 @@ def deserialize(data):
 
     except JSONDecodeError:
         raise InteragentProtocolMarshalError
-
