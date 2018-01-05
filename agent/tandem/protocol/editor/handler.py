@@ -1,5 +1,6 @@
 import logging
 import tandem.protocol.editor.messages as m
+import tandem.protocol.interagent.messages as im
 
 
 class EditorProtocolHandler:
@@ -17,6 +18,20 @@ class EditorProtocolHandler:
                     "connection to {}:{}.".format(message.host, message.port),
                 )
                 self._connection_manager.connect_to(message.host, message.port)
+                logging.info(
+                    "Tandem Agent connected to {}:{}."
+                    .format(message.host, message.port),
+                )
+
+                # Ping the agent
+                address = (message.host, message.port)
+                connection = self._connection_manager.get_connection(address)
+                if connection is None:
+                    logging.error("Could not find connection!")
+                    return
+                ping = im.Ping(5)
+                connection.write(im.serialize(ping))
+                logging.info("Sent ping to the other agent!")
             else:
                 # Echo the message back - placeholder behaviour
                 response = m.serialize(message)

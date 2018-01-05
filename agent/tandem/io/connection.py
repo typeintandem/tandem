@@ -1,12 +1,14 @@
 import logging
 from threading import Thread
 
+ENCODING = "utf-8"
+ENCODED_NEWLINE = "\n".encode(ENCODING)
+
 
 class Connection:
     def __init__(self, socket, address, handler_function):
         self.address = address
         self._socket = socket
-        self._buffered_socket = socket.makefile(mode="r+", encoding="utf-8")
         self._reader = Thread(target=self._socket_read)
         self._handler_function = handler_function
 
@@ -14,21 +16,21 @@ class Connection:
         self._reader.start()
 
     def stop(self):
-        self._buffered_socket.flush()
-        self._buffered_socket.close()
         self._socket.close()
         self._reader.join()
 
-    def write(self, data):
-        self._buffered_socket.write(data)
-        self._buffered_socket.write("\n")
-        self._buffered_socket.flush()
+    def write(self, string_data):
+        self._socket.sendall(string_data.encode(ENCODING))
+        self._socket.sendall(ENCODED_NEWLINE)
 
     def _socket_read(self):
-        # Do not invoke directly - only invoked by the _reader thread
+        buffer = ""
         try:
-            for line in self._buffered_socket:
-                self._handler_function(line, self.address)
+            while True:
+                data = self._socket.recv(4096)
+                buffer += data.decode(ENCODING)
+                while buffer.find("\n") != -1:
+                    line, buffer = buffer.split("\n", 1)
+                    self._handler_function(line, self.address)
         except:
-            logging.exception("Exception when reading from connection:")
-            raise
+            logging.info("Connection stopping...")
