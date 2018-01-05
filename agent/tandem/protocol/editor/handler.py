@@ -30,11 +30,11 @@ class EditorProtocolHandler:
                     logging.error("Could not find connection!")
                     return
                 ping = im.Ping(5)
-                connection.write(im.serialize(ping))
+                connection.write_string_message(im.serialize(ping))
             else:
                 # Echo the message back - placeholder behaviour
                 response = m.serialize(message)
-                self._std_streams.write(response)
+                self._std_streams.write_string_message(response)
         except m.EditorProtocolMarshalError:
             logging.info("Ignoring invalid message.")
         except:

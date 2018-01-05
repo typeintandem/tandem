@@ -31,8 +31,8 @@ class Connection:
         self._socket.close()
         self._reader.join()
 
-    def write(self, string_data):
-        self._socket.sendall(string_data.encode(ENCODING))
+    def write_string_message(self, string_message):
+        self._socket.sendall(string_message.encode(ENCODING))
         self._socket.sendall(ENCODED_NEWLINE)
 
     def _get_read_thread(self):

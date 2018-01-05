@@ -71,14 +71,15 @@ def ping_test():
     agent2.stdin.write("\n")
     agent2.stdin.flush()
 
-    # Wait for the connection to be made
-    time.sleep(3)
+    # Wait for the pings
+    time.sleep(2)
 
     agent1.stdin.close()
     agent1.terminate()
-    agent1.wait()
     agent2.stdin.close()
     agent2.terminate()
+
+    agent1.wait()
     agent2.wait()
 
 
