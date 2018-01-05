@@ -31,7 +31,6 @@ class EditorProtocolHandler:
                     return
                 ping = im.Ping(5)
                 connection.write(im.serialize(ping))
-                logging.info("Sent ping to the other agent!")
             else:
                 # Echo the message back - placeholder behaviour
                 response = m.serialize(message)
