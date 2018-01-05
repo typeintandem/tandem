@@ -1,17 +1,21 @@
 import logging
-import tandem.protocol.interagent.messages as m
+import tandem.protocol.editor.messages as em
+import tandem.protocol.interagent.messages as im
 
 
 class InteragentProtocolHandler:
-    def __init__(self, connection_manager):
+    def __init__(self, std_streams, connection_manager):
+        self._std_streams = std_streams
         self._connection_manager = connection_manager
 
     def handle_message(self, data, sender_address):
         try:
-            message = m.deserialize(data)
-            if type(message) is m.Ping:
+            message = im.deserialize(data)
+            if type(message) is im.Ping:
                 self._handle_ping(message, sender_address)
-        except m.InteragentProtocolMarshalError:
+            elif type(message) is im.TextChanged:
+                self._handle_text_changed(message, sender_address)
+        except im.InteragentProtocolMarshalError:
             logging.info("Ignoring invalid interagent protocol message.")
         except:
             logging.exception(
@@ -25,4 +29,11 @@ class InteragentProtocolHandler:
         # Ping the sender back
         sender_connection = \
             self._connection_manager.get_connection(sender_address)
-        sender_connection.write_string_message(m.serialize(m.Ping(message.ttl-1)))
+        sender_connection.write_string_message(
+            im.serialize(im.Ping(message.ttl-1)),
+        )
+
+    def _handle_text_changed(self, message, sender_address):
+        # Tell the plugin to change the editor's text buffer
+        apply_text = em.serialize(em.ApplyText(message.contents))
+        self._std_streams.write_string_message(apply_text)

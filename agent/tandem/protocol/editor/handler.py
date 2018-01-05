@@ -1,5 +1,5 @@
 import logging
-import tandem.protocol.editor.messages as m
+import tandem.protocol.editor.messages as em
 import tandem.protocol.interagent.messages as im
 
 
@@ -10,14 +10,12 @@ class EditorProtocolHandler:
 
     def handle_message(self, data):
         try:
-            message = m.deserialize(data)
-            if type(message) is m.ConnectTo:
+            message = em.deserialize(data)
+            if type(message) is em.ConnectTo:
                 self._handle_connect_to(message)
-            else:
-                # Echo the message back - placeholder behaviour
-                response = m.serialize(message)
-                self._std_streams.write_string_message(response)
-        except m.EditorProtocolMarshalError:
+            elif type(message) is em.UserChangedEditorText:
+                self._handle_user_changed_editor_text(message)
+        except em.EditorProtocolMarshalError:
             logging.info("Ignoring invalid editor protocol message.")
         except:
             logging.exception(
@@ -43,3 +41,7 @@ class EditorProtocolHandler:
             return
         ping = im.Ping(2)
         connection.write_string_message(im.serialize(ping))
+
+    def _handle_user_changed_editor_text(self, message):
+        text_changed = im.serialize(im.TextChanged(message.contents))
+        self._connection_manager.broadcast(text_changed)

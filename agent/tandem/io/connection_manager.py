@@ -17,6 +17,10 @@ class ConnectionManager:
             return None
         return self._connections[address]
 
+    def broadcast(self, string_message):
+        for _, connection in self._connections.items():
+            connection.write_string_message(string_message)
+
     def connect_to(self, host, port):
         new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         new_socket.connect((host, port))

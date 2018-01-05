@@ -26,6 +26,7 @@ class TandemAgent:
             self._connection_manager,
         )
         self._interagent_protocol = InteragentProtocolHandler(
+            self._std_streams,
             self._connection_manager,
         )
         self._main_executor = ThreadPoolExecutor(max_workers=1)
