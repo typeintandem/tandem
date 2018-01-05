@@ -27,5 +27,5 @@ class TandemAgent:
         logging.info("Tandem Agent has shut down")
 
     def _on_std_input(self, data):
-        # Do not call directly - called by _std_streams
+        # Called by _std_streams after receiving a new message from the plugin
         self._main_executor.submit(self._editor_protocol.handle_message, data)
