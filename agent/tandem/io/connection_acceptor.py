@@ -19,7 +19,7 @@ class ConnectionAcceptor:
             socket.SOCK_STREAM,
         )
         self._handler_function = handler_function
-        self._acceptor = self._get_acceptor_thread()
+        self._acceptor = Thread(target=self._accept_connections)
 
     def __enter__(self):
         self.start()
@@ -42,18 +42,15 @@ class ConnectionAcceptor:
         self._server_socket.close()
         self._acceptor.join()
 
-    def _get_acceptor_thread(self):
-        def accept_connections():
-            try:
-                while True:
-                    socket, address = self._server_socket.accept()
-                    host, port = address
-                    logging.info(
-                        "Accepted a connection to {}:{}."
-                        .format(host, port),
-                    )
-                    self._handler_function(socket, address)
-            except:
-                logging.info("Tandem Agent has stopped accepting connections.")
-
-        return Thread(target=accept_connections)
+    def _accept_connections(self):
+        try:
+            while True:
+                socket, address = self._server_socket.accept()
+                host, port = address
+                logging.info(
+                    "Accepted a connection to {}:{}."
+                    .format(host, port),
+                )
+                self._handler_function(socket, address)
+        except:
+            logging.info("Tandem Agent has stopped accepting connections.")

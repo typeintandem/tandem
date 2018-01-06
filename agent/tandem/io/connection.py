@@ -21,7 +21,7 @@ class Connection:
     def __init__(self, socket, address, handler_function):
         self.address = address
         self._socket = socket
-        self._reader = self._get_read_thread()
+        self._reader = Thread(target=self._socket_read)
         self._handler_function = handler_function
 
     def start(self):
@@ -35,17 +35,14 @@ class Connection:
         self._socket.sendall(string_message.encode(ENCODING))
         self._socket.sendall(ENCODED_NEWLINE)
 
-    def _get_read_thread(self):
-        def socket_read():
-            buffer = ""
-            try:
-                while True:
-                    data = self._socket.recv(4096)
-                    buffer += data.decode(ENCODING)
-                    while buffer.find("\n") != -1:
-                        line, buffer = buffer.split("\n", 1)
-                        self._handler_function(line, self.address)
-            except:
-                logging.info("Connection stopping...")
-
-        return Thread(target=socket_read)
+    def _socket_read(self):
+        buffer = ""
+        try:
+            while True:
+                data = self._socket.recv(4096)
+                buffer += data.decode(ENCODING)
+                while buffer.find("\n") != -1:
+                    line, buffer = buffer.split("\n", 1)
+                    self._handler_function(line, self.address)
+        except:
+            logging.info("Connection stopping...")
