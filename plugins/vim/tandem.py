@@ -27,9 +27,28 @@ def send_user_changed(agent_stdin, text):
     agent_stdin.flush()
 
 
-def print_raw_message(agent_stdout):
+def send_apply_text(agent_stdin, text):
+    message = m.ApplyText(text)
+    agent_stdin.write(m.serialize(message))
+    agent_stdin.write("\n")
+    agent_stdin.flush()
+
+
+def handle_apply_text(contents):
+    print "should apply text"
+    # TODO
+
+
+def handle_agent_output(agent_stdout):
     resp = agent_stdout.readline()
-    print "Received: " + resp
+    try:
+        message = m.deserialize(resp)
+        if isinstance(message, m.ApplyText):
+            handle_apply_text(message.contents)
+    except m.EditorProtocolMarshalError:
+        pass
+    except:
+        raise
 
 
 def main():
@@ -37,14 +56,11 @@ def main():
     agent = start_agent()
 
     # Send the agent a dummy message
-    send_user_changed(agent.stdin, "Hello world!")
+    send_user_changed(agent.stdin, ["Hello world!"])
+    print "handling"
 
     # The agent currently just echos messages so just print the response
-    print_raw_message(agent.stdout)
-
-    # Repeat
-    send_user_changed(agent.stdin, "Hello world again!")
-    print_raw_message(agent.stdout)
+    handle_agent_output(agent.stdout)
 
     # Stop the agent and wait for it to shutdown gracefully
     agent.stdin.close()
@@ -53,4 +69,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception, err:
+        print str(err)

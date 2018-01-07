@@ -105,13 +105,13 @@ def text_transfer_test():
 
     # Simulate a text buffer change - the plugin notifes agent1 that
     # the text buffer has changed
-    send_user_changed(agent1.stdin, "Hello world!")
+    send_user_changed(agent1.stdin, ["Hello world!"])
 
     # Expect agent2 to receive a ApplyText message
     print_raw_message(agent2.stdout)
 
     # Repeat
-    send_user_changed(agent1.stdin, "Hello world again!")
+    send_user_changed(agent1.stdin, ["Hello world again!"])
     print_raw_message(agent2.stdout)
 
     # Shut down the agents
