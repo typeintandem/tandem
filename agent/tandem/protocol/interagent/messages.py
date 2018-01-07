@@ -59,13 +59,13 @@ def serialize(message):
 def deserialize(data):
     try:
         as_dict = json.loads(data)
-        type = as_dict["type"]
+        message_type = as_dict["type"]
         payload = as_dict["payload"]
 
-        if type == InteragentProtocolMessageType.TextChanged.value:
+        if message_type == InteragentProtocolMessageType.TextChanged.value:
             return TextChanged.from_payload(payload)
 
-        elif type == InteragentProtocolMessageType.Ping.value:
+        elif message_type == InteragentProtocolMessageType.Ping.value:
             return Ping.from_payload(payload)
 
         else:

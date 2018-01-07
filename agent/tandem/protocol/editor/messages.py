@@ -83,16 +83,16 @@ def serialize(message):
 def deserialize(data):
     try:
         as_dict = json.loads(data)
-        type = as_dict["type"]
+        message_type = as_dict["type"]
         payload = as_dict["payload"]
 
-        if type == EditorProtocolMessageType.ConnectTo.value:
+        if message_type == EditorProtocolMessageType.ConnectTo.value:
             return ConnectTo.from_payload(payload)
 
-        elif type == EditorProtocolMessageType.UserChangedEditorText.value:
+        elif message_type == EditorProtocolMessageType.UserChangedEditorText.value:
             return UserChangedEditorText.from_payload(payload)
 
-        elif type == EditorProtocolMessageType.ApplyTextBuffer.value:
+        elif message_type == EditorProtocolMessageType.ApplyTextBuffer.value:
             return ApplyTextBuffer.from_payload(payload)
 
         else:
