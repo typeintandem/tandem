@@ -15,8 +15,8 @@ class StdStreams:
         self._reader.join()
         sys.stdout.close()
 
-    def write(self, data):
-        sys.stdout.write(data)
+    def write_string_message(self, string_message):
+        sys.stdout.write(string_message)
         sys.stdout.write("\n")
         sys.stdout.flush()
 
