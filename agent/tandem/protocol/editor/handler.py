@@ -36,9 +36,6 @@ class EditorProtocolHandler:
         # Ping the agent (this is for testing)
         address = (message.host, message.port)
         connection = self._connection_manager.get_connection(address)
-        if connection is None:
-            logging.error("Could not find connection!")
-            return
         ping = im.Ping(2)
         connection.write_string_message(im.serialize(ping))
 

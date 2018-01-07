@@ -2,7 +2,7 @@ import json
 import enum
 
 
-class InteragentProtocolMarshalError:
+class InteragentProtocolMarshalError(ValueError):
     pass
 
 
@@ -71,5 +71,5 @@ def deserialize(data):
         else:
             raise InteragentProtocolMarshalError
 
-    except JSONDecodeError:
+    except json.JSONDecodeError:
         raise InteragentProtocolMarshalError

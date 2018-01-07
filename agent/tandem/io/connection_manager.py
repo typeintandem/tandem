@@ -14,7 +14,9 @@ class ConnectionManager:
 
     def get_connection(self, address):
         if address not in self._connections:
-            return None
+            host, port = address
+            raise ValueError(
+                "Connection to {}:{} does not exist.".format(host, port))
         return self._connections[address]
 
     def broadcast(self, string_message):

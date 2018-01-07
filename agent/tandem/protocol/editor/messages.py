@@ -2,7 +2,7 @@ import json
 import enum
 
 
-class EditorProtocolMarshalError:
+class EditorProtocolMarshalError(ValueError):
     pass
 
 
@@ -98,5 +98,5 @@ def deserialize(data):
         else:
             raise EditorProtocolMarshalError
 
-    except JSONDecodeError:
+    except json.JSONDecodeError:
         raise EditorProtocolMarshalError
