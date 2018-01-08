@@ -11,8 +11,9 @@ if !executable('python3')
 endif
 
 " Bind the Tandem function to a globally available command
-" com! -nargs=* Tandem py tandem_agent.start(<f-args>)
 com! -nargs=* Tandem py tandem_agent.start(<f-args>)
+
+com! -nargs=* TandemStop py tandem_agent.stop(<f-args>)
 
 python << EOF
 
@@ -34,6 +35,7 @@ if tandem_agent_path not in sys.path:
 
 import tandem.protocol.editor.messages as m
 
+should_exit = False
 
 def start_agent(extra_args=None):
     if extra_args is None:
@@ -97,7 +99,7 @@ class PluginManager:
         self._agent2.wait()
 
     def _check_buffer(self):
-        while True:
+        while not should_exit:
             current_buffer = vim.current.buffer[:]
 
             # perform check
@@ -120,17 +122,23 @@ class PluginManager:
 
     def _check_message(self):
         while True:
-            print_raw_message(self._agent2.stdout)
+            line = self._agent2.stdout.readline()
+            if line == '':
+                break
+            print "Received:", line
 
     def start(self):
         self._main_thread.start()
 
-    # TODO must call this somehow when we should terminate
     def stop(self):
         self._shut_down_agents()
 
         self._main_thread.join()
+
+        global should_exit
+        should_exit = True
         self._input_checker.join()
+
         self._output_checker.join()
 
 
@@ -141,25 +149,17 @@ def send_user_changed(agent_stdin, text):
     agent_stdin.flush()
 
 
-def print_raw_message(agent_stdout):
-    resp = agent_stdout.readline()
-    print("Received: " + resp)
-
-
 class TandemPlugin():
     def __init__(self):
         # Sends message from agent1 to agent2
         self._plugin_manager = PluginManager(vim.current.buffer[:])
-        #self._setup()
-
-        #    def _setup(self):
-        #      # bind autocmds
-        #      vim.command(':autocmd!')
-        #      vim.command('autocmd CursorMoved <buffer> py reactor.callFromThread(tandem_plugin.cursor_update)')
-        #      vim.command('autocmd CursorMovedI <buffer> py reactor.callFromThread(tandem_plugin.fact.buff_update)')
 
     def start(self):
         self._plugin_manager.start()
+
+    def stop(self):
+        self._plugin_manager.stop()
+        print "closed succesfully"
 
     def handle_command(self):
         pass
