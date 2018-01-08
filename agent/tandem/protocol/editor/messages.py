@@ -6,7 +6,7 @@ class EditorProtocolMarshalError(ValueError):
     pass
 
 
-class EditorProtocolContentTypeError:
+class EditorProtocolContentTypeError(ValueError):
     pass
 
 
@@ -40,7 +40,7 @@ class UserChangedEditorText(EditorTextTransform):
     notify it that the user changed the text buffer.
     """
     def __init__(self, contents):
-        self.__guard__(contents)
+        # self.__guard__(contents)
 
         self.type = EditorProtocolMessageType.UserChangedEditorText
         self.contents = contents
@@ -61,7 +61,7 @@ class ApplyText(EditorTextTransform):
     notify it that someone else edited the text buffer.
     """
     def __init__(self, contents):
-        self.__guard__(contents)
+        # self.__guard__(contents)
 
         self.type = EditorProtocolMessageType.ApplyText
         self.contents = contents

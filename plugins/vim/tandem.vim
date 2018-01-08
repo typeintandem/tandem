@@ -11,6 +11,8 @@ if !executable('python3')
 endif
 
 " Bind the Tandem function to a globally available command
+" e.g. :Tandem h
+" e.g. :Tandem <anythingelse> localhost 1234
 com! -nargs=* Tandem py tandem_agent.start(<f-args>)
 
 com! -nargs=* TandemStop py tandem_agent.stop(<f-args>)
@@ -47,56 +49,52 @@ def start_agent(extra_args=None):
     )
 
 
-def get_string_ports():
+def get_string_port():
     starting_port = random.randint(60600, 62600)
-    port1 = str(starting_port)
-    port2 = str(starting_port+1)
-    return port1, port2
+    return str(starting_port)
 
 
 class PluginManager:
 
     def __init__(self, curr_buffer):
         self._buffer = curr_buffer
+
         self._main_thread = Thread(target=self._start_agents)
+
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
 
     def _start_agents(self):
-        agent1_port, agent2_port = get_string_ports()
-
-        self._agent1 = start_agent(["--port", agent1_port])
-        self._agent2 = start_agent([
+        agent_port = get_string_port()
+        self._agent = start_agent([
             "--port",
-            agent2_port,
+            agent_port,
             "--log-file",
-            "/tmp/tandem-agent-2.log",
+            "/tmp/tandem-agent-{}.log".format(agent_port),
         ])
 
-        # Wait for the agents to start accepting connections
-        sleep(1)
+        if not self._is_host:
+            # Wait for the agents to start accepting connections
+            sleep(1)
 
-        message = m.ConnectTo("localhost", int(agent1_port))
-        self._agent2.stdin.write(m.serialize(message))
-        self._agent2.stdin.write("\n")
-        self._agent2.stdin.flush()
+            message = m.ConnectTo(self._host_ip, int(self._host_port))
+            self._agent.stdin.write(m.serialize(message))
+            self._agent.stdin.write("\n")
+            self._agent.stdin.flush()
+        else:
+            print "Host Port:", agent_port
 
-        # Wait for the pings
-        sleep(2)
-
-        # Assume we got dem pings
-        self._input_checker.start()
-        self._output_checker.start()
+        if self._is_host:
+            self._input_checker.start()
+        else:
+            self._output_checker.start()
 
     def _shut_down_agents(self):
         # Shut down the agents
-        self._agent1.stdin.close()
-        self._agent1.terminate()
-        self._agent2.stdin.close()
-        self._agent2.terminate()
+        self._agent.stdin.close()
+        self._agent.terminate()
 
-        self._agent1.wait()
-        self._agent2.wait()
+        self._agent.wait()
 
     def _check_buffer(self):
         while not should_exit:
@@ -106,7 +104,7 @@ class PluginManager:
             # first case should never happen
             if current_buffer is None or \
                     len(current_buffer) != len(self._buffer):
-                send_user_changed(self._agent1.stdin, current_buffer)
+                send_user_changed(self._agent.stdin, current_buffer)
             else:
                 should_send = False
                 for i in range(len(current_buffer)):
@@ -114,7 +112,7 @@ class PluginManager:
                         should_send = True
                         break
                 if should_send:
-                    send_user_changed(self._agent1.stdin, current_buffer)
+                    send_user_changed(self._agent.stdin, current_buffer)
 
             self._buffer = current_buffer
 
@@ -122,12 +120,30 @@ class PluginManager:
 
     def _check_message(self):
         while True:
-            line = self._agent2.stdout.readline()
+            line = self._agent.stdout.readline()
             if line == '':
                 break
-            print "Received:", line
+            self._handle_message(line)
 
-    def start(self):
+    def _handle_message(self, msg):
+        try:
+            print msg
+            message = m.deserialize(msg)
+            if isinstance(message, m.ApplyText):
+                print message.contents[0]
+                vim.current.buffer[:] = message.contents
+                vim.command(':redraw')
+        except m.EditorProtocolMarshalError:
+            pass
+        except:
+            pass
+
+    def start(self, is_host, host_ip, host_port):
+        self._is_host = is_host
+        if not is_host:
+            self._host_ip = host_ip
+            self._host_port = host_port
+
         self._main_thread.start()
 
     def stop(self):
@@ -135,11 +151,12 @@ class PluginManager:
 
         self._main_thread.join()
 
-        global should_exit
-        should_exit = True
-        self._input_checker.join()
-
-        self._output_checker.join()
+        if self._is_host:
+            global should_exit
+            should_exit = True
+            self._input_checker.join()
+        else:
+            self._output_checker.join()
 
 
 def send_user_changed(agent_stdin, text):
@@ -154,8 +171,8 @@ class TandemPlugin():
         # Sends message from agent1 to agent2
         self._plugin_manager = PluginManager(vim.current.buffer[:])
 
-    def start(self):
-        self._plugin_manager.start()
+    def start(self, is_host, ip=None, port=None):
+         self._plugin_manager.start(is_host == 'h', ip, port)
 
     def stop(self):
         self._plugin_manager.stop()
