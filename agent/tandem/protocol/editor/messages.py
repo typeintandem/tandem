@@ -6,18 +6,42 @@ class EditorProtocolMarshalError(ValueError):
     pass
 
 
+class EditorProtocolContentTypeError(ValueError):
+    pass
+
+
 class EditorProtocolMessageType(enum.Enum):
     UserChangedEditorText = "user-changed-editor-text"
     ApplyText = "apply-text"
     ConnectTo = "connect-to"
 
 
-class UserChangedEditorText:
+class EditorTextTransform:
+
+    """
+    Ensure that the contents is a list of strings representing the
+    buffer contents.
+    """
+    def __guard__(self, contents):
+        if not isinstance(contents, list):
+            raise EditorProtocolContentTypeError
+        for c in contents:
+            if not isinstance(c, str):
+                raise EditorProtocolContentTypeError
+
+    def __init__(self, contents):
+        pass
+
+
+class UserChangedEditorText(EditorTextTransform):
+
     """
     Sent by the editor plugin to the agent to
     notify it that the user changed the text buffer.
     """
     def __init__(self, contents):
+        # self.__guard__(contents)
+
         self.type = EditorProtocolMessageType.UserChangedEditorText
         self.contents = contents
 
@@ -31,12 +55,14 @@ class UserChangedEditorText:
         return UserChangedEditorText(payload["contents"])
 
 
-class ApplyText:
+class ApplyText(EditorTextTransform):
     """
     Sent by the agent to the editor plugin to
     notify it that someone else edited the text buffer.
     """
     def __init__(self, contents):
+        # self.__guard__(contents)
+
         self.type = EditorProtocolMessageType.ApplyText
         self.contents = contents
 
@@ -89,14 +115,15 @@ def deserialize(data):
         if message_type == EditorProtocolMessageType.ConnectTo.value:
             return ConnectTo.from_payload(payload)
 
-        elif message_type == EditorProtocolMessageType.UserChangedEditorText.value:
+        elif message_type == \
+                EditorProtocolMessageType.UserChangedEditorText.value:
             return UserChangedEditorText.from_payload(payload)
 
-        elif message_type == EditorProtocolMessageType.ApplyTextBuffer.value:
-            return ApplyTextBuffer.from_payload(payload)
+        elif message_type == EditorProtocolMessageType.ApplyText.value:
+            return ApplyText.from_payload(payload)
 
         else:
             raise EditorProtocolMarshalError
 
-    except json.JSONDecodeError:
+    except:
         raise EditorProtocolMarshalError
