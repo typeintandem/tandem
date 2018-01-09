@@ -25,7 +25,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Thread, Event
+from threading import Thread
 
 import vim
 
@@ -74,9 +74,6 @@ class TandemPlugin:
         ])
 
         if not self._is_host:
-            # Wait for the agents to start accepting connections
-            sleep(1)
-
             message = m.ConnectTo(self._host_ip, int(self._host_port))
             self._agent.stdin.write(m.serialize(message))
             self._agent.stdin.write("\n")
@@ -102,13 +99,10 @@ class TandemPlugin:
                     len(current_buffer) != len(self._buffer):
                 self._send_user_changed(current_buffer)
             else:
-                should_send = False
                 for i in range(len(current_buffer)):
                     if current_buffer[i] != self._buffer[i]:
-                        should_send = True
+                        self._send_user_changed(current_buffer)
                         break
-                if should_send:
-                    self._send_user_changed(current_buffer)
 
             self._buffer = current_buffer
 
@@ -117,7 +111,7 @@ class TandemPlugin:
     def _check_message(self):
         while True:
             line = self._agent.stdout.readline()
-            if line == '':
+            if line == "":
                 break
             self._handle_message(line)
 
@@ -159,9 +153,6 @@ class TandemPlugin:
             self._input_checker.join()
         else:
             self._output_checker.join()
-
-    def handle_command(self):
-        pass
 
 
 tandem_agent = TandemPlugin()
