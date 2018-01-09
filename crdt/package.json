@@ -1,0 +1,23 @@
+{
+  "name": "tandem-crdt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "$(npm bin)/webpack --progress --colors --watch ",
+    "start": "node ./build/bundle.js",
+    "clean": "rm -r ./build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@atom/teletype-crdt": "^0.8.1",
+    "uuid": "^3.1.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "webpack": "^3.10.0"
+  }
+}
