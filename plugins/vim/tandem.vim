@@ -61,7 +61,7 @@ class TandemPlugin:
 
         self._main_thread = Thread(target=self._start_agent)
 
-        self._input_checker = Thread(target=self._check_buffer)
+        self._input_checker = None
         self._output_checker = Thread(target=self._check_message)
 
     def _start_agent(self):
@@ -81,9 +81,7 @@ class TandemPlugin:
         else:
             print "Bound host to port: {}".format(agent_port)
 
-        if self._is_host:
-            self._input_checker.start()
-        else:
+        if not self._is_host:
             self._output_checker.start()
 
     def _shut_down_agent(self):
@@ -91,22 +89,26 @@ class TandemPlugin:
         self._agent.terminate()
         self._agent.wait()
 
+    def check_buffer(self):
+        if self._input_checker is not None and \
+              self._input_checker.isAlive():
+            self._input_checker.join()
+        self._input_checker = Thread(target=self._check_buffer)
+        self._input_checker.start()
+
     def _check_buffer(self):
-        while not should_exit:
-            current_buffer = vim.current.buffer[:]
+        current_buffer = vim.current.buffer[:]
 
-            if current_buffer is not None and \
-                    len(current_buffer) != len(self._buffer):
-                self._send_user_changed(current_buffer)
-            else:
-                for i in range(len(current_buffer)):
-                    if current_buffer[i] != self._buffer[i]:
-                        self._send_user_changed(current_buffer)
-                        break
+        if current_buffer is not None and \
+                len(current_buffer) != len(self._buffer):
+            self._send_user_changed(current_buffer)
+        else:
+            for i in range(len(current_buffer)):
+                if current_buffer[i] != self._buffer[i]:
+                    self._send_user_changed(current_buffer)
+                    break
 
-            self._buffer = current_buffer
-
-            sleep(1)
+        self._buffer = current_buffer
 
     def _check_message(self):
         while True:
@@ -134,6 +136,13 @@ class TandemPlugin:
         self._agent.stdin.write("\n")
         self._agent.stdin.flush()
 
+    def _set_up_autocommands(self):
+        vim.command(':autocmd!')
+        vim.command('autocmd CursorMoved <buffer> py tandem_agent.check_buffer()')
+        vim.command('autocmd CursorMovedI <buffer> py tandem_agent.check_buffer()')
+        vim.command('autocmd VimLeave * py tandem_agent.stop()')
+
+
     def start(self, host_arg, host_ip=None, host_port=None):
         self._is_host = host_arg == "h"
         if not self._is_host:
@@ -141,11 +150,13 @@ class TandemPlugin:
             self._host_port = host_port
 
         self._main_thread.start()
+        self._main_thread.join()
+
+        self._set_up_autocommands()
+
 
     def stop(self):
         self._shut_down_agent()
-
-        self._main_thread.join()
 
         if self._is_host:
             global should_exit
