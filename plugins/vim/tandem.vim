@@ -39,7 +39,7 @@ import tandem.protocol.editor.messages as m
 
 should_exit = False
 
-def start_agent(extra_args=None):
+def spawn_agent(extra_args=None):
     if extra_args is None:
         extra_args = []
     return Popen(
@@ -54,19 +54,19 @@ def get_string_port():
     return str(starting_port)
 
 
-class PluginManager:
+class TandemPlugin:
 
-    def __init__(self, curr_buffer):
-        self._buffer = curr_buffer
+    def __init__(self):
+        self._buffer = vim.current.buffer[:]
 
-        self._main_thread = Thread(target=self._start_agents)
+        self._main_thread = Thread(target=self._start_agent)
 
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
 
-    def _start_agents(self):
+    def _start_agent(self):
         agent_port = get_string_port()
-        self._agent = start_agent([
+        self._agent = spawn_agent([
             "--port",
             agent_port,
             "--log-file",
@@ -82,29 +82,25 @@ class PluginManager:
             self._agent.stdin.write("\n")
             self._agent.stdin.flush()
         else:
-            print "Host Port:", agent_port
+            print "Bound host to port: {}".format(agent_port)
 
         if self._is_host:
             self._input_checker.start()
         else:
             self._output_checker.start()
 
-    def _shut_down_agents(self):
-        # Shut down the agents
+    def _shut_down_agent(self):
         self._agent.stdin.close()
         self._agent.terminate()
-
         self._agent.wait()
 
     def _check_buffer(self):
         while not should_exit:
             current_buffer = vim.current.buffer[:]
 
-            # perform check
-            # first case should never happen
-            if current_buffer is None or \
+            if current_buffer is not None and \
                     len(current_buffer) != len(self._buffer):
-                send_user_changed(self._agent.stdin, current_buffer)
+                self._send_user_changed(current_buffer)
             else:
                 should_send = False
                 for i in range(len(current_buffer)):
@@ -112,7 +108,7 @@ class PluginManager:
                         should_send = True
                         break
                 if should_send:
-                    send_user_changed(self._agent.stdin, current_buffer)
+                    self._send_user_changed(current_buffer)
 
             self._buffer = current_buffer
 
@@ -132,22 +128,28 @@ class PluginManager:
             if isinstance(message, m.ApplyText):
                 print message.contents[0]
                 vim.current.buffer[:] = message.contents
-                vim.command(':redraw')
+                vim.command(":redraw")
         except m.EditorProtocolMarshalError:
             pass
         except:
             pass
 
-    def start(self, is_host, host_ip, host_port):
-        self._is_host = is_host
-        if not is_host:
+    def _send_user_changed(self, text):
+        message = m.UserChangedEditorText(text)
+        self._agent.stdin.write(m.serialize(message))
+        self._agent.stdin.write("\n")
+        self._agent.stdin.flush()
+
+    def start(self, host_arg, host_ip=None, host_port=None):
+        self._is_host = host_arg == "h"
+        if not self._is_host:
             self._host_ip = host_ip
             self._host_port = host_port
 
         self._main_thread.start()
 
     def stop(self):
-        self._shut_down_agents()
+        self._shut_down_agent()
 
         self._main_thread.join()
 
@@ -158,28 +160,9 @@ class PluginManager:
         else:
             self._output_checker.join()
 
-
-def send_user_changed(agent_stdin, text):
-    message = m.UserChangedEditorText(text)
-    agent_stdin.write(m.serialize(message))
-    agent_stdin.write("\n")
-    agent_stdin.flush()
-
-
-class TandemPlugin():
-    def __init__(self):
-        # Sends message from agent1 to agent2
-        self._plugin_manager = PluginManager(vim.current.buffer[:])
-
-    def start(self, is_host, ip=None, port=None):
-         self._plugin_manager.start(is_host == 'h', ip, port)
-
-    def stop(self):
-        self._plugin_manager.stop()
-        print "closed succesfully"
-
     def handle_command(self):
         pass
+
 
 tandem_agent = TandemPlugin()
 
