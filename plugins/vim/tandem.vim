@@ -25,7 +25,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Thread
+from threading import Thread, Semaphore
 
 import vim
 
@@ -59,8 +59,9 @@ class TandemPlugin:
     def __init__(self):
         self._buffer = vim.current.buffer[:]
 
-        self._input_checker = None
+        self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
+        self._should_check_buffer = Semaphore(0)
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -88,25 +89,26 @@ class TandemPlugin:
         self._agent.wait()
 
     def check_buffer(self):
-        if self._input_checker is not None and \
-              self._input_checker.isAlive():
-            self._input_checker.join()
-        self._input_checker = Thread(target=self._check_buffer)
-        self._input_checker.start()
+        self._should_check_buffer.release()
 
     def _check_buffer(self):
-        current_buffer = vim.current.buffer[:]
+        while True:
+            self._should_check_buffer.acquire()
+            if not is_active:
+              break
 
-        if current_buffer is not None and \
-                len(current_buffer) != len(self._buffer):
-            self._send_user_changed(current_buffer)
-        else:
-            for i in range(len(current_buffer)):
-                if current_buffer[i] != self._buffer[i]:
-                    self._send_user_changed(current_buffer)
-                    break
+            current_buffer = vim.current.buffer[:]
 
-        self._buffer = current_buffer
+            if current_buffer is not None and \
+                    len(current_buffer) != len(self._buffer):
+                self._send_user_changed(current_buffer)
+            else:
+                for i in range(len(current_buffer)):
+                    if current_buffer[i] != self._buffer[i]:
+                        self._send_user_changed(current_buffer)
+                        break
+
+            self._buffer = current_buffer
 
     def _check_message(self):
         while True:
@@ -155,6 +157,7 @@ class TandemPlugin:
         self._start_agent()
         is_active = True
 
+        self._input_checker.start()
         self._set_up_autocommands()
 
 
@@ -165,6 +168,9 @@ class TandemPlugin:
                 print "No instance running."
             return
 
+        is_active = False
+        self._should_check_buffer.release()
+
         self._shut_down_agent()
 
         if self._is_host and is_running(self._input_checker):
@@ -172,7 +178,6 @@ class TandemPlugin:
         elif not self._is_host and is_running(self._output_checker):
             self._output_checker.join()
 
-        is_active = False
 
 def is_running(thread):
     return thread is not None and thread.isAlive()
