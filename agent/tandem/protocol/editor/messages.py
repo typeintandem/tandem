@@ -6,10 +6,6 @@ class EditorProtocolMarshalError(ValueError):
     pass
 
 
-class EditorProtocolContentTypeError(ValueError):
-    pass
-
-
 class EditorProtocolMessageType(enum.Enum):
     UserChangedEditorText = "user-changed-editor-text"
     ApplyText = "apply-text"
