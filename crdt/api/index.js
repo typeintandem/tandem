@@ -9,5 +9,5 @@ export default {
     getDocumentText,
     replicateDocument,
     setDocument,
-    setTextInRange
+    setTextInRange,
 };

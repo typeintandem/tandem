@@ -7,17 +7,23 @@
     "build": "$(npm bin)/webpack --progress --colors --watch ",
     "start": "node ./build/bundle.js",
     "clean": "rm -r ./build",
+    "lint": "$(npm bin)/eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@atom/teletype-crdt": "^0.8.1",
+    "@atom/teletype-crdt": "0.8.1",
     "uuid": "^3.1.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
+    "eslint": "^4.15.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.5.1",
     "webpack": "^3.10.0"
   }
 }

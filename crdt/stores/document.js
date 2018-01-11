@@ -4,5 +4,5 @@ export default {
     getDocument: () => localDocument,
     setDocument: (newDocument) => {
         localDocument = newDocument;
-    }
+    },
 };

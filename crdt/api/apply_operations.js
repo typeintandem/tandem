@@ -6,7 +6,6 @@ import DocumentStore from '../stores/document';
  * Used for applying CRDT operations to the local document
  */
 export default (operations) => {
-    const {textUpdates} = DocumentStore.getDocument().integrationOperations(operations);
+    const { textUpdates } = DocumentStore.getDocument().integrateOperations(operations);
     return textUpdates;
 };
-

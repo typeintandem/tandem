@@ -6,6 +6,5 @@ import DocumentStore from '../stores/document';
  * Used for assigning the local document to a new document
  */
 export default (newDocument) => {
-    DocumentStore.setDocument(newDocument)
+    DocumentStore.setDocument(newDocument);
 };
-
