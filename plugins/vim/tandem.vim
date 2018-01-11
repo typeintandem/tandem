@@ -15,7 +15,7 @@ endif
 " e.g. :Tandem <anythingelse> localhost 1234
 com! -nargs=* Tandem py tandem_agent.start(<f-args>)
 
-com! -nargs=* TandemStop py tandem_agent.stop(<f-args>)
+com! TandemStop py tandem_agent.stop(False)
 
 python << EOF
 
@@ -25,7 +25,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Thread
+from threading import Thread, Semaphore
 
 import vim
 
@@ -37,7 +37,7 @@ if tandem_agent_path not in sys.path:
 
 import tandem.protocol.editor.messages as m
 
-should_exit = False
+is_active = False
 
 def spawn_agent(extra_args=None):
     if extra_args is None:
@@ -59,18 +59,17 @@ class TandemPlugin:
     def __init__(self):
         self._buffer = vim.current.buffer[:]
 
-        self._main_thread = Thread(target=self._start_agent)
-
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
+        self._should_check_buffer = Semaphore(0)
 
     def _start_agent(self):
-        agent_port = get_string_port()
+        self._agent_port = get_string_port()
         self._agent = spawn_agent([
             "--port",
-            agent_port,
+            self._agent_port,
             "--log-file",
-            "/tmp/tandem-agent-{}.log".format(agent_port),
+            "/tmp/tandem-agent-{}.log".format(self._agent_port),
         ])
 
         if not self._is_host:
@@ -79,11 +78,9 @@ class TandemPlugin:
             self._agent.stdin.write("\n")
             self._agent.stdin.flush()
         else:
-            print "Bound host to port: {}".format(agent_port)
+            print "Bound host to port: {}".format(self._agent_port)
 
-        if self._is_host:
-            self._input_checker.start()
-        else:
+        if not self._is_host:
             self._output_checker.start()
 
     def _shut_down_agent(self):
@@ -91,8 +88,15 @@ class TandemPlugin:
         self._agent.terminate()
         self._agent.wait()
 
+    def check_buffer(self):
+        self._should_check_buffer.release()
+
     def _check_buffer(self):
-        while not should_exit:
+        while True:
+            self._should_check_buffer.acquire()
+            if not is_active:
+              break
+
             current_buffer = vim.current.buffer[:]
 
             if current_buffer is not None and \
@@ -105,8 +109,6 @@ class TandemPlugin:
                         break
 
             self._buffer = current_buffer
-
-            sleep(1)
 
     def _check_message(self):
         while True:
@@ -134,25 +136,51 @@ class TandemPlugin:
         self._agent.stdin.write("\n")
         self._agent.stdin.flush()
 
+    def _set_up_autocommands(self):
+        vim.command(':autocmd!')
+        vim.command('autocmd CursorMoved <buffer> py tandem_agent.check_buffer()')
+        vim.command('autocmd CursorMovedI <buffer> py tandem_agent.check_buffer()')
+        vim.command('autocmd VimLeave * py tandem_agent.stop()')
+
+
     def start(self, host_arg, host_ip=None, host_port=None):
+        global is_active
+        if is_active:
+            print "Cannot start. An instance is already running on :{}".format(self._agent_port)
+            return
+
         self._is_host = host_arg == "h"
         if not self._is_host:
             self._host_ip = host_ip
             self._host_port = host_port
 
-        self._main_thread.start()
+        self._start_agent()
+        is_active = True
 
-    def stop(self):
+        self._input_checker.start()
+        self._set_up_autocommands()
+
+
+    def stop(self, invoked_from_autocmd=True):
+        global is_active
+        if not is_active:
+            if not invoked_from_autocmd:
+                print "No instance running."
+            return
+
+        is_active = False
+        self._should_check_buffer.release()
+
         self._shut_down_agent()
 
-        self._main_thread.join()
-
-        if self._is_host:
-            global should_exit
-            should_exit = True
+        if self._is_host and is_running(self._input_checker):
             self._input_checker.join()
-        else:
+        elif not self._is_host and is_running(self._output_checker):
             self._output_checker.join()
+
+
+def is_running(thread):
+    return thread is not None and thread.isAlive()
 
 
 tandem_agent = TandemPlugin()
