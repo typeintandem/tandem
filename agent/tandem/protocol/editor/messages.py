@@ -16,24 +16,7 @@ class EditorProtocolMessageType(enum.Enum):
     ConnectTo = "connect-to"
 
 
-class EditorTextTransform:
-
-    """
-    Ensure that the contents is a list of strings representing the
-    buffer contents.
-    """
-    def __guard__(self, contents):
-        if not isinstance(contents, list):
-            raise EditorProtocolContentTypeError
-        for c in contents:
-            if not isinstance(c, str):
-                raise EditorProtocolContentTypeError
-
-    def __init__(self, contents):
-        pass
-
-
-class UserChangedEditorText(EditorTextTransform):
+class UserChangedEditorText:
 
     """
     Sent by the editor plugin to the agent to
@@ -55,7 +38,7 @@ class UserChangedEditorText(EditorTextTransform):
         return UserChangedEditorText(payload["contents"])
 
 
-class ApplyText(EditorTextTransform):
+class ApplyText:
     """
     Sent by the agent to the editor plugin to
     notify it that someone else edited the text buffer.
