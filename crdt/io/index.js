@@ -1,16 +1,14 @@
 const ioHandlers = [];
-let inPayload = '';
+let currentPayload = '';
 
 process.stdin.resume();
 process.stdin.setEncoding('utf-8');
 process.stdin.on('data', (data) => {
-    if (data === '\n') {
-        const currPayload = inPayload;
-        ioHandlers.forEach(handler => setImmediate(() => handler(currPayload)));
-        inPayload = '';
-    } else {
-        inPayload += data;
-    }
+    const payloadList = (currentPayload + data).split('\n');
+    currentPayload = payloadList.pop();
+    payloadList.forEach((payload) => {
+        ioHandlers.forEach(handler => setImmediate(() => handler(payload)));
+    });
 });
 
 const addIoHandler = handler => ioHandlers.push(handler);
