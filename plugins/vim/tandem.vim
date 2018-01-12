@@ -119,10 +119,8 @@ class TandemPlugin:
 
     def _handle_message(self, msg):
         try:
-            print msg
             message = m.deserialize(msg)
             if isinstance(message, m.ApplyText):
-                print message.contents[0]
                 vim.current.buffer[:] = message.contents
                 vim.command(":redraw")
         except m.EditorProtocolMarshalError:
