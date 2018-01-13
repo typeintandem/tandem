@@ -51,6 +51,11 @@ class Ping:
 class NewOperations:
     """
     Sent to other agents to notify them of new CRDT operations to apply.
+
+    The value of operations_list should be passed as-is to the document's
+    apply_operations() function. The patches that are returned by that
+    call should be passed to the plugin using the ApplyPatches editor
+    protocol message.
     """
     def __init__(self, operations_list):
         self.type = InteragentProtocolMessageType.NewOperations

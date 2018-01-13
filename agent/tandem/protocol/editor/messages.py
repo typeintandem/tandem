@@ -80,10 +80,21 @@ class ConnectTo:
 
 class NewPatches:
     """
-    Sent by the plugin to the agent to inform it of text buffer patches.
-    start: {row, col}
-    end: {row, col}
-    text: ""
+    Sent by the plugin to the agent to inform it of changes made by
+    the user to their local text buffer.
+
+    patch_list should be a list of dictionaries where each dictionary
+    represents a change that the user made to their local text buffer.
+    The patches should be ordered such that they are applied in the
+    correct order when the list is traversed from front to back.
+
+    Each patch should have the form:
+
+    {
+        "start": {"row": <row>, "column": <column>},
+        "end": {"row": <row>, "column": <column>},
+        "text": <text>,
+    }
     """
     def __init__(self, patch_list):
         self.type = EditorProtocolMessageType.NewPatches
@@ -100,6 +111,26 @@ class NewPatches:
 
 
 class ApplyPatches:
+    """
+    Sent by the agent to the plugin to inform it of remote changes
+    that should be applied to their local text buffer.
+
+    patch_list will be a list of dictionaries where each dictionary
+    represents a change that some remote user made to the text buffer.
+    The order of the patches is significant. They should applied in
+    the order they are found in this message.
+
+    Each patch will have the form:
+
+    {
+        "oldStart": {"row": <row>, "column": <column>},
+        "oldEnd": {"row": <row>, "column": <column>},
+        "oldText": <old text>,
+        "newStart": {"row": <row>, "column": <column>},
+        "newEnd": {"row": <row>, "column": <column>},
+        "newText": <new text>,
+    }
+    """
     def __init__(self, patch_list):
         self.type = EditorProtocolMessageType.ApplyPatches
         self.patch_list = patch_list
