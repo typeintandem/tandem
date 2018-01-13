@@ -10,6 +10,8 @@ class EditorProtocolMessageType(enum.Enum):
     UserChangedEditorText = "user-changed-editor-text"
     ApplyText = "apply-text"
     ConnectTo = "connect-to"
+    NewPatches = "new-patches"
+    ApplyPatches = "apply-patches"
 
 
 class UserChangedEditorText:
@@ -76,6 +78,42 @@ class ConnectTo:
         return ConnectTo(payload["host"], payload["port"])
 
 
+class NewPatches:
+    """
+    Sent by the plugin to the agent to inform it of text buffer patches.
+    start: {row, col}
+    end: {row, col}
+    text: ""
+    """
+    def __init__(self, patch_list):
+        self.type = EditorProtocolMessageType.NewPatches
+        self.patch_list = patch_list
+
+    def to_payload(self):
+        return {
+            "patch_list": self.patch_list
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return NewPatches(payload["patch_list"])
+
+
+class ApplyPatches:
+    def __init__(self, patch_list):
+        self.type = EditorProtocolMessageType.ApplyPatches
+        self.patch_list = patch_list
+
+    def to_payload(self):
+        return {
+            "patch_list": self.patch_list
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return ApplyPatches(payload["patch_list"])
+
+
 def serialize(message):
     as_dict = {
         "type": message.type.value,
@@ -100,6 +138,12 @@ def deserialize(data):
 
         elif message_type == EditorProtocolMessageType.ApplyText.value:
             return ApplyText.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.NewPatches.value:
+            return NewPatches.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.ApplyPatches.value:
+            return ApplyPatches.from_payload(payload)
 
         else:
             raise EditorProtocolMarshalError

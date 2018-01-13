@@ -9,6 +9,7 @@ class InteragentProtocolMarshalError(ValueError):
 class InteragentProtocolMessageType(enum.Enum):
     TextChanged = "text-changed"
     Ping = "ping"
+    NewOperations = "new-operations"
 
 
 class TextChanged:
@@ -47,6 +48,24 @@ class Ping:
         return Ping(payload["ttl"])
 
 
+class NewOperations:
+    """
+    Sent to other agents to notify them of new CRDT operations to apply.
+    """
+    def __init__(self, operations_list):
+        self.type = InteragentProtocolMessageType.NewOperations
+        self.operations_list = operations_list
+
+    def to_payload(self):
+        return {
+            "operations_list": self.operations_list,
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return NewOperations(payload["operations_list"])
+
+
 def serialize(message):
     as_dict = {
         "type": message.type.value,
@@ -67,6 +86,9 @@ def deserialize(data):
 
         elif message_type == InteragentProtocolMessageType.Ping.value:
             return Ping.from_payload(payload)
+
+        elif message_type == InteragentProtocolMessageType.NewOperations.value:
+            return NewOperations.from_payload(payload)
 
         else:
             raise InteragentProtocolMarshalError
