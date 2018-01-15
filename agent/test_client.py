@@ -1,15 +1,17 @@
 import sys
+import os
 import time
 import random
 from subprocess import Popen, PIPE
 import tandem.protocol.editor.messages as m
+from tandem.configuration import BASE_DIR
 
 
 def start_agent(extra_args=None):
     if extra_args is None:
         extra_args = []
     return Popen(
-        ["python3", "main.py"] + extra_args,
+        ["python3", os.path.join(BASE_DIR, "main.py")] + extra_args,
         stdin=PIPE,
         stdout=PIPE,
         encoding="utf-8",

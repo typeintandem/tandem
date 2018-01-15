@@ -1,7 +1,9 @@
 import json
+import os
 from subprocess import Popen, PIPE
+from tandem.configuration import CRDT_PATH
 
-CRDT_PROCESS = ["node", "../crdt/build/bundle.js"]
+CRDT_PROCESS = ["node", os.path.join(CRDT_PATH, "build", "bundle.js")]
 
 
 class Document:
