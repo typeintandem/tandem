@@ -10,6 +10,8 @@ class EditorProtocolMessageType(enum.Enum):
     UserChangedEditorText = "user-changed-editor-text"
     ApplyText = "apply-text"
     ConnectTo = "connect-to"
+    NewPatches = "new-patches"
+    ApplyPatches = "apply-patches"
 
 
 class UserChangedEditorText:
@@ -76,6 +78,73 @@ class ConnectTo:
         return ConnectTo(payload["host"], payload["port"])
 
 
+class NewPatches:
+    """
+    Sent by the plugin to the agent to inform it of changes made by
+    the user to their local text buffer.
+
+    patch_list should be a list of dictionaries where each dictionary
+    represents a change that the user made to their local text buffer.
+    The patches should be ordered such that they are applied in the
+    correct order when the list is traversed from front to back.
+
+    Each patch should have the form:
+
+    {
+        "start": {"row": <row>, "column": <column>},
+        "end": {"row": <row>, "column": <column>},
+        "text": <text>,
+    }
+    """
+    def __init__(self, patch_list):
+        self.type = EditorProtocolMessageType.NewPatches
+        self.patch_list = patch_list
+
+    def to_payload(self):
+        return {
+            "patch_list": self.patch_list
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return NewPatches(payload["patch_list"])
+
+
+class ApplyPatches:
+    """
+    Sent by the agent to the plugin to inform it of remote changes
+    that should be applied to their local text buffer.
+
+    patch_list will be a list of dictionaries where each dictionary
+    represents a change that some remote user made to the text buffer.
+    The order of the patches is significant. They should applied in
+    the order they are found in this message.
+
+    Each patch will have the form:
+
+    {
+        "oldStart": {"row": <row>, "column": <column>},
+        "oldEnd": {"row": <row>, "column": <column>},
+        "oldText": <old text>,
+        "newStart": {"row": <row>, "column": <column>},
+        "newEnd": {"row": <row>, "column": <column>},
+        "newText": <new text>,
+    }
+    """
+    def __init__(self, patch_list):
+        self.type = EditorProtocolMessageType.ApplyPatches
+        self.patch_list = patch_list
+
+    def to_payload(self):
+        return {
+            "patch_list": self.patch_list
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return ApplyPatches(payload["patch_list"])
+
+
 def serialize(message):
     as_dict = {
         "type": message.type.value,
@@ -100,6 +169,12 @@ def deserialize(data):
 
         elif message_type == EditorProtocolMessageType.ApplyText.value:
             return ApplyText.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.NewPatches.value:
+            return NewPatches.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.ApplyPatches.value:
+            return ApplyPatches.from_payload(payload)
 
         else:
             raise EditorProtocolMarshalError
