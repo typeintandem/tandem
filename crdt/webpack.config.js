@@ -5,6 +5,8 @@ module.exports = {
         './index.js'
     ],
 
+    target: 'node',
+
     output: {
         path: path.resolve(__dirname, 'build'),
         filename: 'bundle.js'
