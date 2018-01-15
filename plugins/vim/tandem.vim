@@ -75,7 +75,7 @@ class TandemPlugin:
         if not self._is_host:
             message = m.ConnectTo(self._host_ip, int(self._host_port))
             self._agent.stdin.write(m.serialize(message))
-            self._agent.stdin.write("\n")
+            self._agent.stdin.write(os.linesep)
             self._agent.stdin.flush()
         else:
             print "Bound host to port: {}".format(self._agent_port)
@@ -131,7 +131,7 @@ class TandemPlugin:
     def _send_user_changed(self, text):
         message = m.UserChangedEditorText(text)
         self._agent.stdin.write(m.serialize(message))
-        self._agent.stdin.write("\n")
+        self._agent.stdin.write(os.linesep)
         self._agent.stdin.flush()
 
     def _set_up_autocommands(self):
