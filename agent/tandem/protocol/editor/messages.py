@@ -11,6 +11,8 @@ class EditorProtocolMessageType(enum.Enum):
     ApplyPatches = "apply-patches"
     CheckDocumentSync = "check-document-sync"
     ConnectTo = "connect-to"
+    WriteRequest = "write-request"
+    WriteRequestAck = "write-request-ack"
     NewPatches = "new-patches"
     UserChangedEditorText = "user-changed-editor-text"
 
@@ -93,6 +95,42 @@ class ConnectTo:
     @staticmethod
     def from_payload(payload):
         return ConnectTo(payload["host"], payload["port"])
+
+
+class WriteRequest:
+    """
+    Sent by the agent to the plugin to request for the ability
+    to apply remote operations to the CRDT.
+    """
+    def __init__(self):
+        self.type = EditorProtocolMessageType.WriteRequest
+
+    def to_payload(self):
+        return {}
+
+    @staticmethod
+    def from_payload(payload):
+        return WriteRequest()
+
+
+class WriteRequestAck:
+    """
+    Sent by the plugin to the agent in response to a WriteRequest
+    message to grant it permission to apply remote operations to the CRDT.
+
+    By sending this message the plugin agrees to not allow users
+    to modify their local buffer until the remote operations have been
+    sent back to the plugin via an ApplyPatches message.
+    """
+    def __init__(self):
+        self.type = EditorProtocolMessageType.WriteRequestAck
+
+    def to_payload(self):
+        return {}
+
+    @staticmethod
+    def from_payload(payload):
+        return WriteRequestAck()
 
 
 class NewPatches:
@@ -179,6 +217,12 @@ def deserialize(data):
 
         if message_type == EditorProtocolMessageType.ConnectTo.value:
             return ConnectTo.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.WriteRequest.value:
+            return WriteRequest.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.WriteRequestAck.value:
+            return WriteRequestAck.from_payload(payload)
 
         elif message_type == \
                 EditorProtocolMessageType.UserChangedEditorText.value:

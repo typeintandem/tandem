@@ -9,6 +9,8 @@ CRDT_PROCESS = ["node", os.path.join(CRDT_PATH, "build", "bundle.js")]
 class Document:
     def __init__(self):
         self._crdt_process = None
+        self._pending_remote_operations = []
+        self._write_request_sent = False
 
     def start(self):
         self._crdt_process = Popen(
@@ -40,6 +42,20 @@ class Document:
 
     def get_document_operations(self):
         return self._call_remote_function("getDocumentOperations")
+
+    def enqueue_remote_operations(self, operations_list):
+        self._pending_remote_operations.extend(operations_list)
+
+    def apply_queued_operations(self):
+        text_patches = self.apply_operations(self._pending_remote_operations)
+        self._pending_remote_operations.clear()
+        return text_patches
+
+    def write_request_sent(self):
+        return self._write_request_sent
+
+    def set_write_request_sent(self, value):
+        self._write_request_sent = value
 
     def _call_remote_function(self, function_name, parameters=None):
         call_message = {"function": function_name}

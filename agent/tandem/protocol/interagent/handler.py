@@ -55,10 +55,9 @@ class InteragentProtocolHandler:
         self._std_streams.write_string_message(apply_text)
 
     def _handle_new_operations(self, message, sender_address):
-        text_patches = self._document.apply_operations(message.operations_list)
-        if len(text_patches) == 0:
-            return
-        apply_patches_message = em.ApplyPatches(text_patches)
-        self._std_streams.write_string_message(
-            em.serialize(apply_patches_message),
-        )
+        self._document.enqueue_remote_operations(message.operations_list)
+        if not self._document.write_request_sent():
+            self._std_streams.write_string_message(
+                em.serialize(em.WriteRequest()),
+            )
+            self._document.set_write_request_sent(True)

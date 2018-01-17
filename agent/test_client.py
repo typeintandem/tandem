@@ -36,6 +36,12 @@ def send_new_patches(agent_stdin, start, end, text):
     agent_stdin.flush()
 
 
+def send_request_write_ack(agent_stdin):
+    agent_stdin.write(m.serialize(m.WriteRequestAck()))
+    agent_stdin.write("\n")
+    agent_stdin.flush()
+
+
 def print_raw_message(agent_stdout):
     resp = agent_stdout.readline()
     print("Received: " + resp)
@@ -177,9 +183,6 @@ def crdt_test():
     )
     print("Agent 1 made an edit")
 
-    # Expect agent2 to receive an ApplyPatches message
-    print_raw_message(agent2.stdout)
-
     # Simulate a text buffer change - the plugin notifes agent1 that
     # the text buffer has changed
     send_new_patches(
@@ -190,7 +193,16 @@ def crdt_test():
     )
     print("Agent 1 made a second edit")
 
-    # Expect agent2 to receive an ApplyPatches message
+    # The agent should not resend the request write message
+    time.sleep(1)
+
+    # Expect agent2 to receive a "Request Write" message
+    print_raw_message(agent2.stdout)
+
+    # Allow the plugin to apply the remote changes
+    send_request_write_ack(agent2.stdin)
+
+    # Expect agent2 to get the changes
     print_raw_message(agent2.stdout)
 
     # Simulate an edit that occurs on agent2's machine
@@ -202,7 +214,31 @@ def crdt_test():
     )
     print("Agent 2 made an edit")
 
-    # Expect agent1 to receive an ApplyPatches message
+    # Expect agent1 to receive a RequestWrite message
+    print_raw_message(agent1.stdout)
+
+    # Allow changes to be applied
+    send_request_write_ack(agent1.stdin)
+
+    # Expect to receive the text patches
+    print_raw_message(agent1.stdout)
+
+    # Simulate an edit that occurs on agent2's machine
+    send_new_patches(
+        agent2.stdin,
+        {"row": 0, "column": 0},
+        {"row": 0, "column": 0},
+        "Agent 2 says hi again! ",
+    )
+    print("Agent 2 made a second edit!")
+
+     # Expect agent1 to receive a RequestWrite message
+    print_raw_message(agent1.stdout)
+
+    # Allow changes to be applied
+    send_request_write_ack(agent1.stdin)
+
+    # Expect to receive the text patches
     print_raw_message(agent1.stdout)
 
     time.sleep(2)
