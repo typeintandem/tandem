@@ -36,6 +36,30 @@ class UserChangedEditorText:
         return UserChangedEditorText(payload["contents"])
 
 
+class CheckDocumentSync:
+
+    """
+    Sent by the editor plugin to the agent to
+    check whether the editor and the crdt have their
+    document contents in sync
+    """
+
+    def __init__(self, contents):
+        # self.__guard__(contents)
+
+        self.type = EditorProtocolMessageType.CheckDocumentSync
+        self.contents = contents
+
+    def to_payload(self):
+        return {
+            "contents": self.contents,
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return UserChangedEditorText(payload["contents"])
+
+
 class ApplyText:
     """
     Sent by the agent to the editor plugin to

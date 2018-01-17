@@ -62,6 +62,7 @@ class TandemPlugin:
 
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
+        self._document_syncer = Thread(target=self._check_document_sync)
         self._should_check_buffer = Semaphore(0)
         self._ui = Semaphore(0)
         self._read_write_check = Semaphore(1)
@@ -85,6 +86,15 @@ class TandemPlugin:
 
         if not self._is_host:
             self._output_checker.start()
+
+    def _check_document_sync(self):
+        while is_active:
+            current_buffer = vim.current.buffer[:]
+            message = m.CheckDocumentSync(current_buffer)
+            self._agent.stdin.write(m.serialize(message))
+            self._agent.stdin.write("\n")
+            self._agent.stdin.flush()
+            sleep(1)
 
     def _shut_down_agent(self):
         self._agent.stdin.close()

@@ -18,6 +18,8 @@ class EditorProtocolHandler:
                 self._handle_user_changed_editor_text(message)
             elif type(message) is em.NewPatches:
                 self._handle_new_patches(message)
+            elif type(message) is em.CheckDocumentSync:
+                self._handle_check_document_sync(message)
         except em.EditorProtocolMarshalError:
             logging.info("Ignoring invalid editor protocol message.")
         except:
@@ -54,3 +56,9 @@ class EditorProtocolHandler:
             operations.extend(operations_list)
         new_operations_message = im.serialize(im.NewOperations(operations))
         self._connection_manager.broadcast(new_operations_message)
+
+    def _handle_check_document_sync(self, message):
+        document_text_content = self._document.get_document_text()
+        if (message.contents != document_text_content):
+            apply_text = em.serialize(em.ApplyText(document_text_context))
+            self._std_streams.write_string_message(apply_text)
