@@ -37,7 +37,7 @@ if tandem_agent_path not in sys.path:
 
 import tandem.protocol.editor.messages as m
 
-DEBUG = True
+DEBUG = False
 is_active = False
 
 def spawn_agent(extra_args=None):
@@ -157,11 +157,17 @@ class TandemPlugin:
                 print operation, " ", lines_affected
 
             if operation == '-':
-                # TODO: fix deletion not working.
                 # Delete from start of current line to end of last specified line.
-                start = (line, 0)
-                end_line = line + len(lines_affected) - 1
-                end = (end_line, len(self._buffer[end_line]))
+                if line == 0:
+                    start = (0, 0)
+                    if len(self._buffer) == 1:
+                        end = (0, len(self._buffer[0]))
+                    else:
+                        end = (1, 0)
+                else:
+                    start = (line - 1, len(self._buffer[line - 1]))
+                    end_line = line + len(lines_affected) - 1
+                    end = (end_line, len(self._buffer[end_line]))
                 text = ""
                 patches.append(
                   self._create_patch(start, end, text)
@@ -221,11 +227,21 @@ class TandemPlugin:
                     start = patch["oldStart"]
                     end = patch["oldEnd"]
                     text = patch["newText"]
+
                     # For now, assume deletion is whole line and insertion is at a single point.
-                    before = vim.current.buffer[:start["row"]]
+                    # Modifying the first row only (only thing that exists)
+                    if start["row"] == 0 and end["row"] == 0:
+                        before_row = 0
+                    else:
+                        before_row = start["row"] + 1
+
+                    before = vim.current.buffer[:before_row]
+
                     after_row = end["row"] if (text == os.linesep) else end["row"] + 1
                     after = vim.current.buffer[after_row:]
+
                     new_lines = text.splitlines() if text != "" else []
+
                     if DEBUG:
                         print "buffer: ", vim.current.buffer[:]
                         print "start: ", start
@@ -242,7 +258,6 @@ class TandemPlugin:
                         print "after: ", after
                     vim.current.buffer[:] = before + new_lines + after
 
-            # TODO: Add r/w lock.
             self._buffer = vim.current.buffer[:]
             vim.command(":redraw")
             # Allow the next input/output checker thread to continue.
