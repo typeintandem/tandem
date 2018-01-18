@@ -23,7 +23,6 @@ import os
 import sys
 import random
 from time import sleep
-import pprint
 
 from subprocess import Popen, PIPE
 from threading import Lock, Thread, Semaphore
@@ -44,9 +43,8 @@ import tandem.protocol.editor.messages as m
 
 DEBUG = False
 is_active = False
-count = 0
-pp = pprint.PrettyPrinter(indent=4)
 patch = diff_match_patch()
+
 
 def spawn_agent(extra_args=None):
     if extra_args is None:
@@ -71,6 +69,13 @@ def index_to_point(buffer, index):
             index_left -= 1
         else:
             return (i, index_left)
+
+
+def error():
+    print "An error occurred."
+    global DEBUG
+    if DEBUG:
+        raise
 
 
 class TandemPlugin:
@@ -111,7 +116,6 @@ class TandemPlugin:
                 if not is_active:
                     break
 
-                continue
                 current_buffer = vim.current.buffer[:]
                 message = m.CheckDocumentSync(current_buffer)
 
@@ -203,25 +207,12 @@ class TandemPlugin:
 
                 start_rc = index_to_point(self._buffer, start_index)
                 end_rc = index_to_point(self._buffer, end_index)
-                #end_rc = (end_rc[0], end_rc[1] + 1)
-
-                print "==========="
 
                 text = []
                 for (op, data) in p.diffs:
                     if op == diff_match_patch.DIFF_INSERT or op == diff_match_patch.DIFF_EQUAL:
                         text.append(data)
                 text = "".join(text)
-
-                #print str(p)
-                #print "start: ", start
-                #print "end: ", end
-                if text == "":
-                    print "text: emptystr"
-                elif text == os.linesep:
-                    print "text: newline"
-                else:
-                    print "text: ", text
 
                 patches.extend(
                   self._create_patch(start_rc, end_rc, text)
@@ -234,11 +225,8 @@ class TandemPlugin:
 
                 self._agent.stdin.write(os.linesep)
                 self._agent.stdin.flush()
-
-                if DEBUG:
-                    print "Sent patches: " + str(message.patch_list)
         except:
-            raise
+            error()
 
     def _check_message(self):
         while True:
@@ -253,17 +241,9 @@ class TandemPlugin:
             message = m.deserialize(msg)
             with self._read_write_check:
                 if isinstance(message, m.ApplyText):
-                    if DEBUG:
-                        print "============="
-                        print "Applying text."
-                        print str(message.contents)
                     vim.current.buffer[:] = message.contents
                     # TODO: Send ack back to agent.
                 elif isinstance(message, m.ApplyPatches):
-                    if DEBUG:
-                        print "============="
-                        print "Received patches: "
-                        pp.pprint(message.patch_list)
                     for patch in message.patch_list:
                         start = patch["oldStart"]
                         end = patch["oldEnd"]
@@ -273,9 +253,10 @@ class TandemPlugin:
                         before_lines = current_buffer[:start["row"]]
                         after_lines = current_buffer[end["row"] + 1:]
 
-                        new_lines = text.split(os.linesep)
                         before_in_new_line = current_buffer[start["row"]][:start["column"]]
-                        after_in_new_line = current_buffer[end["row"]][end["column"] + 1:]
+                        after_in_new_line = current_buffer[end["row"]][end["column"]:]
+
+                        new_lines = text.split(os.linesep)
                         if len(new_lines) > 0:
                             new_lines[0] = before_in_new_line + new_lines[0]
                         else:
@@ -289,9 +270,7 @@ class TandemPlugin:
                 self._buffer = vim.current.buffer[:]
                 vim.command(":redraw")
         except:
-            print "An error occurred."
-            if DEBUG:
-                raise
+            error()
 
     def _set_up_autocommands(self):
         vim.command(':autocmd!')
@@ -335,6 +314,8 @@ class TandemPlugin:
             self._input_checker.join()
         if self._output_checker.isAlive():
             self._output_checker.join()
+        if self._document_syncer.isAlive():
+            self._document_syncer.join()
 
 
 tandem_agent = TandemPlugin()

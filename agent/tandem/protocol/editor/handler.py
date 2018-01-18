@@ -63,15 +63,9 @@ class EditorProtocolHandler:
         document_text_content = self._document.get_document_text()
 
         # TODO: ignore all other messages until we receive an ack
-        if message.contents == ['']:
-            contents = ''
-        else:
-            contents = os.linesep.join(message.contents) + os.linesep
+        contents = os.linesep.join(message.contents) + os.linesep
 
         if (contents != document_text_content):
-
-            document_lines = document_text_content.splitlines()
-            document_lines = document_lines[:-1]
-
+            document_lines = document_text_content.split(os.linesep)
             apply_text = em.serialize(em.ApplyText(document_lines))
             self._std_streams.write_string_message(apply_text)
