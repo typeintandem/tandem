@@ -63,6 +63,16 @@ def get_string_port():
     return str(starting_port)
 
 
+def index_to_point(buffer, index):
+    index_left = index
+    for i in range(len(buffer)):
+        if index_left >= len(buffer[i]) + 1:
+            index_left -= len(buffer[i])
+            index_left -= 1
+        else:
+            return (i, index_left)
+
+
 class TandemPlugin:
 
     def __init__(self):
@@ -154,17 +164,31 @@ class TandemPlugin:
                 raise ValueError
             else:
                 return None
-        return {
-            "start": {
-                "row": start[0],
-                "column": start[1],
+        return [
+            {
+                "start": {
+                    "row": start[0],
+                    "column": start[1],
+                },
+                "end": {
+                    "row": end[0],
+                    "column": end[1],
+                },
+                "text": "",
             },
-            "end": {
-                "row": end[0],
-                "column": end[1],
-            },
-            "text": text,
-        }
+            {
+                "start": {
+                    "row": start[0],
+                    "column": start[1],
+                },
+                "end": {
+                    "row": 0,
+                    "column": 0,
+                },
+                "text": text,
+            }
+        ]
+
 
     def _send_patches(self, current_buffer):
         try :
@@ -174,65 +198,14 @@ class TandemPlugin:
 
             patches = []
             for p in diff_patches:
-                start = (None, None)
-                end = (None, None)
-
                 start_index = p.start1
-                end_index = p.start1 + p.length1
+                end_index = p.start1 + p.length1 # - 1
 
-                line = 0
-                start_counter = 0
+                start_rc = index_to_point(self._buffer, start_index)
+                end_rc = index_to_point(self._buffer, end_index)
+                #end_rc = (end_rc[0], end_rc[1] + 1)
 
                 print "==========="
-
-                for row in self._buffer:
-                    if start_counter + len(row) + 1 >= start_index:
-                        col = start_index - start_counter
-                        print "col: ", col
-                        print "sstart_index: ", start_index
-                        print "start_counter: ", start_counter
-                        if col >= len(self._buffer[line]):
-                            next_line = min(line + 1, len(self._buffer) - 1)
-                            print "adjusting start due to line length overflow or newline"
-                            if next_line == line:
-                                print "... to ... sorry, same line"
-                                # end = (line, max(0, max(len(self._buffer[line]) - 1, col - 1)))
-                                start = (line, col)
-                            else:
-                                print "...to start of next line"
-                                start = (next_line, 0)
-                        start = (line, col)
-                        break
-
-                    line += 1
-                    start_counter += len(row) + 1
-
-                line = 0
-                end_counter = 0
-                for row in self._buffer:
-                    if end_counter + len(row) + 1 >= end_index:
-                        print "col: ", col
-                        print "end_index: ", end_index
-                        print "end_counter: ", end_counter
-                        col = end_index - end_counter
-                        if col >= len(self._buffer[line]):
-                          # or self._buffer[line][col] == os.linesep:
-                              # end = (line, max(0, col - 1))
-                            print "adjusting end due to line length overflow or newline"
-                            next_line = min(line + 1, len(self._buffer) - 1)
-                            if next_line == line:
-                                print "... to ... sorry, same line"
-                                # end = (line, max(0, max(len(self._buffer[line]) - 1, col - 1)))
-                                end = (line, col)
-                            else:
-                                print "...to start of next line"
-                                end = (next_line, 0)
-                        else:
-                            end = (line, col)
-                        break
-
-                    line += 1
-                    end_counter += len(row) + 1
 
                 text = []
                 for (op, data) in p.diffs:
@@ -240,9 +213,9 @@ class TandemPlugin:
                         text.append(data)
                 text = "".join(text)
 
-                print str(p)
-                print "start: ", start
-                print "end: ", end
+                #print str(p)
+                #print "start: ", start
+                #print "end: ", end
                 if text == "":
                     print "text: emptystr"
                 elif text == os.linesep:
@@ -250,8 +223,8 @@ class TandemPlugin:
                 else:
                     print "text: ", text
 
-                patches.append(
-                  self._create_patch(start, end, text)
+                patches.extend(
+                  self._create_patch(start_rc, end_rc, text)
                 )
 
             patches = [p for p in patches if p is not None]
