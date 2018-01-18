@@ -56,6 +56,7 @@ class InteragentProtocolHandler:
 
     def _handle_new_operations(self, message, sender_address):
         text_patches = self._document.apply_operations(message.operations_list)
+        logging.info("listener: " + self._document.get_document_text())
         if len(text_patches) == 0:
             return
         apply_patches_message = em.ApplyPatches(text_patches)

@@ -7,11 +7,12 @@ class EditorProtocolMarshalError(ValueError):
 
 
 class EditorProtocolMessageType(enum.Enum):
-    UserChangedEditorText = "user-changed-editor-text"
     ApplyText = "apply-text"
+    ApplyPatches = "apply-patches"
+    CheckDocumentSync = "check-document-sync"
     ConnectTo = "connect-to"
     NewPatches = "new-patches"
-    ApplyPatches = "apply-patches"
+    UserChangedEditorText = "user-changed-editor-text"
 
 
 class UserChangedEditorText:
@@ -21,8 +22,6 @@ class UserChangedEditorText:
     notify it that the user changed the text buffer.
     """
     def __init__(self, contents):
-        # self.__guard__(contents)
-
         self.type = EditorProtocolMessageType.UserChangedEditorText
         self.contents = contents
 
@@ -37,16 +36,12 @@ class UserChangedEditorText:
 
 
 class CheckDocumentSync:
-
     """
     Sent by the editor plugin to the agent to
     check whether the editor and the crdt have their
     document contents in sync
     """
-
     def __init__(self, contents):
-        # self.__guard__(contents)
-
         self.type = EditorProtocolMessageType.CheckDocumentSync
         self.contents = contents
 
@@ -57,7 +52,7 @@ class CheckDocumentSync:
 
     @staticmethod
     def from_payload(payload):
-        return UserChangedEditorText(payload["contents"])
+        return CheckDocumentSync(payload["contents"])
 
 
 class ApplyText:
@@ -66,8 +61,6 @@ class ApplyText:
     notify it that someone else edited the text buffer.
     """
     def __init__(self, contents):
-        # self.__guard__(contents)
-
         self.type = EditorProtocolMessageType.ApplyText
         self.contents = contents
 
@@ -200,6 +193,8 @@ def deserialize(data):
         elif message_type == EditorProtocolMessageType.ApplyPatches.value:
             return ApplyPatches.from_payload(payload)
 
+        elif message_type == EditorProtocolMessageType.CheckDocumentSync.value:
+            return CheckDocumentSync.from_payload(payload)
         else:
             raise EditorProtocolMarshalError
 

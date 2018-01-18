@@ -1,3 +1,4 @@
+import os
 import logging
 import tandem.protocol.editor.messages as em
 import tandem.protocol.interagent.messages as im
@@ -52,6 +53,7 @@ class EditorProtocolHandler:
             for patch in message.patch_list
         ]
         operations = []
+        logging.info("host: " + str(self._document.get_document_text()))
         for operations_list in nested_operations:
             operations.extend(operations_list)
         new_operations_message = im.serialize(im.NewOperations(operations))
@@ -59,6 +61,17 @@ class EditorProtocolHandler:
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()
-        if (message.contents != document_text_content):
-            apply_text = em.serialize(em.ApplyText(document_text_context))
+
+        # TODO: ignore all other messages until we receive an ack
+        if message.contents == ['']:
+            contents = ''
+        else:
+            contents = os.linesep.join(message.contents) + os.linesep
+
+        if (contents != document_text_content):
+
+            document_lines = document_text_content.splitlines()
+            document_lines = document_lines[:-1]
+
+            apply_text = em.serialize(em.ApplyText(document_lines))
             self._std_streams.write_string_message(apply_text)
