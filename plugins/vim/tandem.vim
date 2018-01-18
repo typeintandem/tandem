@@ -260,7 +260,7 @@ class TandemPlugin:
                     vim.current.buffer[:] = message.contents
                     # TODO: Send ack back to agent.
                 elif isinstance(message, m.ApplyPatches):
-                    if DEBUG or True:
+                    if DEBUG:
                         print "============="
                         print "Received patches: "
                         pp.pprint(message.patch_list)
@@ -270,44 +270,27 @@ class TandemPlugin:
                         text = patch["newText"]
 
                         current_buffer = vim.current.buffer[:]
-                        print "buffer: ", current_buffer
-                        print "curr patch: "
-                        pp.pprint(patch)
+                        before_lines = current_buffer[:start["row"]]
+                        after_lines = current_buffer[end["row"] + 1:]
 
-                        buffer_as_string = os.linesep.join(current_buffer)
-                        start_index = 0
-                        end_index = 0
-                        counter = 0
-                        both_done = 0
+                        new_lines = text.split(os.linesep)
+                        before_in_new_line = current_buffer[start["row"]][:start["column"]]
+                        after_in_new_line = current_buffer[end["row"]][end["column"] + 1:]
+                        if len(new_lines) > 0:
+                            new_lines[0] = before_in_new_line + new_lines[0]
+                        else:
+                            new_lines = [before_in_new_line]
 
-                        for row in current_buffer:
-                            if start["row"] == counter:
-                                start_index = start_index + start["column"]
-                                both_done = both_done + 1
+                        new_lines[-1] = new_lines[-1] + after_in_new_line
 
-                            if end["row"] == counter:
-                                end_index = end_index + end["column"]
-                                both_done = both_done + 1
-
-                            if both_done >= 2:
-                                break
-
-                            start_index = start_index + len(row)
-                            end_index = end_index + len(row)
-                            counter += 1
-
-                        buffer_as_string = buffer_as_string[:start_index] + \
-                            text + buffer_as_string[end_index + 1:]
-
-                        extra_line = [''] if text == os.linesep else []
-                        print "ex_line: ", extra_line
-                        vim.current.buffer[:] = buffer_as_string.splitlines() + extra_line
+                        vim.current.buffer[:] = \
+                            before_lines + new_lines + after_lines
 
                 self._buffer = vim.current.buffer[:]
                 vim.command(":redraw")
         except:
             print "An error occurred."
-            if DEBUG or True:
+            if DEBUG:
                 raise
 
     def _set_up_autocommands(self):
