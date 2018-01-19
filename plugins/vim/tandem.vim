@@ -80,7 +80,7 @@ def error():
 
 class TandemPlugin:
 
-    def initialize(self):
+    def _initialize(self):
         self._buffer = vim.current.buffer[:]
 
         self._input_checker = Thread(target=self._check_buffer)
@@ -291,7 +291,7 @@ class TandemPlugin:
             self._host_ip = host_ip
             self._host_port = host_port
 
-        self.initialize()
+        self._initialize()
         self._start_agent()
         is_active = True
 
