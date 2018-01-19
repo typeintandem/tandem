@@ -203,7 +203,7 @@ class TandemPlugin:
             patches = []
             for p in diff_patches:
                 start_index = p.start1
-                end_index = p.start1 + p.length1 # - 1
+                end_index = p.start1 + p.length1
 
                 start_rc = index_to_point(self._buffer, start_index)
                 end_rc = index_to_point(self._buffer, end_index)
