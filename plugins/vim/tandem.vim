@@ -25,7 +25,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Thread, Semaphore
+from threading import Lock, Thread, Semaphore
 
 import vim
 
@@ -34,10 +34,17 @@ import vim
 tandem_agent_path = os.path.abspath('../../agent')
 if tandem_agent_path not in sys.path:
     sys.path.insert(0, tandem_agent_path)
+local_path = os.path.abspath('./')
+if local_path not in sys.path:
+    sys.path.insert(0, local_path)
 
+from diff_match_patch import diff_match_patch
 import tandem.protocol.editor.messages as m
 
+DEBUG = False
 is_active = False
+patch = diff_match_patch()
+
 
 def spawn_agent(extra_args=None):
     if extra_args is None:
@@ -54,6 +61,23 @@ def get_string_port():
     return str(starting_port)
 
 
+def index_to_point(buffer, index):
+    index_left = index
+    for i in range(len(buffer)):
+        if index_left >= len(buffer[i]) + 1:
+            index_left -= len(buffer[i])
+            index_left -= 1
+        else:
+            return (i, index_left)
+
+
+def error():
+    print "An error occurred."
+    global DEBUG
+    if DEBUG:
+        raise
+
+
 class TandemPlugin:
 
     def __init__(self):
@@ -61,7 +85,10 @@ class TandemPlugin:
 
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
+        self._document_syncer = Thread(target=self._check_document_sync)
         self._should_check_buffer = Semaphore(0)
+        self._ui = Semaphore(0)
+        self._read_write_check = Lock()
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -77,11 +104,26 @@ class TandemPlugin:
             self._agent.stdin.write(m.serialize(message))
             self._agent.stdin.write("\n")
             self._agent.stdin.flush()
-        else:
-            print "Bound host to port: {}".format(self._agent_port)
 
-        if not self._is_host:
-            self._output_checker.start()
+        print "Bound agent to port: {}".format(self._agent_port)
+
+        self._output_checker.start()
+
+    def _check_document_sync(self):
+        global is_active
+        while is_active:
+            with self._read_write_check:
+                if not is_active:
+                    break
+
+                current_buffer = vim.current.buffer[:]
+                message = m.CheckDocumentSync(current_buffer)
+
+                self._agent.stdin.write(m.serialize(message))
+                self._agent.stdin.write("\n")
+                self._agent.stdin.flush()
+
+            sleep(0.5)
 
     def _shut_down_agent(self):
         self._agent.stdin.close()
@@ -89,26 +131,102 @@ class TandemPlugin:
         self._agent.wait()
 
     def check_buffer(self):
+        # Allow the user input to be checked.
         self._should_check_buffer.release()
+        # Block the UI until the user input is processed.
+        self._ui.acquire()
 
     def _check_buffer(self):
         while True:
+            # Wait on a signal from the autocommand that the text has changed
             self._should_check_buffer.acquire()
+            global is_active
             if not is_active:
               break
 
-            current_buffer = vim.current.buffer[:]
+            with self._read_write_check:
+                current_buffer = vim.current.buffer[:]
 
-            if current_buffer is not None and \
-                    len(current_buffer) != len(self._buffer):
-                self._send_user_changed(current_buffer)
+                if len(current_buffer) != len(self._buffer):
+                    self._send_patches(current_buffer)
+                else:
+                    for i in range(len(current_buffer)):
+                        if current_buffer[i] != self._buffer[i]:
+                            self._send_patches(current_buffer)
+                            break
+
+                self._buffer = current_buffer
+                # Unblock the UI.
+                self._ui.release()
+
+        self._ui.release()
+
+    def _create_patch(self, start, end, text):
+        if start is None or end is None or text is None:
+            # Raise an error if in debug mode, otherwise return None
+            if DEBUG:
+                raise ValueError
             else:
-                for i in range(len(current_buffer)):
-                    if current_buffer[i] != self._buffer[i]:
-                        self._send_user_changed(current_buffer)
-                        break
+                return None
+        return [
+            {
+                "start": {
+                    "row": start[0],
+                    "column": start[1],
+                },
+                "end": {
+                    "row": end[0],
+                    "column": end[1],
+                },
+                "text": "",
+            },
+            {
+                "start": {
+                    "row": start[0],
+                    "column": start[1],
+                },
+                "end": {
+                    "row": 0,
+                    "column": 0,
+                },
+                "text": text,
+            }
+        ]
 
-            self._buffer = current_buffer
+
+    def _send_patches(self, current_buffer):
+        try :
+            prev_contents = os.linesep.join(self._buffer)
+            curr_contents = os.linesep.join(current_buffer)
+            diff_patches = patch.patch_make(prev_contents, curr_contents)
+
+            patches = []
+            for p in diff_patches:
+                start_index = p.start1
+                end_index = p.start1 + p.length1
+
+                start_rc = index_to_point(self._buffer, start_index)
+                end_rc = index_to_point(self._buffer, end_index)
+
+                text = []
+                for (op, data) in p.diffs:
+                    if op == diff_match_patch.DIFF_INSERT or op == diff_match_patch.DIFF_EQUAL:
+                        text.append(data)
+                text = "".join(text)
+
+                patches.extend(
+                  self._create_patch(start_rc, end_rc, text)
+                )
+
+            patches = [p for p in patches if p is not None]
+            if len(patches) > 0:
+                message = m.NewPatches(patches)
+                self._agent.stdin.write(m.serialize(message))
+
+                self._agent.stdin.write("\n")
+                self._agent.stdin.flush()
+        except:
+            error()
 
     def _check_message(self):
         while True:
@@ -119,25 +237,45 @@ class TandemPlugin:
 
     def _handle_message(self, msg):
         try:
+            # Wait until the input checker thread is done.
             message = m.deserialize(msg)
-            if isinstance(message, m.ApplyText):
-                vim.current.buffer[:] = message.contents
-                vim.command(":redraw")
-        except m.EditorProtocolMarshalError:
-            pass
-        except:
-            pass
+            with self._read_write_check:
+                if isinstance(message, m.ApplyText):
+                    vim.current.buffer[:] = message.contents
+                    # TODO: Send ack back to agent.
+                elif isinstance(message, m.ApplyPatches):
+                    for patch in message.patch_list:
+                        start = patch["oldStart"]
+                        end = patch["oldEnd"]
+                        text = patch["newText"]
 
-    def _send_user_changed(self, text):
-        message = m.UserChangedEditorText(text)
-        self._agent.stdin.write(m.serialize(message))
-        self._agent.stdin.write("\n")
-        self._agent.stdin.flush()
+                        current_buffer = vim.current.buffer[:]
+                        before_lines = current_buffer[:start["row"]]
+                        after_lines = current_buffer[end["row"] + 1:]
+
+                        before_in_new_line = current_buffer[start["row"]][:start["column"]]
+                        after_in_new_line = current_buffer[end["row"]][end["column"]:]
+
+                        new_lines = text.split(os.linesep)
+                        if len(new_lines) > 0:
+                            new_lines[0] = before_in_new_line + new_lines[0]
+                        else:
+                            new_lines = [before_in_new_line]
+
+                        new_lines[-1] = new_lines[-1] + after_in_new_line
+
+                        vim.current.buffer[:] = \
+                            before_lines + new_lines + after_lines
+
+                self._buffer = vim.current.buffer[:]
+                vim.command(":redraw")
+        except:
+            error()
 
     def _set_up_autocommands(self):
         vim.command(':autocmd!')
-        vim.command('autocmd CursorMoved <buffer> py tandem_agent.check_buffer()')
-        vim.command('autocmd CursorMovedI <buffer> py tandem_agent.check_buffer()')
+        vim.command('autocmd TextChanged <buffer> py tandem_agent.check_buffer()')
+        vim.command('autocmd TextChangedI <buffer> py tandem_agent.check_buffer()')
         vim.command('autocmd VimLeave * py tandem_agent.stop()')
 
 
@@ -156,6 +294,7 @@ class TandemPlugin:
         is_active = True
 
         self._input_checker.start()
+        # self._document_syncer.start()
         self._set_up_autocommands()
 
 
@@ -171,14 +310,12 @@ class TandemPlugin:
 
         self._shut_down_agent()
 
-        if self._is_host and is_running(self._input_checker):
+        if self._input_checker.isAlive():
             self._input_checker.join()
-        elif not self._is_host and is_running(self._output_checker):
+        if self._output_checker.isAlive():
             self._output_checker.join()
-
-
-def is_running(thread):
-    return thread is not None and thread.isAlive()
+        # if self._document_syncer.isAlive():
+            # if sself._document_syncer.join()
 
 
 tandem_agent = TandemPlugin()
