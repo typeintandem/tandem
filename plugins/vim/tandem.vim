@@ -297,7 +297,7 @@ class TandemPlugin:
 
         self._initialize()
 
-        if host_ip is not None:  # assert(host_port is not None)
+        if host_ip is not None:
             self._connect_to = (host_ip, host_port)
 
         self._start_agent()
