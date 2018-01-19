@@ -27,7 +27,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Lock, Thread, Semaphore
+from threading import Lock, Thread, Semaphore, Event
 
 import vim
 
@@ -43,7 +43,7 @@ if local_path not in sys.path:
 from diff_match_patch import diff_match_patch
 import tandem.protocol.editor.messages as m
 
-DEBUG = False
+DEBUG = True
 is_active = False
 patch = diff_match_patch()
 
@@ -93,7 +93,7 @@ class TandemPlugin:
         self._document_syncer = Thread(target=self._check_document_sync)
 
         self._should_check_buffer = Semaphore(0)
-        self._ui = Semaphore(0)
+        self._buffer_check_completed = Event()
         self._read_write_check = Lock()
 
     def _start_agent(self):
@@ -138,10 +138,11 @@ class TandemPlugin:
         self._agent.wait()
 
     def check_buffer(self):
-        # Allow the user input to be checked.
-        self._should_check_buffer.release()
-        # Block the UI until the user input is processed.
-        self._ui.acquire()
+        with self._read_write_check:
+            # Allow the user input to be checked.
+            self._buffer_check_completed.clear()
+            self._should_check_buffer.release()
+            self._buffer_check_completed.wait()
 
     def _check_buffer(self):
         while True:
@@ -151,22 +152,21 @@ class TandemPlugin:
             if not is_active:
               break
 
-            with self._read_write_check:
-                current_buffer = vim.current.buffer[:]
+            # The read_write_check lock is held by the signalling thread
+            current_buffer = vim.current.buffer[:]
 
-                if len(current_buffer) != len(self._buffer):
-                    self._send_patches(current_buffer)
-                else:
-                    for i in range(len(current_buffer)):
-                        if current_buffer[i] != self._buffer[i]:
-                            self._send_patches(current_buffer)
-                            break
+            if len(current_buffer) != len(self._buffer):
+                self._send_patches(current_buffer)
+            else:
+                for i in range(len(current_buffer)):
+                    if current_buffer[i] != self._buffer[i]:
+                        self._send_patches(current_buffer)
+                        break
 
-                self._buffer = current_buffer
-                # Unblock the UI.
-                self._ui.release()
+            self._buffer = current_buffer
 
-        self._ui.release()
+            self._buffer_check_completed.set()
+
 
     def _create_patch(self, start, end, text):
         if start is None or end is None or text is None:
@@ -246,36 +246,54 @@ class TandemPlugin:
         try:
             # Wait until the input checker thread is done.
             message = m.deserialize(msg)
-            with self._read_write_check:
-                if isinstance(message, m.ApplyText):
+            if isinstance(message, m.ApplyText):
+                with self._read_write_check:
                     vim.current.buffer[:] = message.contents
                     # TODO: Send ack back to agent.
-                elif isinstance(message, m.ApplyPatches):
-                    for patch in message.patch_list:
-                        start = patch["oldStart"]
-                        end = patch["oldEnd"]
-                        text = patch["newText"]
+                    self._buffer = vim.current.buffer[:]
+                    vim.command(":redraw")
 
-                        current_buffer = vim.current.buffer[:]
-                        before_lines = current_buffer[:start["row"]]
-                        after_lines = current_buffer[end["row"] + 1:]
+            elif isinstance(message, m.WriteRequest):
+                # Acquire the lock to prevent further writes
+                self._read_write_check.acquire()
+                vim.command(":set nomodifiable")
+                self._agent.stdin.write(m.serialize(m.WriteRequestAck()))
+                self._agent.stdin.write("\n")
+                self._agent.stdin.flush()
 
-                        before_in_new_line = current_buffer[start["row"]][:start["column"]]
-                        after_in_new_line = current_buffer[end["row"]][end["column"]:]
+            elif isinstance(message, m.ApplyPatches):
+                # read_write_check lock should already be acquired
+                for patch in message.patch_list:
+                    start = patch["oldStart"]
+                    end = patch["oldEnd"]
+                    text = patch["newText"]
 
-                        new_lines = text.split(os.linesep)
-                        if len(new_lines) > 0:
-                            new_lines[0] = before_in_new_line + new_lines[0]
-                        else:
-                            new_lines = [before_in_new_line]
+                    current_buffer = vim.current.buffer[:]
+                    before_lines = current_buffer[:start["row"]]
+                    after_lines = current_buffer[end["row"] + 1:]
 
-                        new_lines[-1] = new_lines[-1] + after_in_new_line
+                    before_in_new_line = current_buffer[start["row"]][:start["column"]]
+                    after_in_new_line = current_buffer[end["row"]][end["column"]:]
 
-                        vim.current.buffer[:] = \
-                            before_lines + new_lines + after_lines
+                    new_lines = text.split(os.linesep)
+                    if len(new_lines) > 0:
+                        new_lines[0] = before_in_new_line + new_lines[0]
+                    else:
+                        new_lines = [before_in_new_line]
+
+                    new_lines[-1] = new_lines[-1] + after_in_new_line
+
+                    vim.command(":set modifiable")
+                    vim.current.buffer[:] = \
+                        before_lines + new_lines + after_lines
+                    vim.command(":set nomodifiable")
 
                 self._buffer = vim.current.buffer[:]
                 vim.command(":redraw")
+
+                # Enable editing again
+                vim.command(":set modifiable")
+                self._read_write_check.release()
         except:
             error()
 
