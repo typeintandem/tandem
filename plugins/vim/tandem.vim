@@ -10,11 +10,13 @@ if !executable('python3')
   finish
 endif
 
-" Bind the Tandem function to a globally available command
-" e.g. :Tandem h
-" e.g. :Tandem <anythingelse> localhost 1234
+" Bind the Tandem functions to globally available commands.
+" =================
+" Start agent with `:Tandem`
+" Start agent and connect to network with `:Tandem <localhost | ip> <port>`
 com! -nargs=* Tandem py tandem_agent.start(<f-args>)
-
+" ================
+" Stop agent (and disconnect from network) with `:TandemStop`
 com! TandemStop py tandem_agent.stop(False)
 
 python << EOF
@@ -91,6 +93,8 @@ class TandemPlugin:
         self._ui = Semaphore(0)
         self._read_write_check = Lock()
 
+        self._connect_to = None
+
     def _start_agent(self):
         self._agent_port = get_string_port()
         self._agent = spawn_agent([
@@ -100,8 +104,9 @@ class TandemPlugin:
             "/tmp/tandem-agent-{}.log".format(self._agent_port),
         ])
 
-        if not self._is_host:
-            message = m.ConnectTo(self._host_ip, int(self._host_port))
+        if self._connect_to is not None:
+            host_ip, host_port = self._connect_to
+            message = m.ConnectTo(host_ip, int(host_port))
             self._agent.stdin.write(m.serialize(message))
             self._agent.stdin.write("\n")
             self._agent.stdin.flush()
@@ -280,18 +285,21 @@ class TandemPlugin:
         vim.command('autocmd VimLeave * py tandem_agent.stop()')
 
 
-    def start(self, host_arg, host_ip=None, host_port=None):
+    def start(self, host_ip=None, host_port=None):
         global is_active
         if is_active:
             print "Cannot start. An instance is already running on :{}".format(self._agent_port)
             return
 
-        self._is_host = host_arg == "h"
-        if not self._is_host:
-            self._host_ip = host_ip
-            self._host_port = host_port
+        if host_ip is not None and host_port is None:
+            print "Cannot start. IP specified. You must also provide a port"
+            return
 
         self._initialize()
+
+        if host_ip is not None:  # assert(host_port is not None)
+            self._connect_to = (host_ip, host_port)
+
         self._start_agent()
         is_active = True
 
