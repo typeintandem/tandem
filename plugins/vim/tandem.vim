@@ -102,7 +102,7 @@ class TandemPlugin:
         if not self._is_host:
             message = m.ConnectTo(self._host_ip, int(self._host_port))
             self._agent.stdin.write(m.serialize(message))
-            self._agent.stdin.write(os.linesep)
+            self._agent.stdin.write("\n")
             self._agent.stdin.flush()
 
         print "Bound agent to port: {}".format(self._agent_port)
@@ -120,7 +120,7 @@ class TandemPlugin:
                 message = m.CheckDocumentSync(current_buffer)
 
                 self._agent.stdin.write(m.serialize(message))
-                self._agent.stdin.write(os.linesep)
+                self._agent.stdin.write("\n")
                 self._agent.stdin.flush()
 
             sleep(0.5)
@@ -223,7 +223,7 @@ class TandemPlugin:
                 message = m.NewPatches(patches)
                 self._agent.stdin.write(m.serialize(message))
 
-                self._agent.stdin.write(os.linesep)
+                self._agent.stdin.write("\n")
                 self._agent.stdin.flush()
         except:
             error()
@@ -294,7 +294,7 @@ class TandemPlugin:
         is_active = True
 
         self._input_checker.start()
-        self._document_syncer.start()
+        # self._document_syncer.start()
         self._set_up_autocommands()
 
 
@@ -314,8 +314,8 @@ class TandemPlugin:
             self._input_checker.join()
         if self._output_checker.isAlive():
             self._output_checker.join()
-        if self._document_syncer.isAlive():
-            self._document_syncer.join()
+        # if self._document_syncer.isAlive():
+            # if sself._document_syncer.join()
 
 
 tandem_agent = TandemPlugin()

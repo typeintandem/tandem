@@ -53,7 +53,6 @@ class EditorProtocolHandler:
             for patch in message.patch_list
         ]
         operations = []
-        logging.info("host: " + str(self._document.get_document_text()))
         for operations_list in nested_operations:
             operations.extend(operations_list)
         new_operations_message = im.serialize(im.NewOperations(operations))
