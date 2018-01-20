@@ -83,7 +83,7 @@ def error():
 class TandemPlugin:
 
     def _initialize(self):
-        self._buffer = vim.current.buffer[:]
+        self._buffer = ['']
 
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
@@ -307,6 +307,7 @@ class TandemPlugin:
         # self._document_syncer.start()
         self._set_up_autocommands()
 
+        self.check_buffer()
 
     def stop(self, invoked_from_autocmd=True):
         global is_active
