@@ -225,7 +225,7 @@ class TandemPlugin:
         vim.command(":redraw")
 
     def _handle_write_request(self):
-        self._agent.stdin.write(m.serialize(m.WriteRequestAck()))
+        self._agent.stdin.write(m.serialize(m.WriteRequestAck(self._message.seq)))
         self._agent.stdin.write("\n")
         self._agent.stdin.flush()
         apply_patches_message = self._read_message()

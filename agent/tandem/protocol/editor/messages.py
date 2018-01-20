@@ -102,15 +102,18 @@ class WriteRequest:
     Sent by the agent to the plugin to request for the ability
     to apply remote operations to the CRDT.
     """
-    def __init__(self):
+    def __init__(self, seq):
         self.type = EditorProtocolMessageType.WriteRequest
+        self.seq = seq
 
     def to_payload(self):
-        return {}
+        return {
+            "seq": self.seq,
+        }
 
     @staticmethod
     def from_payload(payload):
-        return WriteRequest()
+        return WriteRequest(payload["seq"])
 
 
 class WriteRequestAck:
@@ -122,15 +125,18 @@ class WriteRequestAck:
     to modify their local buffer until the remote operations have been
     sent back to the plugin via an ApplyPatches message.
     """
-    def __init__(self):
+    def __init__(self, seq):
         self.type = EditorProtocolMessageType.WriteRequestAck
+        self.seq = seq
 
     def to_payload(self):
-        return {}
+        return {
+            "seq": self.seq,
+        }
 
     @staticmethod
     def from_payload(payload):
-        return WriteRequestAck()
+        return WriteRequestAck(payload["seq"])
 
 
 class NewPatches:

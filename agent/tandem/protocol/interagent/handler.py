@@ -8,6 +8,7 @@ class InteragentProtocolHandler:
         self._std_streams = std_streams
         self._connection_manager = connection_manager
         self._document = document
+        self._sequence = 0
 
     def handle_new_connection(self, socket, address):
         self._connection_manager.register_connection(socket, address)
@@ -58,6 +59,8 @@ class InteragentProtocolHandler:
         self._document.enqueue_remote_operations(message.operations_list)
         if not self._document.write_request_sent():
             self._std_streams.write_string_message(
-                em.serialize(em.WriteRequest()),
+                em.serialize(em.WriteRequest(self._sequence)),
             )
             self._document.set_write_request_sent(True)
+            logging.info("Sent write request seq: {}".format(self._sequence))
+            self._sequence += 1

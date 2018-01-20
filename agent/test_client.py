@@ -36,8 +36,8 @@ def send_new_patches(agent_stdin, start, end, text):
     agent_stdin.flush()
 
 
-def send_request_write_ack(agent_stdin):
-    agent_stdin.write(m.serialize(m.WriteRequestAck()))
+def send_request_write_ack(agent_stdin, seq):
+    agent_stdin.write(m.serialize(m.WriteRequestAck(seq)))
     agent_stdin.write("\n")
     agent_stdin.flush()
 
@@ -200,7 +200,7 @@ def crdt_test():
     print_raw_message(agent2.stdout)
 
     # Allow the plugin to apply the remote changes
-    send_request_write_ack(agent2.stdin)
+    send_request_write_ack(agent2.stdin, 0)
 
     # Expect agent2 to get the changes
     print_raw_message(agent2.stdout)
@@ -218,7 +218,7 @@ def crdt_test():
     print_raw_message(agent1.stdout)
 
     # Allow changes to be applied
-    send_request_write_ack(agent1.stdin)
+    send_request_write_ack(agent1.stdin, 0)
 
     # Expect to receive the text patches
     print_raw_message(agent1.stdout)
@@ -236,7 +236,7 @@ def crdt_test():
     print_raw_message(agent1.stdout)
 
     # Allow changes to be applied
-    send_request_write_ack(agent1.stdin)
+    send_request_write_ack(agent1.stdin, 1)
 
     # Expect to receive the text patches
     print_raw_message(agent1.stdout)
