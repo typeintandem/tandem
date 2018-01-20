@@ -88,13 +88,10 @@ class TandemPlugin:
         if self._connect_to is not None:
             vim.command('enew')
 
-        self._input_checker = Thread(target=self._check_buffer)
-        self._output_checker = Thread(target=self._check_message)
-        self._document_syncer = Thread(target=self._check_document_sync)
+        self._output_checker = Thread(target=self._agent_listener)
 
-        self._should_check_buffer = Semaphore(0)
-        self._buffer_check_completed = Event()
-        self._read_write_check = Lock()
+        self._connect_to = None
+        self._message = None
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -138,68 +135,41 @@ class TandemPlugin:
         self._agent.wait()
 
     def check_buffer(self):
-        with self._read_write_check:
-            # Allow the user input to be checked.
-            self._buffer_check_completed.clear()
-            self._should_check_buffer.release()
-            self._buffer_check_completed.wait()
+        global is_active
+        if not is_active:
+          return
 
-    def _check_buffer(self):
-        while True:
-            # Wait on a signal from the autocommand that the text has changed
-            self._should_check_buffer.acquire()
-            global is_active
-            if not is_active:
-              break
+        current_buffer = vim.current.buffer[:]
 
-            # The read_write_check lock is held by the signalling thread
-            current_buffer = vim.current.buffer[:]
+        if len(current_buffer) != len(self._buffer):
+            self._send_patches(current_buffer)
+        else:
+            for i in range(len(current_buffer)):
+                if current_buffer[i] != self._buffer[i]:
+                    self._send_patches(current_buffer)
+                    break
 
-            if len(current_buffer) != len(self._buffer):
-                self._send_patches(current_buffer)
-            else:
-                for i in range(len(current_buffer)):
-                    if current_buffer[i] != self._buffer[i]:
-                        self._send_patches(current_buffer)
-                        break
-
-            self._buffer = current_buffer
-
-            self._buffer_check_completed.set()
-
+        self._buffer = current_buffer
 
     def _create_patch(self, start, end, text):
         if start is None or end is None or text is None:
             # Raise an error if in debug mode, otherwise return None
             if DEBUG:
-                raise ValueError
+                raise ValueError("Start, end, or text is None!")
             else:
                 return None
         return [
             {
-                "start": {
-                    "row": start[0],
-                    "column": start[1],
-                },
-                "end": {
-                    "row": end[0],
-                    "column": end[1],
-                },
+                "start": {"row": start[0], "column": start[1]},
+                "end": {"row": end[0], "column": end[1]},
                 "text": "",
             },
             {
-                "start": {
-                    "row": start[0],
-                    "column": start[1],
-                },
-                "end": {
-                    "row": 0,
-                    "column": 0,
-                },
+                "start": {"row": start[0], "column": start[1]},
+                "end": {"row": 0, "column": 0},
                 "text": text,
-            }
+            },
         ]
-
 
     def _send_patches(self, current_buffer):
         try :
@@ -235,74 +205,77 @@ class TandemPlugin:
         except:
             error()
 
-    def _check_message(self):
+    def _agent_listener(self):
         while True:
-            line = self._agent.stdout.readline()
-            if line == "":
+            message = self._read_message()
+            if message is None:
                 break
-            self._handle_message(line)
+            self._handle_message(message)
 
-    def _handle_message(self, msg):
-        try:
-            # Wait until the input checker thread is done.
-            message = m.deserialize(msg)
-            if isinstance(message, m.ApplyText):
-                with self._read_write_check:
-                    vim.current.buffer[:] = message.contents
-                    # TODO: Send ack back to agent.
-                    self._buffer = vim.current.buffer[:]
-                    vim.command(":redraw")
+    def _read_message(self):
+        line = self._agent.stdout.readline()
+        if line == "":
+            return None
+        return m.deserialize(line)
 
-            elif isinstance(message, m.WriteRequest):
-                # Acquire the lock to prevent further writes
-                self._read_write_check.acquire()
-                vim.command(":set nomodifiable")
-                self._agent.stdin.write(m.serialize(m.WriteRequestAck()))
-                self._agent.stdin.write("\n")
-                self._agent.stdin.flush()
+    def _handle_apply_text(self):
+        vim.current.buffer[:] = self._message.contents
+        # TODO: Send ack back to agent.
+        self._buffer = vim.current.buffer[:]
+        vim.command(":redraw")
 
-            elif isinstance(message, m.ApplyPatches):
-                # read_write_check lock should already be acquired
-                for patch in message.patch_list:
-                    start = patch["oldStart"]
-                    end = patch["oldEnd"]
-                    text = patch["newText"]
+    def _handle_write_request(self):
+        self._agent.stdin.write(m.serialize(m.WriteRequestAck()))
+        self._agent.stdin.write("\n")
+        self._agent.stdin.flush()
+        apply_patches_message = self._read_message()
+        if not isinstance(apply_patches_message, m.ApplyPatches):
+            raise ValueError("Invalid protocol message!")
+        self._handle_apply_patches(apply_patches_message)
 
-                    current_buffer = vim.current.buffer[:]
-                    before_lines = current_buffer[:start["row"]]
-                    after_lines = current_buffer[end["row"] + 1:]
+    def _handle_apply_patches(self, message):
+        # read_write_check lock should already be acquired
+        for patch in message.patch_list:
+            start = patch["oldStart"]
+            end = patch["oldEnd"]
+            text = patch["newText"]
 
-                    before_in_new_line = current_buffer[start["row"]][:start["column"]]
-                    after_in_new_line = current_buffer[end["row"]][end["column"]:]
+            current_buffer = vim.current.buffer[:]
+            before_lines = current_buffer[:start["row"]]
+            after_lines = current_buffer[end["row"] + 1:]
 
-                    new_lines = text.split(os.linesep)
-                    if len(new_lines) > 0:
-                        new_lines[0] = before_in_new_line + new_lines[0]
-                    else:
-                        new_lines = [before_in_new_line]
+            before_in_new_line = current_buffer[start["row"]][:start["column"]]
+            after_in_new_line = current_buffer[end["row"]][end["column"]:]
 
-                    new_lines[-1] = new_lines[-1] + after_in_new_line
+            new_lines = text.split(os.linesep)
+            if len(new_lines) > 0:
+                new_lines[0] = before_in_new_line + new_lines[0]
+            else:
+                new_lines = [before_in_new_line]
 
-                    vim.command(":set modifiable")
-                    vim.current.buffer[:] = \
-                        before_lines + new_lines + after_lines
-                    vim.command(":set nomodifiable")
+            new_lines[-1] = new_lines[-1] + after_in_new_line
 
-                self._buffer = vim.current.buffer[:]
-                vim.command(":redraw")
+            vim.current.buffer[:] = \
+                before_lines + new_lines + after_lines
 
-                # Enable editing again
-                vim.command(":set modifiable")
-                self._read_write_check.release()
-        except:
-            error()
+        self._buffer = vim.current.buffer[:]
+        vim.command(":redraw")
+
+    def _handle_message(self, message):
+        self._message = message
+        if isinstance(message, m.ApplyText):
+            vim.command(":doautocmd User TandemApplyText")
+        elif isinstance(message, m.WriteRequest):
+            vim.command(":doautocmd User TandemWriteRequest")
+        # ApplyPatches is handled separately
 
     def _set_up_autocommands(self):
         vim.command(':autocmd!')
         vim.command('autocmd TextChanged <buffer> py tandem_agent.check_buffer()')
         vim.command('autocmd TextChangedI <buffer> py tandem_agent.check_buffer()')
         vim.command('autocmd VimLeave * py tandem_agent.stop()')
-
+        vim.command("autocmd User TandemApplyText py tandem_agent._handle_apply_text()")
+        vim.command("autocmd User TandemWriteRequest py tandem_agent._handle_write_request()")
 
     def start(self, host_ip=None, host_port=None):
         global is_active
@@ -321,8 +294,6 @@ class TandemPlugin:
         self._start_agent()
         is_active = True
 
-        self._input_checker.start()
-        # self._document_syncer.start()
         self._set_up_autocommands()
 
         if self._connect_to is None:
@@ -336,16 +307,11 @@ class TandemPlugin:
             return
 
         is_active = False
-        self._should_check_buffer.release()
 
         self._shut_down_agent()
 
-        if self._input_checker.isAlive():
-            self._input_checker.join()
         if self._output_checker.isAlive():
             self._output_checker.join()
-        # if self._document_syncer.isAlive():
-            # if sself._document_syncer.join()
 
 
 tandem_agent = TandemPlugin()
