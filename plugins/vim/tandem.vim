@@ -85,8 +85,8 @@ class TandemPlugin:
     def _initialize(self):
         self._buffer = ['']
 
-        if not self._is_host:
-            vim.current.buffer[:] = ['']
+        if self._connect_to is not None:
+            vim.command('enew')
 
         self._input_checker = Thread(target=self._check_buffer)
         self._output_checker = Thread(target=self._check_message)
@@ -95,8 +95,6 @@ class TandemPlugin:
         self._should_check_buffer = Semaphore(0)
         self._ui = Semaphore(0)
         self._read_write_check = Lock()
-
-        self._connect_to = None
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -298,12 +296,9 @@ class TandemPlugin:
             print "Cannot start. IP specified. You must also provide a port"
             return
 
-        self._is_host = host_ip is None and host_port is None
+        self._connect_to = (host_ip, host_port) if host_ip is not None else None
 
         self._initialize()
-
-        if host_ip is not None:
-            self._connect_to = (host_ip, host_port)
 
         self._start_agent()
         is_active = True
@@ -312,7 +307,7 @@ class TandemPlugin:
         # self._document_syncer.start()
         self._set_up_autocommands()
 
-        if self._is_host:
+        if self._connect_to is None:
             self.check_buffer()
 
     def stop(self, invoked_from_autocmd=True):
