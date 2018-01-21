@@ -225,9 +225,15 @@ class TandemPlugin:
         vim.command(":redraw")
 
     def _handle_write_request(self):
+        # Flush out any non-diff'd changes first
+        self._check_buffer_impl()
+
+        # Allow agent to apply remote operations
         self._agent.stdin.write(m.serialize(m.WriteRequestAck(self._message.seq)))
         self._agent.stdin.write("\n")
         self._agent.stdin.flush()
+
+        # Apply results of the remote operations
         apply_patches_message = self._read_message()
         if not isinstance(apply_patches_message, m.ApplyPatches):
             raise ValueError("Invalid protocol message!")
