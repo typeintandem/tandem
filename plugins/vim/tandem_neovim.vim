@@ -87,7 +87,6 @@ class TandemPlugin:
         self._output_checker = Thread(target=self._agent_listener)
 
         self._connect_to = None
-        self._message = None
         self._text_applied = Event()
 
     def _start_agent(self):
@@ -218,18 +217,18 @@ class TandemPlugin:
             return None
         return m.deserialize(line)
 
-    def _handle_apply_text(self):
-        vim.current.buffer[:] = self._message.contents
+    def _handle_apply_text(self, message):
+        vim.current.buffer[:] = message.contents
         # TODO: Send ack back to agent.
         self._buffer = vim.current.buffer[:]
         vim.command(":redraw")
 
-    def _handle_write_request(self):
+    def _handle_write_request(self, message):
         # Flush out any non-diff'd changes first
         self._check_buffer_impl()
 
         # Allow agent to apply remote operations
-        self._agent.stdin.write(m.serialize(m.WriteRequestAck(self._message.seq)))
+        self._agent.stdin.write(m.serialize(m.WriteRequestAck(message.seq)))
         self._agent.stdin.write("\n")
         self._agent.stdin.flush()
 
@@ -268,12 +267,11 @@ class TandemPlugin:
         self._text_applied.set()
 
     def _handle_message(self, message):
-        self._message = message
         if isinstance(message, m.ApplyText):
-            vim.async_call(self._handle_apply_text)
+            vim.async_call(self._handle_apply_text, message)
         elif isinstance(message, m.WriteRequest):
             self._text_applied.clear()
-            vim.async_call(self._handle_write_request)
+            vim.async_call(self._handle_write_request, message)
             self._text_applied.wait()
         # ApplyPatches is handled separately
 
