@@ -27,7 +27,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Lock, Thread, Semaphore, Event
+from threading import Thread, Event
 
 import vim
 
@@ -136,7 +136,7 @@ class TandemPlugin:
         if not is_active:
           return
 
-        vim.session.threadsafe_call(self._check_buffer_impl)
+        vim.async_call(self._check_buffer_impl)
 
     def _check_buffer_impl(self):
         current_buffer = vim.current.buffer[:]
@@ -270,10 +270,10 @@ class TandemPlugin:
     def _handle_message(self, message):
         self._message = message
         if isinstance(message, m.ApplyText):
-            vim.session.threadsafe_call(self._handle_apply_text)
+            vim.async_call(self._handle_apply_text)
         elif isinstance(message, m.WriteRequest):
             self._text_applied.clear()
-            vim.session.threadsafe_call(self._handle_write_request)
+            vim.async_call(self._handle_write_request)
             self._text_applied.wait()
         # ApplyPatches is handled separately
 

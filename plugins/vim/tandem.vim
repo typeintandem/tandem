@@ -27,7 +27,7 @@ import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Lock, Thread, Semaphore, Event
+from threading import Thread
 
 import vim
 
@@ -234,7 +234,6 @@ class TandemPlugin:
         self._handle_apply_patches(apply_patches_message)
 
     def _handle_apply_patches(self, message):
-        # read_write_check lock should already be acquired
         for patch in message.patch_list:
             start = patch["oldStart"]
             end = patch["oldEnd"]
