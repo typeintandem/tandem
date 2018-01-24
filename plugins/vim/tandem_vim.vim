@@ -1,7 +1,7 @@
 if !has('python')
   " :echom is persistent messaging. See
   " http://learnvimscriptthehardway.stevelosh.com/chapters/01.html
-  :echom 'ERROR: Please use a version of Neovim with Python support'
+  :echom 'ERROR: Please use a version of Vim with Python support'
   finish
 endif
 
@@ -23,7 +23,6 @@ python << EOF
 
 import os
 import sys
-from threading import Event
 import vim
 
 # For now, add the tandem agent path to the system path so that we can use the
@@ -38,31 +37,40 @@ if local_path not in sys.path:
 import tandem_lib as tandem
 import tandem.protocol.editor.messages as m
 
-class TandemNeovimPlugin:
+class TandemVimPlugin:
     def __init__(self):
         self._tandem = tandem.TandemPlugin(
             self._set_up_autocommands,
             self._handle_message,
             self._check_buffer,
         )
-        self._text_applied = Event()
+        self._message = None
+
+    def _handle_message(self, message):
+        self._message = message
+        if isinstance(message, m.ApplyText):
+            vim.command(":doautocmd User TandemApplyText")
+        elif isinstance(message, m.WriteRequest):
+            vim.command(":doautocmd User TandemWriteRequest")
+
+    def _handle_apply_text(self):
+        self._tandem.handle_apply_text(self._message)
+        self._message = None
+
+    def _handle_write_request(self):
+        self._tandem.handle_write_request(self._message, lambda: None)
+        self._message = None
+
+    def _check_buffer(self):
+        self._tandem.check_buffer()
 
     def _set_up_autocommands(self):
         vim.command(':autocmd!')
         vim.command('autocmd TextChanged <buffer> py tandem_plugin._check_buffer()')
         vim.command('autocmd TextChangedI <buffer> py tandem_plugin._check_buffer()')
         vim.command('autocmd VimLeave * py tandem_plugin.stop()')
-
-    def _handle_message(self, message):
-        if isinstance(message, m.ApplyText):
-            vim.async_call(self._tandem.handle_apply_text, message)
-        elif isinstance(message, m.WriteRequest):
-            self._text_applied.clear()
-            vim.async_call(self._tandem.handle_write_request, message, lambda: self._text_applied.set())
-            self._text_applied.wait()
-
-    def _check_buffer(self):
-        vim.async_call(self._tandem.check_buffer)
+        vim.command("autocmd User TandemApplyText py tandem_plugin._handle_apply_text()")
+        vim.command("autocmd User TandemWriteRequest py tandem_plugin._handle_write_request()")
 
     def start(self, host_ip=None, host_port=None):
         self._tandem.start(host_ip, host_port)
@@ -70,6 +78,6 @@ class TandemNeovimPlugin:
     def stop(self, invoked_from_autocmd=True):
         self._tandem.stop(invoked_from_autocmd)
 
-tandem_plugin = TandemNeovimPlugin()
+tandem_plugin = TandemVimPlugin()
 
 EOF

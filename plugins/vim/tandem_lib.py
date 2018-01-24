@@ -1,33 +1,10 @@
-if !has('python')
-  " :echom is persistent messaging. See
-  " http://learnvimscriptthehardway.stevelosh.com/chapters/01.html
-  :echom 'ERROR: Please use a version of Vim with Python support'
-  finish
-endif
-
-if !executable('python3')
-  :echom 'ERROR: Global python3 install required.'
-  finish
-endif
-
-" Bind the Tandem functions to globally available commands.
-" =================
-" Start agent with `:Tandem`
-" Start agent and connect to network with `:Tandem <localhost | ip> <port>`
-com! -nargs=* Tandem py tandem_agent.start(<f-args>)
-" ================
-" Stop agent (and disconnect from network) with `:TandemStop`
-com! TandemStop py tandem_agent.stop(False)
-
-python << EOF
-
 import os
 import sys
 import random
 from time import sleep
 
 from subprocess import Popen, PIPE
-from threading import Thread
+from threading import Thread, Event
 
 import vim
 
@@ -81,6 +58,10 @@ def error():
 
 
 class TandemPlugin:
+    def __init__(self, autocmd_binder, message_handler, check_buffer_handler):
+        self._autocmd_binder = autocmd_binder
+        self._message_handler = message_handler
+        self._check_buffer_handler = check_buffer_handler
 
     def _initialize(self):
         self._buffer = ['']
@@ -90,8 +71,7 @@ class TandemPlugin:
 
         self._output_checker = Thread(target=self._agent_listener)
 
-        self._connect_to = None
-        self._message = None
+        self._text_applied = Event()
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -218,22 +198,28 @@ class TandemPlugin:
             return None
         return m.deserialize(line)
 
-    def _handle_apply_text(self):
-        vim.current.buffer[:] = self._message.contents
+    def handle_apply_text(self, message):
+        vim.current.buffer[:] = message.contents
         # TODO: Send ack back to agent.
         self._buffer = vim.current.buffer[:]
         vim.command(":redraw")
 
-    def _handle_write_request(self):
-        self._agent.stdin.write(m.serialize(m.WriteRequestAck(self._message.seq)))
+    def handle_write_request(self, message, callback):
+        # Flush out any non-diff'd changes first
+        self.check_buffer()
+
+        # Allow agent to apply remote operations
+        self._agent.stdin.write(m.serialize(m.WriteRequestAck(message.seq)))
         self._agent.stdin.write("\n")
         self._agent.stdin.flush()
+
+        # Apply results of the remote operations
         apply_patches_message = self._read_message()
         if not isinstance(apply_patches_message, m.ApplyPatches):
             raise ValueError("Invalid protocol message!")
-        self._handle_apply_patches(apply_patches_message)
+        self._handle_apply_patches(apply_patches_message, callback)
 
-    def _handle_apply_patches(self, message):
+    def _handle_apply_patches(self, message, callback):
         for patch in message.patch_list:
             start = patch["oldStart"]
             end = patch["oldEnd"]
@@ -259,22 +245,10 @@ class TandemPlugin:
 
         self._buffer = vim.current.buffer[:]
         vim.command(":redraw")
+        callback()
 
     def _handle_message(self, message):
-        self._message = message
-        if isinstance(message, m.ApplyText):
-            vim.command(":doautocmd User TandemApplyText")
-        elif isinstance(message, m.WriteRequest):
-            vim.command(":doautocmd User TandemWriteRequest")
-        # ApplyPatches is handled separately
-
-    def _set_up_autocommands(self):
-        vim.command(':autocmd!')
-        vim.command('autocmd TextChanged <buffer> py tandem_agent.check_buffer()')
-        vim.command('autocmd TextChangedI <buffer> py tandem_agent.check_buffer()')
-        vim.command('autocmd VimLeave * py tandem_agent.stop()')
-        vim.command("autocmd User TandemApplyText py tandem_agent._handle_apply_text()")
-        vim.command("autocmd User TandemWriteRequest py tandem_agent._handle_write_request()")
+        self._message_handler(message)
 
     def start(self, host_ip=None, host_port=None):
         global is_active
@@ -293,10 +267,10 @@ class TandemPlugin:
         self._start_agent()
         is_active = True
 
-        self._set_up_autocommands()
+        self._autocmd_binder()
 
         if self._connect_to is None:
-            self.check_buffer()
+            self._check_buffer_handler()
 
     def stop(self, invoked_from_autocmd=True):
         global is_active
@@ -311,8 +285,3 @@ class TandemPlugin:
 
         if self._output_checker.isAlive():
             self._output_checker.join()
-
-
-tandem_agent = TandemPlugin()
-
-EOF
