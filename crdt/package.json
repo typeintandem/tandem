@@ -14,7 +14,8 @@
   "license": "ISC",
   "dependencies": {
     "@atom/teletype-crdt": "0.8.1",
-    "uuid": "^3.1.0"
+    "uuid": "^3.1.0",
+    "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
