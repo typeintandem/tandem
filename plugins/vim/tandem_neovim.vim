@@ -83,10 +83,13 @@ def error():
 class TandemPlugin:
 
     def _initialize(self):
-        self._buffer = vim.current.buffer[:]
+        self._buffer = ['']
+
+        if self._connect_to is not None:
+            vim.command('enew')
+
         self._output_checker = Thread(target=self._agent_listener)
 
-        self._connect_to = None
         self._text_applied = Event()
 
     def _start_agent(self):
@@ -291,15 +294,17 @@ class TandemPlugin:
             print "Cannot start. IP specified. You must also provide a port"
             return
 
-        self._initialize()
+        self._connect_to = (host_ip, host_port) if host_ip is not None else None
 
-        if host_ip is not None:
-            self._connect_to = (host_ip, host_port)
+        self._initialize()
 
         self._start_agent()
         is_active = True
 
         self._set_up_autocommands()
+
+        if self._connect_to is None:
+            self.check_buffer()
 
     def stop(self, invoked_from_autocmd=True):
         global is_active
