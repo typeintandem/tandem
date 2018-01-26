@@ -71,7 +71,6 @@ class TandemPlugin:
         return self._view.substr(sublime.Region(0, self._view.size()))
 
     def _initialize(self, view):
-        # TODO: use sublime buffer
         self._view = view
         self._buffer = self._current_buffer()
 
@@ -150,7 +149,6 @@ class TandemPlugin:
         ]
 
     def _send_patches(self, current_buffer):
-        print("sending patches")
         try:
             prev_contents = self._buffer
             curr_contents = current_buffer
@@ -161,9 +159,14 @@ class TandemPlugin:
                 start_index = p.start1
                 end_index = p.start1 + p.length1
 
-                # TODO: rowcol works on view (current buffer), we want it on old buffer
-                start_rc = self._view.rowcol(start_index)
-                end_rc = self._view.rowcol(end_index)
+                start_rc = index_to_point(
+                    prev_contents.split(os.linesep),
+                    start_index,
+                )
+                end_rc = index_to_point(
+                    prev_contents.split(os.linesep),
+                    end_index,
+                )
 
                 text = []
                 for (op, data) in p.diffs:
@@ -189,14 +192,11 @@ class TandemPlugin:
 
     def _check_message(self):
         for line in iter(self._agent.stdout.readline, b''):
-            print("line: ", line)
-
             def callback():
                 self._handle_message(line)
             sublime.set_timeout(callback, 0)
 
     def _handle_message(self, msg):
-        print("deserializing")
         message = m.deserialize(msg.decode("utf-8"))
         global is_processing
         is_processing = True
@@ -205,23 +205,21 @@ class TandemPlugin:
             text = os.linesep.join(message.contents)
             with Edit(self._view) as edit:
                 edit.replace(0, self._view.size(), text)
+            self._buffer = self._current_buffer()
             # TODO: Send ack back to agent.
         elif isinstance(message, m.ApplyPatches):
-            print("applying patch")
             for patch in message.patch_list:
-                print("p")
                 start = patch["oldStart"]
                 end = patch["oldEnd"]
                 text = patch["newText"]
-                print("v")
                 start_point = self._view.text_point(
-                    start["row"], start["column"],
+                    start["row"],
+                    start["column"],
                 )
-                print("s: ", start_point)
                 end_point = self._view.text_point(
-                    end["row"], end["column"],
+                    end["row"],
+                    end["column"],
                 )
-                print("e: ", end_point)
                 """
                 Edit cannot be passed around
                 https://forum.sublimetext.com/t/multithreaded-plugin/14439
@@ -233,14 +231,9 @@ class TandemPlugin:
                         text,
                     )
 
-                print("changing buffer")
-                # update with every patch
-                self._buffer = self._current_buffer()
-                print("buf: ", self._buffer)
-            print("done processing patch")
+            self._buffer = self._current_buffer()
 
         is_processing = False
-
 
     def start(self, view, host_ip=None, host_port=None):
         global is_active
@@ -278,7 +271,6 @@ class TandemPlugin:
             self._output_checker.join()
 
 
-# TODO investigate ViewEventListener
 class TandemTextChangedListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         global is_active
