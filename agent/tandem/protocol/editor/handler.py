@@ -15,6 +15,8 @@ class EditorProtocolHandler:
             message = em.deserialize(data)
             if type(message) is em.ConnectTo:
                 self._handle_connect_to(message)
+            elif type(message) is em.WriteRequestAck:
+                self._handle_write_request_ack(message)
             elif type(message) is em.UserChangedEditorText:
                 self._handle_user_changed_editor_text(message)
             elif type(message) is em.NewPatches:
@@ -38,6 +40,16 @@ class EditorProtocolHandler:
             "Tandem Agent connected to {}:{}."
             .format(message.host, message.port),
         )
+
+    def _handle_write_request_ack(self, message):
+        logging.debug("Received ACK for seq: {}".format(message.seq))
+        text_patches = self._document.apply_queued_operations()
+        self._document.set_write_request_sent(False)
+        # Even if no text patches need to be applied, we need to reply to
+        # the plugin to allow it to accept changes from the user again
+        text_patches_message = em.ApplyPatches(text_patches)
+        self._std_streams.write_string_message(em.serialize(text_patches_message))
+        logging.debug("Sent apply patches message for seq: {}".format(message.seq))
 
     def _handle_user_changed_editor_text(self, message):
         text_changed = im.serialize(im.TextChanged(message.contents))
