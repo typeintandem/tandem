@@ -226,8 +226,6 @@ class TandemPlugin:
             text = patch["newText"]
 
             current_buffer = vim.current.buffer[:]
-            before_lines = current_buffer[:start["row"]]
-            after_lines = current_buffer[end["row"] + 1:]
 
             before_in_new_line = current_buffer[start["row"]][:start["column"]]
             after_in_new_line = current_buffer[end["row"]][end["column"]:]
@@ -240,8 +238,7 @@ class TandemPlugin:
 
             new_lines[-1] = new_lines[-1] + after_in_new_line
 
-            vim.current.buffer[:] = \
-                before_lines + new_lines + after_lines
+            vim.current.buffer[start["row"] : end["row"] + 1] = new_lines
 
         self._buffer = vim.current.buffer[:]
         vim.command(":redraw")
