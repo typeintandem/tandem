@@ -138,18 +138,24 @@ class TandemPlugin:
                 raise ValueError("Start, end, or text is None!")
             else:
                 return None
-        return [
-            {
+
+        result = []
+
+        if not (start[0] == end[0] and start[1] == end[1]):
+            result.append({
                 "start": {"row": start[0], "column": start[1]},
                 "end": {"row": end[0], "column": end[1]},
                 "text": "",
-            },
-            {
+            })
+
+        if text:
+            result.append({
                 "start": {"row": start[0], "column": start[1]},
                 "end": {"row": 0, "column": 0},
                 "text": text,
-            },
-        ]
+            })
+
+        return result
 
     def _send_patches(self, current_buffer):
         try :
@@ -162,8 +168,25 @@ class TandemPlugin:
                 start_index = p.start1
                 end_index = p.start1 + p.length1
 
-                start_rc = index_to_point(self._buffer, start_index)
-                end_rc = index_to_point(self._buffer, end_index)
+                start_index_offset = 0
+                end_index_offset = 0
+
+                while(len(p.diffs)):
+                    (op, data) = p.diffs[0]
+                    if (op != diff_match_patch.DIFF_EQUAL):
+                        break
+                    start_index_offset = start_index_offset + len(data)
+                    p.diffs.pop(0)
+
+                while(len(p.diffs)):
+                    (op, data) = p.diffs[-1]
+                    if (op != diff_match_patch.DIFF_EQUAL):
+                        break
+                    end_index_offset = end_index_offset + len(data)
+                    p.diffs.pop()
+
+                start_rc = index_to_point(self._buffer, start_index + start_index_offset)
+                end_rc = index_to_point(self._buffer, end_index - end_index_offset)
 
                 text = []
                 for (op, data) in p.diffs:
