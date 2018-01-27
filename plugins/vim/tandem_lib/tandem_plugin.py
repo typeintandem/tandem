@@ -69,6 +69,7 @@ class TandemPlugin(object):
             "--log-file",
             "/tmp/tandem-agent-{}.log".format(self._agent_port),
         ])
+        self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
         if self._connect_to is not None:
             host_ip, host_port = self._connect_to
@@ -77,9 +78,9 @@ class TandemPlugin(object):
             self._agent.stdin.write("\n")
             self._agent.stdin.flush()
 
-        print "Bound agent to port: {}".format(self._agent_port)
-
         self._output_checker.start()
+
+        self._vim.command('echom "Bound agent to port: {}"'.format(self._agent_port))
 
     def _check_document_sync(self):
         global is_active
@@ -98,6 +99,7 @@ class TandemPlugin(object):
             sleep(0.5)
 
     def _shut_down_agent(self):
+        self._agent_stdout_iter = None
         self._agent.stdin.close()
         self._agent.terminate()
         self._agent.wait()
@@ -223,10 +225,12 @@ class TandemPlugin(object):
             self._handle_message(message)
 
     def _read_message(self):
-        line = self._agent.stdout.readline()
-        if line == "":
+        try:
+            binary_line = self._agent_stdout_iter.next()
+            line = binary_line.decode("utf-8")
+            return m.deserialize(line)
+        except StopIteration:
             return None
-        return m.deserialize(line)
 
     def handle_apply_text(self, message):
         self._vim.current.buffer[:] = message.contents
