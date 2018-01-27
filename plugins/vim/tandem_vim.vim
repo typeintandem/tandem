@@ -40,6 +40,7 @@ import tandem.protocol.editor.messages as m
 class TandemVimPlugin:
     def __init__(self):
         self._tandem = tandem.TandemPlugin(
+            vim,
             self._set_up_autocommands,
             self._handle_message,
             self._check_buffer,

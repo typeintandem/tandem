@@ -6,8 +6,6 @@ from time import sleep
 from subprocess import Popen, PIPE
 from threading import Thread, Event
 
-import vim
-
 # For now, add the tandem agent path to the system path so that we can use the
 # existing messages protocol implementation
 tandem_agent_path = os.path.abspath('../../agent')
@@ -57,7 +55,8 @@ def error():
 
 
 class TandemPlugin:
-    def __init__(self, autocmd_binder, message_handler, check_buffer_handler):
+    def __init__(self, vim, autocmd_binder, message_handler, check_buffer_handler):
+        self._vim = vim
         self._autocmd_binder = autocmd_binder
         self._message_handler = message_handler
         self._check_buffer_handler = check_buffer_handler
@@ -66,7 +65,7 @@ class TandemPlugin:
         self._buffer = ['']
 
         if self._connect_to is not None:
-            vim.command('enew')
+            self._vim.command('enew')
 
         self._output_checker = Thread(target=self._agent_listener)
 
@@ -99,7 +98,7 @@ class TandemPlugin:
                 if not is_active:
                     break
 
-                current_buffer = vim.current.buffer[:]
+                current_buffer = self._vim.current.buffer[:]
                 message = m.CheckDocumentSync(current_buffer)
 
                 self._agent.stdin.write(m.serialize(message))
@@ -118,7 +117,7 @@ class TandemPlugin:
         if not is_active:
           return
 
-        current_buffer = vim.current.buffer[:]
+        current_buffer = self._vim.current.buffer[:]
 
         if len(current_buffer) != len(self._buffer):
             self._send_patches(current_buffer)
@@ -240,10 +239,10 @@ class TandemPlugin:
         return m.deserialize(line)
 
     def handle_apply_text(self, message):
-        vim.current.buffer[:] = message.contents
+        self._vim.current.buffer[:] = message.contents
         # TODO: Send ack back to agent.
-        self._buffer = vim.current.buffer[:]
-        vim.command(":redraw")
+        self._buffer = self._vim.current.buffer[:]
+        self._vim.command(":redraw")
 
     def handle_write_request(self, message, callback):
         # Flush out any non-diff'd changes first
@@ -266,7 +265,7 @@ class TandemPlugin:
             end = patch["oldEnd"]
             text = patch["newText"]
 
-            current_buffer = vim.current.buffer[:]
+            current_buffer = self._vim.current.buffer[:]
 
             before_in_new_line = current_buffer[start["row"]][:start["column"]]
             after_in_new_line = current_buffer[end["row"]][end["column"]:]
@@ -279,10 +278,10 @@ class TandemPlugin:
 
             new_lines[-1] = new_lines[-1] + after_in_new_line
 
-            vim.current.buffer[start["row"] : end["row"] + 1] = new_lines
+            self._vim.current.buffer[start["row"] : end["row"] + 1] = new_lines
 
-        self._buffer = vim.current.buffer[:]
-        vim.command(":redraw")
+        self._buffer = self._vim.current.buffer[:]
+        self._vim.command(":redraw")
         callback()
 
     def _handle_message(self, message):
