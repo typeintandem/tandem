@@ -46,9 +46,9 @@ def error():
 
 
 class TandemPlugin:
-    def __init__(self, vim, autocmd_binder, message_handler, check_buffer_handler):
+    def __init__(self, vim, on_start, message_handler, check_buffer_handler):
         self._vim = vim
-        self._autocmd_binder = autocmd_binder
+        self._on_start = on_start
         self._message_handler = message_handler
         self._check_buffer_handler = check_buffer_handler
 
@@ -235,7 +235,7 @@ class TandemPlugin:
         self._buffer = self._vim.current.buffer[:]
         self._vim.command(":redraw")
 
-    def handle_write_request(self, message, callback):
+    def handle_write_request(self, message):
         # Flush out any non-diff'd changes first
         self.check_buffer()
 
@@ -248,9 +248,9 @@ class TandemPlugin:
         apply_patches_message = self._read_message()
         if not isinstance(apply_patches_message, m.ApplyPatches):
             raise ValueError("Invalid protocol message!")
-        self._handle_apply_patches(apply_patches_message, callback)
+        self._handle_apply_patches(apply_patches_message)
 
-    def _handle_apply_patches(self, message, callback):
+    def _handle_apply_patches(self, message):
         for patch in message.patch_list:
             start = patch["oldStart"]
             end = patch["oldEnd"]
@@ -273,7 +273,6 @@ class TandemPlugin:
 
         self._buffer = self._vim.current.buffer[:]
         self._vim.command(":redraw")
-        callback()
 
     def _handle_message(self, message):
         self._message_handler(message)
@@ -295,7 +294,7 @@ class TandemPlugin:
         self._start_agent()
         is_active = True
 
-        self._autocmd_binder()
+        self._on_start()
 
         if self._connect_to is None:
             self._check_buffer_handler()

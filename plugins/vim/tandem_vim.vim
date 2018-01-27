@@ -54,7 +54,7 @@ class TandemVimPlugin:
         self._message = None
 
     def _handle_write_request(self):
-        self._tandem.handle_write_request(self._message, lambda: None)
+        self._tandem.handle_write_request(self._message)
         self._message = None
 
     def _check_buffer(self):
