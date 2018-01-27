@@ -6,17 +6,8 @@ from time import sleep
 from subprocess import Popen, PIPE
 from threading import Thread, Event
 
-# For now, add the tandem agent path to the system path so that we can use the
-# existing messages protocol implementation
-tandem_agent_path = os.path.abspath('../../agent')
-if tandem_agent_path not in sys.path:
-    sys.path.insert(0, tandem_agent_path)
-local_path = os.path.abspath('./')
-if local_path not in sys.path:
-    sys.path.insert(0, local_path)
-
 from diff_match_patch import diff_match_patch
-import tandem.protocol.editor.messages as m
+import tandem_agent.protocol.editor.messages as m
 
 DEBUG = True
 is_active = False

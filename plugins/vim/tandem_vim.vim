@@ -25,21 +25,16 @@ import os
 import sys
 import vim
 
-# For now, add the tandem agent path to the system path so that we can use the
-# existing messages protocol implementation
-tandem_agent_path = os.path.abspath('../../agent')
-if tandem_agent_path not in sys.path:
-    sys.path.insert(0, tandem_agent_path)
-local_path = os.path.abspath('./')
+local_path = os.path.abspath("./")
 if local_path not in sys.path:
     sys.path.insert(0, local_path)
 
-import tandem_lib as tandem
-import tandem.protocol.editor.messages as m
+import tandem_lib.tandem_plugin as plugin
+import tandem_lib.tandem_agent.protocol.editor.messages as m
 
 class TandemVimPlugin:
     def __init__(self):
-        self._tandem = tandem.TandemPlugin(
+        self._tandem = plugin.TandemPlugin(
             vim,
             self._set_up_autocommands,
             self._handle_message,
