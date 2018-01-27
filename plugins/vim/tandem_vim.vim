@@ -35,10 +35,9 @@ import tandem_lib.tandem_agent.protocol.editor.messages as m
 class TandemVimPlugin:
     def __init__(self):
         self._tandem = plugin.TandemPlugin(
-            vim,
-            self._set_up_autocommands,
-            self._handle_message,
-            self._check_buffer,
+            vim=vim,
+            on_start=self._set_up_autocommands,
+            message_handler=self._handle_message,
         )
         self._message = None
 

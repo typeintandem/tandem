@@ -18,7 +18,7 @@ def spawn_agent(extra_args=None):
     if extra_args is None:
         extra_args = []
     return Popen(
-        ["python3", "../../agent/main.py"] + extra_args,
+        ["python3", "/Users/geoff/projects/tandem/agent/main.py"] + extra_args,
         stdin=PIPE,
         stdout=PIPE,
     )
@@ -45,12 +45,11 @@ def error():
         raise
 
 
-class TandemPlugin:
-    def __init__(self, vim, on_start, message_handler, check_buffer_handler):
+class TandemPlugin(object):
+    def __init__(self, vim, on_start, message_handler):
         self._vim = vim
         self._on_start = on_start
         self._message_handler = message_handler
-        self._check_buffer_handler = check_buffer_handler
 
     def _initialize(self):
         self._buffer = ['']
@@ -297,7 +296,7 @@ class TandemPlugin:
         self._on_start()
 
         if self._connect_to is None:
-            self._check_buffer_handler()
+            self.check_buffer()
 
     def stop(self, invoked_from_autocmd=True):
         global is_active
