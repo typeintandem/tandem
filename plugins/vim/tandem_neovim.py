@@ -39,38 +39,28 @@ class TandemNeovimPlugin(object):
 
     @neovim.autocmd("TextChanged", sync=False)
     def on_text_changed(self):
-        self._vim.command('echom "Inside TextChanged"')
         if not plugin.is_active:
             return
         self._tandem.check_buffer()
-        self._vim.command('echom "Finished TextChanged"')
 
     @neovim.autocmd("TextChangedI", sync=False)
     def on_text_changed_i(self):
-        self._vim.command('echom "Inside TextChangedI"')
         if not plugin.is_active:
             return
         self._tandem.check_buffer()
-        self._vim.command('echom "Finished TextChangedI"')
 
     @neovim.function("TandemHandleWriteRequest", sync=True)
     def tandem_handle_write_request(self, args):
         try:
-            self._vim.command('echom "Start write request handle"')
             self._tandem.handle_write_request(message=self._message)
         finally:
             self._vim.async_call(lambda: self._text_applied.set())
-            self._vim.command('echom "Finish write request handle"')
 
     def _handle_message(self, message):
         if isinstance(message, m.WriteRequest):
-            self._vim.async_call(lambda: self._vim.command('echom "Received write request..."'))
             self._message = message
             self._text_applied.clear()
-            self._vim.async_call(lambda: self._vim.funcs.TandemHandleWriteRequest(async=True))
+            self._vim.async_call(
+                lambda: self._vim.funcs.TandemHandleWriteRequest(async=True),
+            )
             self._text_applied.wait()
-            self._vim.async_call(lambda: self._vim.command('echom "Finished write request waiting..."'))
-        else:
-            self._vim.async_call(lambda: self._vim.command('echom "BAD MESSAGE TYPE"'))
-            self._vim.async_call(lambda: self._vim.command('echom "{}"'.format(str(message))))
-
