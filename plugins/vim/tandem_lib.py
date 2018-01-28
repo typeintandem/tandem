@@ -40,11 +40,11 @@ def get_string_port():
     return str(starting_port)
 
 
-def index_to_point(current_buffer, index):
+def index_to_point(buffer_line_lengths, index):
     index_left = index
-    for i in range(len(current_buffer)):
-        if index_left >= current_buffer[i] + 1:
-            index_left -= current_buffer[i] + 1
+    for i in range(len(buffer_line_lengths)):
+        if index_left >= buffer_line_lengths[i] + 1:
+            index_left -= buffer_line_lengths[i] + 1
         else:
             return (i, index_left)
 
