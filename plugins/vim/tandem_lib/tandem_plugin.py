@@ -7,7 +7,8 @@ from subprocess import Popen, PIPE
 from threading import Thread, Event
 
 from diff_match_patch import diff_match_patch
-import tandem_agent.protocol.editor.messages as m
+import agent.tandem.protocol.editor.messages as m
+from agent.tandem.configuration import BASE_DIR
 
 DEBUG = True
 is_active = False
@@ -18,7 +19,7 @@ def spawn_agent(extra_args=None):
     if extra_args is None:
         extra_args = []
     return Popen(
-        ["python3", "/Users/geoff/projects/tandem/agent/main.py"] + extra_args,
+        ["python3", os.path.join(BASE_DIR, "main.py")] + extra_args,
         stdin=PIPE,
         stdout=PIPE,
     )

@@ -3,12 +3,12 @@ import sys
 from threading import Event
 import neovim
 
-local_path = os.path.abspath("./")
-if local_path not in sys.path:
-    sys.path.insert(0, local_path)
+plugin_location = os.path.dirname(os.path.abspath(__file__))
+if plugin_location not in sys.path:
+    sys.path.insert(0, plugin_location)
 
 import tandem_lib.tandem_plugin as plugin
-import tandem_lib.tandem_agent.protocol.editor.messages as m
+import tandem_lib.agent.tandem.protocol.editor.messages as m
 
 
 @neovim.plugin
