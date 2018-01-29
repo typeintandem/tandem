@@ -11,17 +11,21 @@ class InteragentProtocolHandler:
         self._sequence = 0
 
     def handle_new_connection(self, socket, address):
-        self._connection_manager.register_connection(socket, address)
+        try:
+            self._connection_manager.register_connection(socket, address)
 
-        # Send newly connected agent a copy of the document
-        operations = self._document.get_document_operations()
-        if len(operations) == 0:
-            return
-        new_operations_message = im.NewOperations(operations)
-        new_connection = self._connection_manager.get_connection(address)
-        new_connection.write_string_message(
-            im.serialize(new_operations_message),
-        )
+            # Send newly connected agent a copy of the document
+            operations = self._document.get_document_operations()
+            if len(operations) == 0:
+                return
+            new_operations_message = im.NewOperations(operations)
+            new_connection = self._connection_manager.get_connection(address)
+            new_connection.write_string_message(
+                im.serialize(new_operations_message),
+            )
+        except:
+            logging.exception("Exception when handling a new connection:")
+            raise
 
     def handle_message(self, data, sender_address):
         try:

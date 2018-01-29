@@ -5,7 +5,4 @@ import DocumentStore from '../stores/document';
  * Returns: An array of operations to get to where the document is currently
  * Used for setting up a new agent
  */
-export default () => {
-  const { textUpdates } = DocumentStore.getDocument().getOperations();
-  return textUpdates;
-}
+export default () => DocumentStore.getDocument().getOperations();
