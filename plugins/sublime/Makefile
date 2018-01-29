@@ -1,6 +1,5 @@
-default: all
-
 all: dir agent crdt deps plugin
+.PHONY: all
 
 dir:
 	sudo mkdir -p /Users/${USER}/Library/Application\ Support/Sublime\ Text\ 3/Packages
@@ -20,3 +19,6 @@ deps:
 
 plugin:
 	sudo cp *.py /Users/${USER}/Library/Application\ Support/Sublime\ Text\ 3/Packages/tandem
+
+clean:
+	sudo rm -rf /Users/${USER}/Library/Application\ Support/Sublime\ Text\ 3/Packages/tandem
