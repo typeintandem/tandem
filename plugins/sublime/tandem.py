@@ -3,7 +3,7 @@ import sys
 import random
 
 from subprocess import Popen, PIPE
-from threading import Thread
+from threading import Thread, Event
 
 import sublime
 import sublime_plugin
@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "enum-dist"))
 import tandem.agent.tandem.protocol.editor.messages as m  # noqa
 
 
-DEBUG = True
+DEBUG = False
 is_active = False
 is_processing = False
 patch = diff_match_patch()
@@ -77,6 +77,7 @@ class TandemPlugin:
         self._output_checker = Thread(target=self._check_message)
 
         self._connect_to = None
+        self._text_applied = Event()
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -95,6 +96,7 @@ class TandemPlugin:
             self._agent.stdin.flush()
 
         print("Bound agent to port: {}".format(self._agent_port))
+        self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
         self._output_checker.start()
 
@@ -190,16 +192,29 @@ class TandemPlugin:
             if DEBUG:
                 raise
 
+    def _read_message(self):
+        try:
+            binary_line = next(self._agent_stdout_iter)
+            line = binary_line.decode("utf-8")
+            return m.deserialize(line)
+        except StopIteration:
+            return None
+
     def _check_message(self):
-        for line in iter(self._agent.stdout.readline, b""):
+        while True:
+            self._text_applied.clear()
+
+            message = self._read_message()
+            if message is None:
+                break
+
             def callback():
-                self._handle_message(line)
+                self._handle_message(message)
             sublime.set_timeout(callback, 0)
 
-    def _handle_write_request(self, message):
-        # Don't allow any more buffer modifications
-        self._view.set_read_only(True)
+            self._text_applied.wait()
 
+    def _handle_write_request(self, message):
         # Flush out any non-diff'd changes first
         self.check_buffer()
 
@@ -209,21 +224,20 @@ class TandemPlugin:
         self._agent.stdin.write("\n".encode("utf-8"))
         self._agent.stdin.flush()
 
-    def _handle_apply_text(self, message):
-        text = os.linesep.join(message.contents)
-        with Edit(self._view) as edit:
-            edit.replace(
-                sublime.Region(0, self._view.size()),
-                text,
-            )
-        self._buffer = self._current_buffer()
+        try:
+            # Read, expect, and process an ApplyPatches message
+            message = self._read_message()
+            if not isinstance(message, m.ApplyPatches):
+                raise ValueError("Invalid message. Expected ApplyPatches.")
+            self._handle_apply_patches(message)
+        except StopIteration:
+            pass
+        except ValueError as v:
+            raise v
+        finally:
+            self._text_applied.set()
 
     def _handle_apply_patches(self, message):
-        if not self._view.is_read_only():
-            raise ValueError("Buffer should be read-only when"
-                             "applying patches.")
-        self._view.set_read_only(False)
-
         for patch in message.patch_list:
             start = patch["oldStart"]
             end = patch["oldEnd"]
@@ -249,19 +263,22 @@ class TandemPlugin:
 
         self._buffer = self._current_buffer()
 
-    def _handle_message(self, msg):
-        message = m.deserialize(msg.decode("utf-8"))
+    def _handle_message(self, message):
         global is_processing
         is_processing = True
 
-        if isinstance(message, m.ApplyText):
-            self._handle_apply_text(message)
-        elif isinstance(message, m.WriteRequest):
-            self._handle_write_request(message)
-        elif isinstance(message, m.ApplyPatches):
-            self._handle_apply_patches(message)
-
-        is_processing = False
+        try:
+            if isinstance(message, m.WriteRequest):
+                self._handle_write_request(message)
+            elif isinstance(message, m.ApplyPatches):
+                raise ValueError("Invalid message. ApplyPatches must be "
+                                 "preceeded by a WriteRequest.")
+            else:
+                raise ValueError("Unsupported message.")
+        except ValueError as v:
+            raise v
+        finally:
+            is_processing = False
 
     def start(self, view, host_ip=None, host_port=None):
         global is_active
