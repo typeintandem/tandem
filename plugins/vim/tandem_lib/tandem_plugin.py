@@ -227,7 +227,7 @@ class TandemPlugin(object):
 
     def _read_message(self):
         try:
-            binary_line = self._agent_stdout_iter.next()
+            binary_line = next(self._agent_stdout_iter)
             line = binary_line.decode("utf-8")
             return m.deserialize(line)
         except StopIteration:
