@@ -1,5 +1,5 @@
 .DS_Store
-*.swp
+*.sw*
 *.pyc
 node_modules
 build
