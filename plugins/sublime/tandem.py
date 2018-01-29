@@ -191,10 +191,63 @@ class TandemPlugin:
                 raise
 
     def _check_message(self):
-        for line in iter(self._agent.stdout.readline, b''):
+        for line in iter(self._agent.stdout.readline, b""):
             def callback():
                 self._handle_message(line)
             sublime.set_timeout(callback, 0)
+
+    def _handle_write_request(self, message):
+        # Don't allow any more buffer modifications
+        self._view.set_read_only(True)
+
+        # Flush out any non-diff'd changes first
+        self.check_buffer()
+
+        # Allow agent to apply remote operations
+        ack = m.WriteRequestAck(message.seq)
+        self._agent.stdin.write(m.serialize(ack).encode("utf-8"))
+        self._agent.stdin.write("\n".encode("utf-8"))
+        self._agent.stdin.flush()
+
+    def _handle_apply_text(self, message):
+        text = os.linesep.join(message.contents)
+        with Edit(self._view) as edit:
+            edit.replace(
+                sublime.Region(0, self._view.size()),
+                text,
+            )
+        self._buffer = self._current_buffer()
+
+    def _handle_apply_patches(self, message):
+        if not self._view.is_read_only():
+            raise ValueError("Buffer should be read-only when"
+                             "applying patches.")
+        self._view.set_read_only(False)
+
+        for patch in message.patch_list:
+            start = patch["oldStart"]
+            end = patch["oldEnd"]
+            text = patch["newText"]
+            start_point = self._view.text_point(
+                start["row"],
+                start["column"],
+            )
+            end_point = self._view.text_point(
+                end["row"],
+                end["column"],
+            )
+            """
+            Edit cannot be passed around
+            https://forum.sublimetext.com/t/multithreaded-plugin/14439
+            Use view abstraction instead.
+            """
+            with Edit(self._view) as edit:
+                edit.replace(
+                    sublime.Region(start_point, end_point),
+                    text,
+                )
+
+        self._buffer = self._current_buffer()
 
     def _handle_message(self, msg):
         message = m.deserialize(msg.decode("utf-8"))
@@ -202,36 +255,11 @@ class TandemPlugin:
         is_processing = True
 
         if isinstance(message, m.ApplyText):
-            text = os.linesep.join(message.contents)
-            with Edit(self._view) as edit:
-                edit.replace(0, self._view.size(), text)
-            self._buffer = self._current_buffer()
-            # TODO: Send ack back to agent.
+            self._handle_apply_text(message)
+        elif isinstance(message, m.WriteRequest):
+            self._handle_write_request(message)
         elif isinstance(message, m.ApplyPatches):
-            for patch in message.patch_list:
-                start = patch["oldStart"]
-                end = patch["oldEnd"]
-                text = patch["newText"]
-                start_point = self._view.text_point(
-                    start["row"],
-                    start["column"],
-                )
-                end_point = self._view.text_point(
-                    end["row"],
-                    end["column"],
-                )
-                """
-                Edit cannot be passed around
-                https://forum.sublimetext.com/t/multithreaded-plugin/14439
-                Use view abstraction instead.
-                """
-                with Edit(self._view) as edit:
-                    edit.replace(
-                        sublime.Region(start_point, end_point),
-                        text,
-                    )
-
-            self._buffer = self._current_buffer()
+            self._handle_apply_patches(message)
 
         is_processing = False
 
