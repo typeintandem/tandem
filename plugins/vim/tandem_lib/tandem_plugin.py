@@ -235,7 +235,6 @@ class TandemPlugin(object):
 
     def handle_apply_text(self, message):
         self._vim.current.buffer[:] = message.contents
-        # TODO: Send ack back to agent.
         self._buffer = self._vim.current.buffer[:]
         self._vim.command(":redraw")
 
