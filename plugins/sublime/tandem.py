@@ -39,12 +39,11 @@ def get_string_port():
     return str(starting_port)
 
 
-def index_to_point(buffer, index):
+def index_to_point(buffer_line_lengths, index):
     index_left = index
-    for i in range(len(buffer)):
-        if index_left >= len(buffer[i]) + 1:
-            index_left -= len(buffer[i])
-            index_left -= 1
+    for i in range(len(buffer_line_lengths)):
+        if index_left >= buffer_line_lengths[i] + 1:
+            index_left -= buffer_line_lengths[i] + 1
         else:
             return (i, index_left)
 
@@ -157,25 +156,62 @@ class TandemPlugin:
             diff_patches = patch.patch_make(prev_contents, curr_contents)
 
             patches = []
+            length_buffer = [len(x) for x in prev_contents.split(os.linesep)]
+
             for p in diff_patches:
                 start_index = p.start1
                 end_index = p.start1 + p.length1
 
+                start_index_offset = 0
+                end_index_offset = 0
+
+                while(len(p.diffs)):
+                    (op, data) = p.diffs[0]
+                    if (op != diff_match_patch.DIFF_EQUAL):
+                        break
+                    start_index_offset = start_index_offset + len(data)
+                    p.diffs.pop(0)
+
+                while(len(p.diffs)):
+                    (op, data) = p.diffs[-1]
+                    if (op != diff_match_patch.DIFF_EQUAL):
+                        break
+                    end_index_offset = end_index_offset + len(data)
+                    p.diffs.pop()
+
                 start_rc = index_to_point(
-                    prev_contents.split(os.linesep),
-                    start_index,
+                    length_buffer,
+                    start_index + start_index_offset,
                 )
                 end_rc = index_to_point(
-                    prev_contents.split(os.linesep),
-                    end_index,
+                    length_buffer,
+                    end_index - end_index_offset,
                 )
 
                 text = []
+
                 for (op, data) in p.diffs:
                     if op == diff_match_patch.DIFF_INSERT or \
                             op == diff_match_patch.DIFF_EQUAL:
                         text.append(data)
+
                 text = "".join(text)
+
+                text_lengths = [len(word) for word in text.split(os.linesep)]
+
+                if start_rc[0] == end_rc[0]:
+                    length_buffer[start_rc[0]] += text_lengths[0]
+                    length_buffer[start_rc[0]] -= end_rc[1] - start_rc[1]
+                    length_buffer[start_rc[0] + 1 : start_rc[0] + 1] = text_lengths[1:]
+                else:
+                    if len(text_lengths) > 1:
+                        length_buffer[start_rc[0]] = start_rc[1] + text_lengths[0]
+                        length_buffer[end_rc[0]] = length_buffer[end_rc[0]] \
+                            - end_rc[1] + text_lengths[-1]
+                        length_buffer[start_rc[0] + 1 : end_rc[0]] = text_lengths[1:-1]
+                    else:
+                        length_buffer[start_rc[0]] = start_rc[1] + text_lengths[0] + length_buffer[end_rc[0]] - end_rc[1]
+                        length_buffer[start_rc[0] + 1 : end_rc[0] + 1] = []
 
                 patches.extend(
                   self._create_patch(start_rc, end_rc, text)
@@ -185,6 +221,7 @@ class TandemPlugin:
             if len(patches) > 0:
                 message = m.NewPatches(patches)
                 self._agent.stdin.write(m.serialize(message).encode("utf-8"))
+
                 self._agent.stdin.write("\n".encode("utf-8"))
                 self._agent.stdin.flush()
         except:
