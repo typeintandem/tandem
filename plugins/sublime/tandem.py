@@ -202,16 +202,21 @@ class TandemPlugin:
                 if start_rc[0] == end_rc[0]:
                     length_buffer[start_rc[0]] += text_lengths[0]
                     length_buffer[start_rc[0]] -= end_rc[1] - start_rc[1]
-                    length_buffer[start_rc[0] + 1 : start_rc[0] + 1] = text_lengths[1:]
+                    length_buffer[start_rc[0] + 1: start_rc[0] + 1] = \
+                        text_lengths[1:]
                 else:
                     if len(text_lengths) > 1:
-                        length_buffer[start_rc[0]] = start_rc[1] + text_lengths[0]
+                        length_buffer[start_rc[0]] = \
+                            start_rc[1] + text_lengths[0]
                         length_buffer[end_rc[0]] = length_buffer[end_rc[0]] \
                             - end_rc[1] + text_lengths[-1]
-                        length_buffer[start_rc[0] + 1 : end_rc[0]] = text_lengths[1:-1]
+                        length_buffer[start_rc[0] + 1: end_rc[0]] = \
+                            text_lengths[1:-1]
                     else:
-                        length_buffer[start_rc[0]] = start_rc[1] + text_lengths[0] + length_buffer[end_rc[0]] - end_rc[1]
-                        length_buffer[start_rc[0] + 1 : end_rc[0] + 1] = []
+                        length_buffer[start_rc[0]] = \
+                            start_rc[1] + text_lengths[0] \
+                            + length_buffer[end_rc[0]] - end_rc[1]
+                        length_buffer[start_rc[0] + 1: end_rc[0] + 1] = []
 
                 patches.extend(
                   self._create_patch(start_rc, end_rc, text)
