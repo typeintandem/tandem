@@ -47,10 +47,10 @@ def error():
 
 
 class TandemPlugin(object):
-    def __init__(self, vim, on_start, message_handler):
+    def __init__(self, vim, message_handler, on_start=lambda: None):
         self._vim = vim
-        self._on_start = on_start
         self._message_handler = message_handler
+        self._on_start = on_start
 
     def _initialize(self):
         self._buffer = ['']

@@ -17,7 +17,6 @@ class TandemNeovimPlugin(object):
         self._vim = vim
         self._tandem = plugin.TandemPlugin(
             vim=vim,
-            on_start=lambda: None,
             message_handler=self._handle_message,
         )
         self._text_applied = Event()
