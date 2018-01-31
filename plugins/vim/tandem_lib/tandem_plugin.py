@@ -53,7 +53,7 @@ class TandemPlugin(object):
         self._on_start = on_start
 
     def _initialize(self):
-        self._buffer = ['']
+        self._buffer_contents = ['']
 
         if self._connect_to is not None:
             self._vim.command('enew')
@@ -90,8 +90,8 @@ class TandemPlugin(object):
                 if not is_active:
                     break
 
-                current_buffer = self._vim.current.buffer[:]
-                message = m.CheckDocumentSync(current_buffer)
+                target_buffer_contents = self._target_buffer[:]
+                message = m.CheckDocumentSync(target_buffer_contents)
 
                 self._agent.stdin.write(m.serialize(message))
                 self._agent.stdin.write("\n")
@@ -110,17 +110,17 @@ class TandemPlugin(object):
         if not is_active:
           return
 
-        current_buffer = self._vim.current.buffer[:]
+        target_buffer_contents = self._target_buffer[:]
 
-        if len(current_buffer) != len(self._buffer):
-            self._send_patches(current_buffer)
+        if len(target_buffer_contents) != len(self._buffer_contents):
+            self._send_patches(target_buffer_contents)
         else:
-            for i in range(len(current_buffer)):
-                if current_buffer[i] != self._buffer[i]:
-                    self._send_patches(current_buffer)
+            for i in range(len(target_buffer_contents)):
+                if target_buffer_contents[i] != self._buffer_contents[i]:
+                    self._send_patches(target_buffer_contents)
                     break
 
-        self._buffer = current_buffer
+        self._buffer_contents = target_buffer_contents
 
     def _create_patch(self, start, end, text):
         if start is None or end is None or text is None:
@@ -148,14 +148,14 @@ class TandemPlugin(object):
 
         return result
 
-    def _send_patches(self, current_buffer):
+    def _send_patches(self, target_buffer_contents):
         try :
-            prev_contents = os.linesep.join(self._buffer)
-            curr_contents = os.linesep.join(current_buffer)
+            prev_contents = os.linesep.join(self._buffer_contents)
+            curr_contents = os.linesep.join(target_buffer_contents)
             diff_patches = patch.patch_make(prev_contents, curr_contents)
 
             patches = []
-            length_buffer = [len(x) for x in self._buffer]
+            length_buffer = [len(x) for x in self._buffer_contents]
 
             for p in diff_patches:
                 start_index = p.start1
@@ -234,8 +234,8 @@ class TandemPlugin(object):
             return None
 
     def handle_apply_text(self, message):
-        self._vim.current.buffer[:] = message.contents
-        self._buffer = self._vim.current.buffer[:]
+        self._target_buffer[:] = message.contents
+        self._buffer_contents = self._target_buffer[:]
         self._vim.command(":redraw")
 
     def handle_write_request(self, message):
@@ -259,10 +259,10 @@ class TandemPlugin(object):
             end = patch["oldEnd"]
             text = patch["newText"]
 
-            current_buffer = self._vim.current.buffer[:]
+            target_buffer_contents = self._target_buffer[:]
 
-            before_in_new_line = current_buffer[start["row"]][:start["column"]]
-            after_in_new_line = current_buffer[end["row"]][end["column"]:]
+            before_in_new_line = target_buffer_contents[start["row"]][:start["column"]]
+            after_in_new_line = target_buffer_contents[end["row"]][end["column"]:]
 
             new_lines = text.split(os.linesep)
             if len(new_lines) > 0:
@@ -272,9 +272,9 @@ class TandemPlugin(object):
 
             new_lines[-1] = new_lines[-1] + after_in_new_line
 
-            self._vim.current.buffer[start["row"] : end["row"] + 1] = new_lines
+            self._target_buffer[start["row"] : end["row"] + 1] = new_lines
 
-        self._buffer = self._vim.current.buffer[:]
+        self._buffer_contents = self._target_buffer[:]
         self._vim.command(":redraw")
 
     def _handle_message(self, message):
@@ -292,7 +292,9 @@ class TandemPlugin(object):
 
         self._connect_to = (host_ip, host_port) if host_ip is not None else None
 
-        if vim.current.buffer.options['modified'] and self._connect_to is not None:
+        self._target_buffer = self._vim.current.buffer
+
+        if self._target_buffer.options['modified'] and self._connect_to is not None:
             print "Cannot start. There are unsaved changes in this buffer"
             return
 
