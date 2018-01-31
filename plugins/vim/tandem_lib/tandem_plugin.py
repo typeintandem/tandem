@@ -292,6 +292,10 @@ class TandemPlugin(object):
 
         self._connect_to = (host_ip, host_port) if host_ip is not None else None
 
+        if vim.current.buffer.options['modified'] and self._connect_to is not None:
+            print "Cannot start. There are unsaved changes in this buffer"
+            return
+
         self._initialize()
 
         self._start_agent()
