@@ -104,7 +104,10 @@ class TandemPlugin:
         self._agent.terminate()
         self._agent.wait()
 
-    def check_buffer(self):
+    def check_buffer(self, buffer_id):
+        if self._view.buffer_id() != buffer_id:
+            return
+
         current_buffer = self._current_buffer()
 
         if len(current_buffer) != len(self._buffer):
@@ -258,7 +261,7 @@ class TandemPlugin:
 
     def _handle_write_request(self, message):
         # Flush out any non-diff'd changes first
-        self.check_buffer()
+        self.check_buffer(self._view.buffer_id())
 
         # Allow agent to apply remote operations
         ack = m.WriteRequestAck(message.seq)
@@ -363,7 +366,7 @@ class TandemTextChangedListener(sublime_plugin.EventListener):
             return
 
         global tandem_agent
-        tandem_agent.check_buffer()
+        tandem_agent.check_buffer(view.buffer_id())
 
 
 tandem_agent = TandemPlugin()
