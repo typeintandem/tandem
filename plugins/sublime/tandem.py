@@ -230,12 +230,8 @@ class TandemPlugin:
             if not isinstance(message, m.ApplyPatches):
                 raise ValueError("Invalid message. Expected ApplyPatches.")
             self._handle_apply_patches(message)
-        except StopIteration:
-            pass
         except ValueError as v:
             raise v
-        finally:
-            self._text_applied.set()
 
     def _handle_apply_patches(self, message):
         for patch in message.patch_list:
@@ -279,6 +275,7 @@ class TandemPlugin:
             raise v
         finally:
             is_processing = False
+            self._text_applied.set()
 
     def start(self, view, host_ip=None, host_port=None):
         global is_active
