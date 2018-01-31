@@ -6,19 +6,9 @@ from time import sleep
 from subprocess import Popen, PIPE
 from threading import Thread, Event
 
-import vim
-
-# For now, add the tandem agent path to the system path so that we can use the
-# existing messages protocol implementation
-tandem_agent_path = os.path.abspath('../../agent')
-if tandem_agent_path not in sys.path:
-    sys.path.insert(0, tandem_agent_path)
-local_path = os.path.abspath('./')
-if local_path not in sys.path:
-    sys.path.insert(0, local_path)
-
 from diff_match_patch import diff_match_patch
-import tandem.protocol.editor.messages as m
+import agent.tandem.protocol.editor.messages as m
+from agent.tandem.configuration import BASE_DIR
 
 DEBUG = True
 is_active = False
@@ -29,7 +19,7 @@ def spawn_agent(extra_args=None):
     if extra_args is None:
         extra_args = []
     return Popen(
-        ["python3", "../../agent/main.py"] + extra_args,
+        ["python3", os.path.join(BASE_DIR, "main.py")] + extra_args,
         stdin=PIPE,
         stdout=PIPE,
     )
@@ -56,17 +46,17 @@ def error():
         raise
 
 
-class TandemPlugin:
-    def __init__(self, autocmd_binder, message_handler, check_buffer_handler):
-        self._autocmd_binder = autocmd_binder
+class TandemPlugin(object):
+    def __init__(self, vim, message_handler, on_start=lambda: None):
+        self._vim = vim
         self._message_handler = message_handler
-        self._check_buffer_handler = check_buffer_handler
+        self._on_start = on_start
 
     def _initialize(self):
         self._buffer = ['']
 
         if self._connect_to is not None:
-            vim.command('enew')
+            self._vim.command('enew')
 
         self._output_checker = Thread(target=self._agent_listener)
 
@@ -80,6 +70,7 @@ class TandemPlugin:
             "--log-file",
             "/tmp/tandem-agent-{}.log".format(self._agent_port),
         ])
+        self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
         if self._connect_to is not None:
             host_ip, host_port = self._connect_to
@@ -88,9 +79,9 @@ class TandemPlugin:
             self._agent.stdin.write("\n")
             self._agent.stdin.flush()
 
-        print "Bound agent to port: {}".format(self._agent_port)
-
         self._output_checker.start()
+
+        self._vim.command('echom "Bound agent to port: {}"'.format(self._agent_port))
 
     def _check_document_sync(self):
         global is_active
@@ -99,7 +90,7 @@ class TandemPlugin:
                 if not is_active:
                     break
 
-                current_buffer = vim.current.buffer[:]
+                current_buffer = self._vim.current.buffer[:]
                 message = m.CheckDocumentSync(current_buffer)
 
                 self._agent.stdin.write(m.serialize(message))
@@ -109,6 +100,7 @@ class TandemPlugin:
             sleep(0.5)
 
     def _shut_down_agent(self):
+        self._agent_stdout_iter = None
         self._agent.stdin.close()
         self._agent.terminate()
         self._agent.wait()
@@ -118,7 +110,7 @@ class TandemPlugin:
         if not is_active:
           return
 
-        current_buffer = vim.current.buffer[:]
+        current_buffer = self._vim.current.buffer[:]
 
         if len(current_buffer) != len(self._buffer):
             self._send_patches(current_buffer)
@@ -234,18 +226,19 @@ class TandemPlugin:
             self._handle_message(message)
 
     def _read_message(self):
-        line = self._agent.stdout.readline()
-        if line == "":
+        try:
+            binary_line = next(self._agent_stdout_iter)
+            line = binary_line.decode("utf-8")
+            return m.deserialize(line)
+        except StopIteration:
             return None
-        return m.deserialize(line)
 
     def handle_apply_text(self, message):
-        vim.current.buffer[:] = message.contents
-        # TODO: Send ack back to agent.
-        self._buffer = vim.current.buffer[:]
-        vim.command(":redraw")
+        self._vim.current.buffer[:] = message.contents
+        self._buffer = self._vim.current.buffer[:]
+        self._vim.command(":redraw")
 
-    def handle_write_request(self, message, callback):
+    def handle_write_request(self, message):
         # Flush out any non-diff'd changes first
         self.check_buffer()
 
@@ -258,15 +251,15 @@ class TandemPlugin:
         apply_patches_message = self._read_message()
         if not isinstance(apply_patches_message, m.ApplyPatches):
             raise ValueError("Invalid protocol message!")
-        self._handle_apply_patches(apply_patches_message, callback)
+        self._handle_apply_patches(apply_patches_message)
 
-    def _handle_apply_patches(self, message, callback):
+    def _handle_apply_patches(self, message):
         for patch in message.patch_list:
             start = patch["oldStart"]
             end = patch["oldEnd"]
             text = patch["newText"]
 
-            current_buffer = vim.current.buffer[:]
+            current_buffer = self._vim.current.buffer[:]
 
             before_in_new_line = current_buffer[start["row"]][:start["column"]]
             after_in_new_line = current_buffer[end["row"]][end["column"]:]
@@ -279,11 +272,10 @@ class TandemPlugin:
 
             new_lines[-1] = new_lines[-1] + after_in_new_line
 
-            vim.current.buffer[start["row"] : end["row"] + 1] = new_lines
+            self._vim.current.buffer[start["row"] : end["row"] + 1] = new_lines
 
-        self._buffer = vim.current.buffer[:]
-        vim.command(":redraw")
-        callback()
+        self._buffer = self._vim.current.buffer[:]
+        self._vim.command(":redraw")
 
     def _handle_message(self, message):
         self._message_handler(message)
@@ -305,10 +297,10 @@ class TandemPlugin:
         self._start_agent()
         is_active = True
 
-        self._autocmd_binder()
+        self._on_start()
 
         if self._connect_to is None:
-            self._check_buffer_handler()
+            self.check_buffer()
 
     def stop(self, invoked_from_autocmd=True):
         global is_active
