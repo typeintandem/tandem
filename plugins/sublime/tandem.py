@@ -52,20 +52,55 @@ def error():
     print("An error occurred.")
 
 
+def show_message(msg, show_gui):
+    if show_gui:
+        sublime.message_dialog(msg)
+    else:
+        print(msg)
+
+
 class TandemCommand(sublime_plugin.TextCommand):
-    def run(self, edit, host_ip=None, host_port=None):
+    def run(self, edit, host_ip=None, host_port=None, show_gui=True):
         global tandem_agent
-        tandem_agent.start(self.view, host_ip, host_port)
+        tandem_agent.start(self.view, host_ip, host_port, show_gui)
+
+
+class TandemConnectCommand(sublime_plugin.TextCommand):
+    def _start(self, args):
+        global tandem_agent
+        host_ip, host_port = args.split(" ")
+        tandem_agent.start(self.view, host_ip, host_port, show_gui=True)
+
+    def run(self, edit):
+        global is_active
+        if is_active:
+            msg = "Cannot start. An instance is already running on :{}".format(
+                tandem_agent.agent_port,
+            )
+            show_message(msg, True)
+            return
+        sublime.active_window().show_input_panel(
+            caption="Enter IP address and port (space-separated)",
+            initial_text="",
+            on_done=self._start,
+            on_change=None,
+            on_cancel=None,
+        )
 
 
 class TandemStopCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, show_gui=False):
         global tandem_agent
-        tandem_agent.stop()
+        tandem_agent.stop(show_gui)
 
 
 class TandemPlugin:
 
+    @property
+    def agent_port(self):
+        return self._agent_port
+
+    @property
     def _current_buffer(self):
         return self._view.substr(sublime.Region(0, self._view.size()))
 
@@ -77,7 +112,7 @@ class TandemPlugin:
 
         self._text_applied = Event()
 
-    def _start_agent(self):
+    def _start_agent(self, show_gui):
         self._agent_port = get_string_port()
         self._agent = spawn_agent([
             "--port",
@@ -93,7 +128,9 @@ class TandemPlugin:
             self._agent.stdin.write("\n".encode("utf-8"))
             self._agent.stdin.flush()
 
-        print("Bound agent to port: {}".format(self._agent_port))
+        msg = "Bound agent to port: {}".format(self._agent_port)
+        show_message(msg, show_gui)
+
         self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
         self._output_checker.start()
@@ -107,7 +144,7 @@ class TandemPlugin:
         if self._view.buffer_id() != buffer_id:
             return
 
-        current_buffer = self._current_buffer()
+        current_buffer = self._current_buffer
 
         if len(current_buffer) != len(self._buffer):
             self._send_patches(current_buffer)
@@ -301,7 +338,7 @@ class TandemPlugin:
                     text,
                 )
 
-        self._buffer = self._current_buffer()
+        self._buffer = self._current_buffer
 
     def _handle_message(self, message):
         global is_processing
@@ -321,18 +358,18 @@ class TandemPlugin:
             is_processing = False
             self._text_applied.set()
 
-    def start(self, view, host_ip=None, host_port=None):
+    def start(self, view, host_ip=None, host_port=None, show_gui=False):
         global is_active
         if is_active:
-            print("Cannot start. An instance is already running on :{}".format(
+            msg = "Cannot start. An instance is already running on :{}".format(
                 self._agent_port,
-            ))
+            )
+            show_message(msg, show_gui)
             return
 
         if host_ip is not None and host_port is None:
-            print(
-                "Cannot start. IP specified. You must also provide a port",
-            )
+            msg = "Cannot start. IP specified. You must also provide a port",
+            show_message(msg, show_gui)
             return
 
         self._connect_to = (host_ip, host_port) if host_ip is not None \
@@ -345,10 +382,11 @@ class TandemPlugin:
         if self._connect_to is None:
             self.check_buffer(view.buffer_id())
 
-    def stop(self):
+    def stop(self, show_gui):
         global is_active
         if not is_active:
-            print("No Tandem instance running.")
+            msg = "No Tandem instance running."
+            show_message(msg, show_gui)
             return
 
         is_active = False
@@ -357,6 +395,9 @@ class TandemPlugin:
 
         if self._output_checker.isAlive():
             self._output_checker.join()
+
+        msg = "Tandem instance shut down."
+        show_message(msg, show_gui)
 
 
 class TandemTextChangedListener(sublime_plugin.EventListener):

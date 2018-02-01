@@ -1,0 +1,5 @@
+[
+    { "caption": "Tandem: Start As Host", "command": "tandem", "args": { "show_gui": "True" } },
+    { "caption": "Tandem: Connect To Host", "command": "tandem_connect" },
+    { "caption": "Tandem: Stop Connection", "command": "tandem_stop", "args": { "show_gui": "True" } }
+]
