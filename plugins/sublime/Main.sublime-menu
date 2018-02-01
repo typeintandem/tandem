@@ -1,0 +1,13 @@
+[
+    {
+        "caption": "Tandem",
+        "mnemonic": "T",
+        "id": "tandem",
+        "children":
+        [
+            { "caption": "Start As Host", "mnemonic": "H", "command": "tandem", "args": { "show_gui": "True" } },
+            { "caption": "Connect To Host", "mnemonic": "C", "command": "tandem_connect" },
+            { "caption": "Stop Connection", "mnemonic": "S", "command": "tandem_stop", "args": { "show_gui": "True" } }
+        ]
+    }
+]
