@@ -5,9 +5,9 @@
         "id": "tandem",
         "children":
         [
-            { "caption": "Start As Host", "mnemonic": "H", "command": "tandem", "args": { "show_gui": "True" } },
-            { "caption": "Connect To Host", "mnemonic": "C", "command": "tandem_connect" },
-            { "caption": "Stop Connection", "mnemonic": "S", "command": "tandem_stop", "args": { "show_gui": "True" } }
+            { "caption": "Start Session", "mnemonic": "S", "command": "tandem", "args": { "show_gui": "True" } },
+            { "caption": "Join Existing Session", "mnemonic": "J", "command": "tandem_connect" },
+            { "caption": "Leave Session", "mnemonic": "L", "command": "tandem_stop", "args": { "show_gui": "True" } }
         ]
     }
 ]

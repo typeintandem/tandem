@@ -60,7 +60,7 @@ def show_message(msg, show_gui):
 
 
 class TandemCommand(sublime_plugin.TextCommand):
-    def run(self, edit, host_ip=None, host_port=None, show_gui=True):
+    def run(self, edit, host_ip=None, host_port=None, show_gui=False):
         global tandem_agent
         tandem_agent.start(self.view, host_ip, host_port, show_gui)
 
@@ -376,7 +376,7 @@ class TandemPlugin:
             else None
         self._initialize(view)
 
-        self._start_agent()
+        self._start_agent(show_gui)
         is_active = True
 
         if self._connect_to is None:
