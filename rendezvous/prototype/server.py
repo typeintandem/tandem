@@ -4,7 +4,6 @@ import json
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--self_host", default="127.0.0.1")
     parser.add_argument("--self_port", default=60000, type=int)
     return parser.parse_args()
 
@@ -20,7 +19,7 @@ def send_data(sock, data, address):
 
 def main():
     args = get_args()
-    self_address = (args.self_host, args.self_port)
+    self_address = (socket.gethostbyname(socket.gethostname()), args.self_port)
     connected_clients = []
 
     print("Listening on {}".format(self_address))
