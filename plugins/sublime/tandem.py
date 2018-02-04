@@ -71,11 +71,10 @@ class TandemPlugin:
 
     def _initialize(self, view):
         self._view = view
-        self._buffer = self._current_buffer()
+        self._buffer = ""
 
         self._output_checker = Thread(target=self._check_message)
 
-        self._connect_to = None
         self._text_applied = Event()
 
     def _start_agent(self):
@@ -336,13 +335,15 @@ class TandemPlugin:
             )
             return
 
+        self._connect_to = (host_ip, host_port) if host_ip is not None \
+            else None
         self._initialize(view)
-
-        if host_ip is not None:
-            self._connect_to = (host_ip, host_port)
 
         self._start_agent()
         is_active = True
+
+        if self._connect_to is None:
+            self.check_buffer(view.buffer_id())
 
     def stop(self):
         global is_active
