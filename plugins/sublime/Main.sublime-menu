@@ -1,0 +1,13 @@
+[
+    {
+        "caption": "Tandem",
+        "mnemonic": "T",
+        "id": "tandem",
+        "children":
+        [
+            { "caption": "Start Session", "mnemonic": "S", "command": "tandem", "args": { "show_gui": "True" } },
+            { "caption": "Join Existing Session", "mnemonic": "J", "command": "tandem_connect" },
+            { "caption": "Leave Session", "mnemonic": "L", "command": "tandem_stop", "args": { "show_gui": "True" } }
+        ]
+    }
+]

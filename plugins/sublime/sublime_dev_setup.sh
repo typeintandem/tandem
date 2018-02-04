@@ -16,6 +16,7 @@ function install() {
   ln -s $SCRIPTPATH/../../crdt "${SUBLIME_PLUGIN_LOCATION}"
   ln -s $SCRIPTPATH/enum-dist "${SUBLIME_PLUGIN_LOCATION}"
   ln -s $SCRIPTPATH/*.py "${SUBLIME_PLUGIN_LOCATION}"
+  ln -s $SCRIPTPATH/*.sublime-* "${SUBLIME_PLUGIN_LOCATION}"
 }
 
 function uninstall() {
