@@ -1,6 +1,7 @@
 import argparse
 import socket
 import json
+import time
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -29,13 +30,16 @@ def main():
     while(True):
         new_data, new_address = recv_data(sock)
 
-        # Send connected_clients information about the new client
-        for connected_data, connected_address in connected_clients:
-            send_data(sock, (new_data, new_address), connected_address)
-
         # Send new client information about the connected_clients
         for connected_data, connected_address in connected_clients:
             send_data(sock, (connected_data, connected_address), new_address)
+            time.sleep(3)
+
+        time.sleep(3)
+
+        # Send connected_clients information about the new client
+        for connected_data, connected_address in connected_clients:
+            send_data(sock, (new_data, new_address), connected_address)
 
         connected_clients.append((new_data, new_address))
 

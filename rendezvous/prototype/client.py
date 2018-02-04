@@ -1,6 +1,7 @@
 import argparse
 import socket
 import json
+import time
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -21,8 +22,20 @@ def send_data(sock, data, address):
 
 def connect_to(sock, data):
     print("Sending ping to addresses: {}".format(data))
-    send_data(sock, 'ping!', tuple(data[0]))
-    send_data(sock, 'ping!', tuple(data[1]))
+    send_data(sock, create_ping(data[1]), tuple(data[0]))
+    send_data(sock, create_ping(data[1]), tuple(data[1]))
+
+def create_ping(address):
+    return {
+        'type': 'ping',
+        'address': address,
+    }
+
+def create_pingback(ping):
+    return {
+        'type': 'pingback',
+        'address': ping['address'],
+    }
 
 def main():
     args = get_args()
@@ -40,9 +53,11 @@ def main():
     while(True):
         data, address = recv_data(sock)
 
-        if (type(data[0]) is list):
+        if (type(data) is list and type(data[0]) is list):
             connect_to(sock, data)
         else:
-            print("Just got pinged by {}".format(address))
+            if data['type'] == 'ping':
+                time.sleep(1)
+                send_data(sock, create_pingback(data), address)
 
 main()
