@@ -374,6 +374,10 @@ class TandemPlugin:
 
         self._connect_to = (host_ip, host_port) if host_ip is not None \
             else None
+
+        if self._connect_to is not None:
+            view = sublime.active_window().new_file()
+
         self._initialize(view)
 
         self._start_agent(show_gui)
