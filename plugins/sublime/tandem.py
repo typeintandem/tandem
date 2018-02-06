@@ -64,6 +64,10 @@ class TandemCommand(sublime_plugin.TextCommand):
         global tandem_agent
         tandem_agent.start(self.view, host_ip, host_port, show_gui)
 
+    def is_enabled(self):
+        global is_active
+        return not is_active
+
 
 class TandemConnectCommand(sublime_plugin.TextCommand):
     def _start(self, args):
@@ -87,11 +91,19 @@ class TandemConnectCommand(sublime_plugin.TextCommand):
             on_cancel=None,
         )
 
+    def is_enabled(self):
+        global is_active
+        return not is_active
+
 
 class TandemStopCommand(sublime_plugin.TextCommand):
     def run(self, edit, show_gui=False):
         global tandem_agent
         tandem_agent.stop(show_gui)
+
+    def is_enabled(self):
+        global is_active
+        return is_active
 
 
 class TandemPlugin:
