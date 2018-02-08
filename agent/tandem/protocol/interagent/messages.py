@@ -1,102 +1,102 @@
 import json
 import enum
 
+INTERAGENT_IDENTIFIER = b"\x54\x01"
+INTERAGENT_HEADER_LENGTH = len(INTERAGENT_IDENTIFIER) + 2
+
 
 class InteragentProtocolMarshalError(ValueError):
     pass
 
 
 class InteragentProtocolMessageType(enum.Enum):
-    TextChanged = "text-changed"
-    Ping = "ping"
-    NewOperations = "new-operations"
+    NewOperations = int(0xA000)
+    Hello = int(0xA00A)
+    Bye = int(0xA00B)
 
 
-class TextChanged:
-    """
-    Sent to other agents to notify them that the text buffer has been changed.
-    """
-    def __init__(self, contents):
-        self.type = InteragentProtocolMessageType.TextChanged
-        self.contents = contents
+class Hello:
+    def __init__(self):
+        self.type = InteragentProtocolMessageType.Hello
 
     def to_payload(self):
-        return {
-            "contents": self.contents,
-        }
+        return []
 
     @staticmethod
     def from_payload(payload):
-        return TextChanged(payload["contents"])
+        return Hello()
 
 
-class Ping:
-    """
-    Sent between agents for testing purposes.
-    """
-    def __init__(self, ttl):
-        self.type = InteragentProtocolMessageType.Ping
-        self.ttl = ttl
+class Bye:
+    def __init__(self):
+        self.type = InteragentProtocolMessageType.Bye
 
     def to_payload(self):
-        return {
-            "ttl": self.ttl,
-        }
+        return []
 
     @staticmethod
     def from_payload(payload):
-        return Ping(payload["ttl"])
+        return Bye()
 
 
-class NewOperations:
+class RawNewOperations:
     """
     Sent to other agents to notify them of new CRDT operations to apply.
-
-    The value of operations_list should be passed as-is to the document's
-    apply_operations() function. The patches that are returned by that
-    call should be passed to the plugin using the ApplyPatches editor
-    protocol message.
     """
-    def __init__(self, operations_list):
+    def __init__(self, sequence_number, total_fragments, fragment_number, operations_binary):
         self.type = InteragentProtocolMessageType.NewOperations
-        self.operations_list = operations_list
+        self.sequence_number = sequence_number
+        self.total_fragments = total_fragments
+        self.fragment_number = fragment_number
+        self.operations_binary = operations_binary
+
+    def is_fragmented(self):
+        return self.total_fragments > 1
 
     def to_payload(self):
-        return {
-            "operations_list": self.operations_list,
-        }
+        payload_bytes = [
+            self.sequence_number.to_bytes(2, byteorder="big"),
+            self.total_fragments.to_bytes(2, byteorder="big"),
+        ]
+        if self.is_fragmented():
+            payload_bytes.append(self.fragment_number.to_bytes(2, byteorder="big"))
+        payload_bytes.append(self.operations_binary)
+        return payload_bytes
 
     @staticmethod
     def from_payload(payload):
-        return NewOperations(payload["operations_list"])
+        sequence_number = int.from_bytes(payload[0:2], byteorder="big")
+        total_fragments = int.from_bytes(payload[2:4], byteorder="big")
+        fragment_number = 0
+        if self.is_fragmented():
+            fragment_number = int.from_bytes(payload[4:6], byteorder="big")
+        data_offset = 6 if self.is_fragmented() else 4
+
+        return RawNewOperations(sequence_number, total_fragments, fragment_number, payload[data_offset:])
 
 
 def serialize(message):
-    as_dict = {
-        "type": message.type.value,
-        "payload": message.to_payload(),
-        "version": 1,
-    }
-    return json.dumps(as_dict)
+    binary_parts = [INTERAGENT_IDENTIFIER]
+    binary_parts.append(message.type.to_bytes(2, byteorder="big"))
+    binary_parts.extend(message.to_payload())
+    return b"".join(binary_parts)
 
 
 def deserialize(data):
-    try:
-        as_dict = json.loads(data)
-        message_type = as_dict["type"]
-        payload = as_dict["payload"]
+    if len(data) < INTERAGENT_HEADER_LENGTH or data[0:2] != INTERAGENT_HEADER:
+        raise InteragentProtocolMarshalError
 
-        if message_type == InteragentProtocolMessageType.TextChanged.value:
-            return TextChanged.from_payload(payload)
+    message_type = int.from_bytes(data[2:4], byteorder="big")
+    payload = data[4:]
 
-        elif message_type == InteragentProtocolMessageType.Ping.value:
-            return Ping.from_payload(payload)
+    if message_type == InteragentProtocolMessageType.Hello.value:
+        return Hello.from_payload(payload)
 
-        elif message_type == InteragentProtocolMessageType.NewOperations.value:
-            return NewOperations.from_payload(payload)
+    elif message_type == InteragentProtocolMessageType.Bye.value:
+        return Bye.from_payload(payload)
 
-        else:
-            raise InteragentProtocolMarshalError
+    elif message_type == InteragentProtocolMessageType.NewOperations.value:
+        return RawNewOperations.from_payload(payload)
 
-    except json.JSONDecodeError:
+    else:
         raise InteragentProtocolMarshalError
