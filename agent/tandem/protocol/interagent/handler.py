@@ -32,6 +32,14 @@ class InteragentProtocolHandler:
     def _handle_hello(self, message, sender_address):
         self._peer_manager.register_peer(sender_address)
 
+        # Send newly connected agent a copy of the document
+        operations = self._document.get_document_operations()
+        if len(operations) == 0:
+            return
+        operations_binary = json.dumps(operations).encode("utf-8")
+        new_operations_message = im.RawNewOperations(1, 1, 0, operations_binary)
+        self._peer_manager.send_message(new_operations_message, sender_address)
+
     def _handle_bye(self, message, sender_address):
         self._peer_manager.remove_peer(sender_address)
 

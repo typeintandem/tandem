@@ -30,7 +30,7 @@ class UDPGateway:
     def _read_datagrams(self):
         try:
             while True:
-                raw_data, address = self._socket.recvfrom(1024)
+                raw_data, address = self._socket.recvfrom(1200)
                 host, port = address
                 logging.debug("Received data from {}:{}.".format(host, port))
                 self._handler_function(raw_data, address)

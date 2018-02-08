@@ -18,6 +18,13 @@ class PeerManager:
         for address, _ in self._peers.items():
             self._gateway.write_binary_data(im.serialize(message), address)
 
+    def send_message(self, message, address):
+        if address not in self._peers:
+            host, port = address
+            raise ValueError(
+                "Peer at {}:{} does not exist.".format(host, port))
+        self._gateway.write_binary_data(im.serialize(message), address)
+
     def connect_to(self, host, port):
         address = (host, port)
         self._gateway.write_binary_data(im.serialize(im.Hello()), address)
