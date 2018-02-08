@@ -26,21 +26,20 @@ class AgentProtocolHandler(ProtocolHandlerBase):
         ConnectionStore.get_instance().register_connection(new_connection)
         session.add_connection(new_connection)
 
-        connect_to = [
-            (connection.get_public_address(), connection.get_private_address())
-            for connection in session.get_connections()
-        ]
-        payload = {"uuid": message.uuid, "connect_to": connect_to}
-        self._connection_manager.send_data(
-            new_connection,
-            RendezvousProtocolUtils.serialize(SetupParameters(payload)),
-        )
-
         for connection in session.get_connections():
             if not(connection == new_connection):
-                connect_to = [(new_connection.get_public_address(), new_connection.get_private_address())]
-                payload = {"uuid": message.uuid, "connect_to": connect_to}
                 self._connection_manager.send_data(
                     connection,
-                    RendezvousProtocolUtils.serialize(SetupParameters(payload)),
+                    RendezvousProtocolUtils.serialize(SetupParameters({
+                        "uuid": message.uuid,
+                        "connect_to": [(new_connection.get_public_address(), new_connection.get_private_address())],
+                    })),
+                )
+
+                self._connection_manager.send_data(
+                    new_connection,
+                    RendezvousProtocolUtils.serialize(SetupParameters({
+                        "uuid": message.uuid,
+                        "connect_to": [(connection.get_public_address(), connection.get_private_address())],
+                    })),
                 )

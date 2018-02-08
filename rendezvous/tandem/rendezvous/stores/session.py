@@ -22,4 +22,8 @@ class SessionStore(StoreBase):
         self._sessions = {}
 
     def get_session_with_uuid(self, uuid):
-        return self._sessions.get(uuid, Session(uuid))
+        session = self._sessions.get(uuid, None)
+        if not session:
+            session = Session(uuid)
+            self._sessions[uuid] = session
+        return session
