@@ -68,22 +68,22 @@ class RawNewOperations:
         sequence_number = int.from_bytes(payload[0:2], byteorder="big")
         total_fragments = int.from_bytes(payload[2:4], byteorder="big")
         fragment_number = 0
-        if self.is_fragmented():
+        if total_fragments > 1:
             fragment_number = int.from_bytes(payload[4:6], byteorder="big")
-        data_offset = 6 if self.is_fragmented() else 4
+        data_offset = 6 if total_fragments > 1 else 4
 
         return RawNewOperations(sequence_number, total_fragments, fragment_number, payload[data_offset:])
 
 
 def serialize(message):
     binary_parts = [INTERAGENT_IDENTIFIER]
-    binary_parts.append(message.type.to_bytes(2, byteorder="big"))
+    binary_parts.append(message.type.value.to_bytes(2, byteorder="big"))
     binary_parts.extend(message.to_payload())
     return b"".join(binary_parts)
 
 
 def deserialize(data):
-    if len(data) < INTERAGENT_HEADER_LENGTH or data[0:2] != INTERAGENT_HEADER:
+    if len(data) < INTERAGENT_HEADER_LENGTH or data[0:2] != INTERAGENT_IDENTIFIER:
         raise InteragentProtocolMarshalError
 
     message_type = int.from_bytes(data[2:4], byteorder="big")

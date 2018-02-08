@@ -1,6 +1,7 @@
 import os
 import logging
 import socket
+import json
 import tandem.protocol.editor.messages as em
 import tandem.protocol.interagent.messages as im
 
@@ -30,7 +31,7 @@ class EditorProtocolHandler:
             raise
 
     def _handle_connect_to(self, message):
-        hostname = socket.gethostfromname(message.host)
+        hostname = socket.gethostbyname(message.host)
         logging.info(
             "Tandem Agent is attempting to establish a "
             "connection to {}:{}.".format(hostname, message.port),

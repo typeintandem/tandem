@@ -15,13 +15,13 @@ class PeerManager:
         del self._peers[address]
 
     def broadcast(self, message):
-        for address, _ in self._peers:
+        for address, _ in self._peers.items():
             self._gateway.write_binary_data(im.serialize(message), address)
 
     def connect_to(self, host, port):
         address = (host, port)
         self._gateway.write_binary_data(im.serialize(im.Hello()), address)
-        self._register_peer(address)
+        self.register_peer(address)
 
     def stop(self):
         self.broadcast(im.Bye())

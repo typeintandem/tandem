@@ -15,7 +15,7 @@ class TandemAgent:
         self._requested_port = port
         self._document = Document()
         self._std_streams = StdStreams(self._on_std_input)
-        self._interagent_gateway = UDPGateway(self.requested_host, self._requested_port)
+        self._interagent_gateway = UDPGateway(self._requested_host, self._requested_port, self._on_interagent_message)
         self._peer_manager = PeerManager(self._interagent_gateway)
         self._editor_protocol = EditorProtocolHandler(
             self._std_streams,
