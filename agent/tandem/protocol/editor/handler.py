@@ -1,13 +1,14 @@
 import os
 import logging
+import socket
 import tandem.protocol.editor.messages as em
 import tandem.protocol.interagent.messages as im
 
 
 class EditorProtocolHandler:
-    def __init__(self, std_streams, connection_manager, document):
+    def __init__(self, std_streams, peer_manager, document):
         self._std_streams = std_streams
-        self._connection_manager = connection_manager
+        self._peer_manager = peer_manager
         self._document = document
 
     def handle_message(self, data):
@@ -17,8 +18,6 @@ class EditorProtocolHandler:
                 self._handle_connect_to(message)
             elif type(message) is em.WriteRequestAck:
                 self._handle_write_request_ack(message)
-            elif type(message) is em.UserChangedEditorText:
-                self._handle_user_changed_editor_text(message)
             elif type(message) is em.NewPatches:
                 self._handle_new_patches(message)
             elif type(message) is em.CheckDocumentSync:
@@ -31,14 +30,15 @@ class EditorProtocolHandler:
             raise
 
     def _handle_connect_to(self, message):
+        hostname = socket.gethostfromname(message.host)
         logging.info(
             "Tandem Agent is attempting to establish a "
-            "connection to {}:{}.".format(message.host, message.port),
+            "connection to {}:{}.".format(hostname, message.port),
         )
-        self._connection_manager.connect_to(message.host, message.port)
+        self._peer_manager.connect_to(hostname, message.port)
         logging.info(
             "Tandem Agent connected to {}:{}."
-            .format(message.host, message.port),
+            .format(hostname, message.port),
         )
 
     def _handle_write_request_ack(self, message):
@@ -55,10 +55,6 @@ class EditorProtocolHandler:
             message.seq
         ))
 
-    def _handle_user_changed_editor_text(self, message):
-        text_changed = im.serialize(im.TextChanged(message.contents))
-        self._connection_manager.broadcast(text_changed)
-
     def _handle_new_patches(self, message):
         nested_operations = [
             self._document.set_text_in_range(
@@ -71,8 +67,14 @@ class EditorProtocolHandler:
         operations = []
         for operations_list in nested_operations:
             operations.extend(operations_list)
-        new_operations_message = im.serialize(im.NewOperations(operations))
-        self._connection_manager.broadcast(new_operations_message)
+        operations_binary = json.dumps(operations).encode("utf-8")
+        new_operations_message = im.RawNewOperations(
+            1,
+            1,
+            0,
+            operations_binary,
+        )
+        self._peer_manager.broadcast(new_operations_message)
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()

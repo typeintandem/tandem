@@ -44,6 +44,7 @@ class TandemAgent:
 
     def stop(self):
         self._std_streams.stop()
+        self._peer_manager.stop()
         self._interagent_gateway.stop()
         self._document.stop()
         self._main_executor.shutdown()
