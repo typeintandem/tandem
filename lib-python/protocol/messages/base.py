@@ -45,7 +45,7 @@ class ProtocolUtilsBase(object):
                 if message_type == data_message_type:
                     return constructor(data_payload)
 
-            raise RendezvousProtocolMarshalError
+            raise ProtocolMarshalError
 
         except json.JSONDecodeError:
-            raise RendezvousProtocolMarshalError
+            raise ProtocolMarshalError

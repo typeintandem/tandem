@@ -51,7 +51,7 @@ class InteragentProtocolHandler:
         sender_connection = \
             self._connection_manager.get_connection(sender_address)
         sender_connection.write_string_message(
-            im.serialize(im.Ping(message.ttl-1)),
+            im.serialize(im.Ping(message.ttl - 1)),
         )
 
     def _handle_text_changed(self, message, sender_address):

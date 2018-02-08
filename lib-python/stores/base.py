@@ -1,6 +1,7 @@
 class ModelBase(object):
     pass
 
+
 class StoreBase(object):
     instance = None
 
@@ -9,4 +10,3 @@ class StoreBase(object):
         if not cls.instance:
             cls.instance = cls()
         return cls.instance
-

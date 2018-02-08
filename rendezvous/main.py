@@ -48,7 +48,7 @@ def main():
     set_up_logging(args.log_file)
 
     # Run the agent until asked to terminate
-    with TandemRendezvous(args.host, args.port) as agent:
+    with TandemRendezvous(args.host, args.port):
         should_shutdown.wait()
 
 

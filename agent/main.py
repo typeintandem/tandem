@@ -48,7 +48,7 @@ def main():
     set_up_logging(args.log_file)
 
     # Run the agent until asked to terminate
-    with TandemAgent(args.host, args.port) as agent:
+    with TandemAgent(args.host, args.port):
         should_shutdown.wait()
 
 

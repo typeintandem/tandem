@@ -1,5 +1,6 @@
 from tandem.shared.stores.base import ModelBase, StoreBase
 
+
 class Connection(ModelBase):
     def __init__(self, public_address, private_address=None):
         self._public_address = public_address
@@ -17,6 +18,7 @@ class Connection(ModelBase):
 
     def get_private_address(self):
         return self._private_address
+
 
 class ConnectionStore(StoreBase):
     def __init__(self):

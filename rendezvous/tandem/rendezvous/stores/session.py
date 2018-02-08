@@ -1,6 +1,7 @@
 from tandem.shared.stores.base import ModelBase, StoreBase
 from tandem.rendezvous.stores.connection import ConnectionStore
 
+
 class Session(ModelBase):
     def __init__(self, uuid):
         self._connections = []
