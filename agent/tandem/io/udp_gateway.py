@@ -32,7 +32,7 @@ class UDPGateway:
         return self._max_payload_length
 
     def split_payload(self, binary_payload, header_length=0):
-        max_payload_length = self._max_payload - header_length
+        max_payload_length = self._max_payload_length - header_length
         return [
             binary_payload[i : i + max_payload_length]
             for i in range(0, len(binary_payload), max_payload_length)

@@ -42,7 +42,17 @@ class InteragentProtocolHandler:
         self._peer_manager.remove_peer(sender_address)
 
     def _handle_new_operations(self, message, sender_address):
-        operations_list = json.loads(message.operations_binary.decode("utf-8"))
+        if not message.is_fragmented():
+            return self._handle_assembled_operations(message.operations_binary)
+
+        peer = self._peer_manager.get_peer(sender_address)
+        operations_binary = peer.integrate_new_operations_message(message)
+
+        if operations_binary is not None:
+            self._handle_assembled_operations(operations_binary)
+
+    def _handle_assembled_operations(self, operations_binary):
+        operations_list = json.loads(operations_binary.decode("utf-8"))
         self._document.enqueue_remote_operations(operations_list)
         if not self._document.write_request_sent():
             self._std_streams.write_string_message(

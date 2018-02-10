@@ -60,7 +60,7 @@ class NewOperations:
     SEQUENCE_MOD = SEQUENCE_MAX + 1
 
     UNFRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 2
-    FRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 4
+    FRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 6
 
     def __init__(self, operations_binary, total_fragments=1, sequence_number=None, fragment_number=None):
         self.type = InteragentProtocolMessageType.NewOperations

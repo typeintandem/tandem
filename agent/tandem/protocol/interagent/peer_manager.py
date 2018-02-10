@@ -15,14 +15,17 @@ class PeerManager:
     def remove_peer(self, address):
         del self._peers[address]
 
-    def broadcast_new_operations(self, operations_list):
-        self._broadcast(self._operations_list_to_messages(operations_list))
-
-    def send_operations_list(self, operations_list, address):
+    def get_peer(self, address):
         if address not in self._peers:
             host, port = address
             raise ValueError(
                 "Peer at {}:{} does not exist.".format(host, port))
+        return self._peers[address]
+
+    def broadcast_new_operations(self, operations_list):
+        self._broadcast(self._operations_list_to_messages(operations_list))
+
+    def send_operations_list(self, operations_list, address):
         self._send_messages(self._operations_list_to_messages(operations_list), address)
 
     def connect_to(self, host, port):
