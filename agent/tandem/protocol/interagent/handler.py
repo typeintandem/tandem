@@ -18,7 +18,7 @@ class InteragentProtocolHandler:
                 self._handle_hello(message, sender_address)
             elif type(message) is im.Bye:
                 self._handle_bye(message, sender_address)
-            elif type(message) is im.RawNewOperations:
+            elif type(message) is im.NewOperations:
                 self._handle_new_operations(message, sender_address)
             else:
                 logging.debug("Received unknown interagent message.")
@@ -37,7 +37,7 @@ class InteragentProtocolHandler:
         if len(operations) == 0:
             return
         operations_binary = json.dumps(operations).encode("utf-8")
-        new_operations_message = im.RawNewOperations(1, 1, 0, operations_binary)
+        new_operations_message = im.NewOperations(operations_binary)
         self._peer_manager.send_message(new_operations_message, sender_address)
 
     def _handle_bye(self, message, sender_address):

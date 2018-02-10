@@ -1,8 +1,13 @@
 import json
 import enum
 
-INTERAGENT_IDENTIFIER = b"\x54\x01"
-INTERAGENT_HEADER_LENGTH = len(INTERAGENT_IDENTIFIER) + 2
+# Interagent messages are prefixed with "T" in UTF-8 encoding (0x54)
+# followed by an 8-bit protocol version number.
+HEADER = b"\x54\x01"
+
+# Version 1 messages contain a 16-bit message identifier that follows
+# the header. So all messages are at least 4 bytes long.
+MIN_MESSAGE_LENGTH = len(HEADER) + 2
 
 
 class InteragentProtocolMarshalError(ValueError):
@@ -39,51 +44,58 @@ class Bye:
         return Bye()
 
 
-class RawNewOperations:
+class NewOperations:
     """
     Sent to other agents to notify them of new CRDT operations to apply.
+
+    This message could have multiple fragments if the operations payload is too large.
+    If there are multiple fragments, the message will contain a sequence number and
+    fragment number.
+
+    All fragments in the same message share the same sequence number. The fragment number
+    is used to order the payloads when reassembling the message.
     """
-    def __init__(self, sequence_number, total_fragments, fragment_number, operations_binary):
+    def __init__(self, operations_binary, total_fragments=1, sequence_number=None, fragment_number=None):
         self.type = InteragentProtocolMessageType.NewOperations
+        self.operations_binary = operations_binary
         self.sequence_number = sequence_number
         self.total_fragments = total_fragments
         self.fragment_number = fragment_number
-        self.operations_binary = operations_binary
-
-    def is_fragmented(self):
-        return self.total_fragments > 1
 
     def to_payload(self):
-        payload_bytes = [
-            self.sequence_number.to_bytes(2, byteorder="big"),
-            self.total_fragments.to_bytes(2, byteorder="big"),
-        ]
-        if self.is_fragmented():
+        payload_bytes = [self.total_fragments.to_bytes(2, byteorder="big")]
+        if self.total_fragments > 1:
+            payload_bytes.append(self.sequence_number.to_bytes(2, byteorder="big"))
             payload_bytes.append(self.fragment_number.to_bytes(2, byteorder="big"))
         payload_bytes.append(self.operations_binary)
         return payload_bytes
 
     @staticmethod
     def from_payload(payload):
-        sequence_number = int.from_bytes(payload[0:2], byteorder="big")
-        total_fragments = int.from_bytes(payload[2:4], byteorder="big")
-        fragment_number = 0
-        if total_fragments > 1:
-            fragment_number = int.from_bytes(payload[4:6], byteorder="big")
-        data_offset = 6 if total_fragments > 1 else 4
+        total_fragments = int.from_bytes(payload[0:2], byteorder="big")
 
-        return RawNewOperations(sequence_number, total_fragments, fragment_number, payload[data_offset:])
+        if total_fragments == 1:
+            return NewOperations(payload[2:])
+
+        sequence_number = int.from_bytes(payload[2:4], byteorder="big")
+        fragment_number = int.from_bytes(payload[4:6], byteorder="big")
+        return NewOperations(
+            payload[6:],
+            total_fragments,
+            sequence_number,
+            fragment_number,
+        )
 
 
 def serialize(message):
-    binary_parts = [INTERAGENT_IDENTIFIER]
+    binary_parts = [HEADER]
     binary_parts.append(message.type.value.to_bytes(2, byteorder="big"))
     binary_parts.extend(message.to_payload())
     return b"".join(binary_parts)
 
 
 def deserialize(data):
-    if len(data) < INTERAGENT_HEADER_LENGTH or data[0:2] != INTERAGENT_IDENTIFIER:
+    if len(data) < MIN_MESSAGE_LENGTH or data[0:2] != HEADER:
         raise InteragentProtocolMarshalError
 
     message_type = int.from_bytes(data[2:4], byteorder="big")
@@ -96,7 +108,7 @@ def deserialize(data):
         return Bye.from_payload(payload)
 
     elif message_type == InteragentProtocolMessageType.NewOperations.value:
-        return RawNewOperations.from_payload(payload)
+        return NewOperations.from_payload(payload)
 
     else:
         raise InteragentProtocolMarshalError
