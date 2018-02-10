@@ -48,7 +48,7 @@ class TandemAgent:
             self._interagent_gateway.stop()
             self._std_streams.stop()
             self._document.stop()
-        self._main_executor.submit(atomic_shutdown).result()
+        self._main_executor.submit(atomic_shutdown)
         self._main_executor.shutdown()
         logging.info("Tandem Agent has shut down.")
 
