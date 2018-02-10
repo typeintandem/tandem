@@ -68,9 +68,8 @@ class EditorProtocolHandler:
         operations = []
         for operations_list in nested_operations:
             operations.extend(operations_list)
-        operations_binary = json.dumps(operations).encode("utf-8")
-        new_operations_message = im.NewOperations(operations_binary)
-        self._peer_manager.broadcast(new_operations_message)
+
+        self._peer_manager.broadcast_new_operations(operations)
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()

@@ -55,6 +55,13 @@ class NewOperations:
     All fragments in the same message share the same sequence number. The fragment number
     is used to order the payloads when reassembling the message.
     """
+
+    SEQUENCE_MAX = int(0xFFFF)
+    SEQUENCE_MOD = SEQUENCE_MAX + 1
+
+    UNFRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 2
+    FRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 4
+
     def __init__(self, operations_binary, total_fragments=1, sequence_number=None, fragment_number=None):
         self.type = InteragentProtocolMessageType.NewOperations
         self.operations_binary = operations_binary
@@ -62,9 +69,12 @@ class NewOperations:
         self.total_fragments = total_fragments
         self.fragment_number = fragment_number
 
+    def is_fragmented(self):
+        return self.total_fragments > 1
+
     def to_payload(self):
         payload_bytes = [self.total_fragments.to_bytes(2, byteorder="big")]
-        if self.total_fragments > 1:
+        if self.is_fragmented():
             payload_bytes.append(self.sequence_number.to_bytes(2, byteorder="big"))
             payload_bytes.append(self.fragment_number.to_bytes(2, byteorder="big"))
         payload_bytes.append(self.operations_binary)
@@ -85,6 +95,19 @@ class NewOperations:
             sequence_number,
             fragment_number,
         )
+
+    @staticmethod
+    def from_fragmented_binary_operations(fragments, sequence_number):
+        messages = []
+        total_fragments = len(fragments)
+        for fragment_number in range(total_fragments):
+            messages.append(NewOperations(
+                fragments[fragment_number],
+                total_fragments,
+                sequence_number,
+                fragment_number,
+            ))
+        return messages
 
 
 def serialize(message):
