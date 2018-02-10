@@ -59,5 +59,8 @@ class InteragentProtocolHandler:
                 em.serialize(em.WriteRequest(self._next_editor_sequence)),
             )
             self._document.set_write_request_sent(True)
-            logging.debug("Sent write request seq: {}".format(self._next_editor_sequence))
+            logging.debug(
+                "Sent write request seq: {}"
+                .format(self._next_editor_sequence),
+            )
             self._next_editor_sequence += 1

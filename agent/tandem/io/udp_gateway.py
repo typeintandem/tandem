@@ -26,7 +26,8 @@ class UDPGateway:
     def write_binary_data(self, binary_data, address):
         bytes_sent = 0
         while bytes_sent < len(binary_data):
-            bytes_sent += self._socket.sendto(binary_data[bytes_sent:], address)
+            bytes_sent += \
+                self._socket.sendto(binary_data[bytes_sent:], address)
 
     def max_payload_length(self):
         return self._max_payload_length
@@ -34,7 +35,7 @@ class UDPGateway:
     def split_payload(self, binary_payload, header_length=0):
         max_payload_length = self._max_payload_length - header_length
         return [
-            binary_payload[i : i + max_payload_length]
+            binary_payload[i:i + max_payload_length]
             for i in range(0, len(binary_payload), max_payload_length)
         ]
 
@@ -46,4 +47,7 @@ class UDPGateway:
                 logging.debug("Received data from {}:{}.".format(host, port))
                 self._handler_function(raw_data, address)
         except:
-            logging.info("Tandem Agent has closed the UDP gateway on port {}.".format(self._port))
+            logging.info(
+                "Tandem Agent has closed the UDP gateway on port {}."
+                .format(self._port),
+            )

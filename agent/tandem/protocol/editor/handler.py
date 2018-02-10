@@ -1,7 +1,6 @@
 import os
 import logging
 import socket
-import json
 import tandem.protocol.editor.messages as em
 import tandem.protocol.interagent.messages as im
 
@@ -50,11 +49,11 @@ class EditorProtocolHandler:
         # the plugin to allow it to accept changes from the user again
         text_patches_message = em.ApplyPatches(text_patches)
         self._std_streams.write_string_message(
-            em.serialize(text_patches_message)
+            em.serialize(text_patches_message),
         )
-        logging.debug("Sent apply patches message for seq: {}".format(
-            message.seq
-        ))
+        logging.debug(
+            "Sent apply patches message for seq: {}".format(message.seq),
+        )
 
     def _handle_new_patches(self, message):
         nested_operations = [

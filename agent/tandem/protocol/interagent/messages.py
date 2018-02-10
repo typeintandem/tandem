@@ -48,12 +48,13 @@ class NewOperations:
     """
     Sent to other agents to notify them of new CRDT operations to apply.
 
-    This message could have multiple fragments if the operations payload is too large.
-    If there are multiple fragments, the message will contain a sequence number and
-    fragment number.
+    This message could have multiple fragments if the operations payload
+    is too large. If there are multiple fragments, the message will
+    contain a sequence number and fragment number.
 
-    All fragments in the same message share the same sequence number. The fragment number
-    is used to order the payloads when reassembling the message.
+    All fragments in the same message share the same sequence number. The
+    fragment number is used to order the payloads when reassembling the
+    message.
     """
 
     SEQUENCE_MAX = int(0xFFFF)
@@ -62,7 +63,13 @@ class NewOperations:
     UNFRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 2
     FRAGMENTED_HEADER_LENGTH = MIN_MESSAGE_LENGTH + 6
 
-    def __init__(self, operations_binary, total_fragments=1, sequence_number=None, fragment_number=None):
+    def __init__(
+        self,
+        operations_binary,
+        total_fragments=1,
+        sequence_number=None,
+        fragment_number=None,
+    ):
         self.type = InteragentProtocolMessageType.NewOperations
         self.operations_binary = operations_binary
         self.sequence_number = sequence_number
@@ -75,8 +82,12 @@ class NewOperations:
     def to_payload(self):
         payload_bytes = [self.total_fragments.to_bytes(2, byteorder="big")]
         if self.is_fragmented():
-            payload_bytes.append(self.sequence_number.to_bytes(2, byteorder="big"))
-            payload_bytes.append(self.fragment_number.to_bytes(2, byteorder="big"))
+            payload_bytes.append(
+                self.sequence_number.to_bytes(2, byteorder="big"),
+            )
+            payload_bytes.append(
+                self.fragment_number.to_bytes(2, byteorder="big"),
+            )
         payload_bytes.append(self.operations_binary)
         return payload_bytes
 

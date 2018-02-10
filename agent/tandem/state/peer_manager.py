@@ -26,7 +26,10 @@ class PeerManager:
         self._broadcast(self._operations_list_to_messages(operations_list))
 
     def send_operations_list(self, operations_list, address):
-        self._send_messages(self._operations_list_to_messages(operations_list), address)
+        self._send_messages(
+            self._operations_list_to_messages(operations_list),
+            address,
+        )
 
     def connect_to(self, host, port):
         address = (host, port)
@@ -41,7 +44,8 @@ class PeerManager:
         operations_json = json.dumps(operations_list)
         operations_binary = operations_json.encode("utf-8")
 
-        if (len(operations_binary) + im.NewOperations.UNFRAGMENTED_HEADER_LENGTH
+        if (len(operations_binary) +
+                im.NewOperations.UNFRAGMENTED_HEADER_LENGTH
                 <= self._gateway.max_payload_length()):
             return [im.NewOperations(operations_binary)]
 
