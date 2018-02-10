@@ -1,5 +1,5 @@
 import json
-from tandem.protocol.interagent.peer import Peer
+from tandem.state.peer import Peer
 import tandem.protocol.interagent.messages as im
 
 
@@ -35,6 +35,7 @@ class PeerManager:
 
     def stop(self):
         self._broadcast([im.Bye()])
+        self._peers.clear()
 
     def _operations_list_to_messages(self, operations_list):
         operations_json = json.dumps(operations_list)

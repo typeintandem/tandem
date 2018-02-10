@@ -4,7 +4,7 @@ from tandem.io.std_streams import StdStreams
 from tandem.io.udp_gateway import UDPGateway
 from tandem.protocol.editor.handler import EditorProtocolHandler
 from tandem.protocol.interagent.handler import InteragentProtocolHandler
-from tandem.protocol.interagent.peer_manager import PeerManager
+from tandem.state.peer_manager import PeerManager
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -43,10 +43,12 @@ class TandemAgent:
         logging.info("Tandem Agent has started.")
 
     def stop(self):
-        self._std_streams.stop()
-        self._peer_manager.stop()
-        self._interagent_gateway.stop()
-        self._document.stop()
+        def atomic_shutdown():
+            self._peer_manager.stop()
+            self._interagent_gateway.stop()
+            self._std_streams.stop()
+            self._document.stop()
+        self._main_executor.submit(atomic_shutdown).result()
         self._main_executor.shutdown()
         logging.info("Tandem Agent has shut down.")
 

@@ -1,6 +1,3 @@
-import tandem.protocol.interagent.messages as im
-
-
 class NewOperationsFragments:
     def __init__(self, num_fragments):
         self._buffer = [None for _ in range(num_fragments)]
