@@ -30,7 +30,10 @@ class ConnectionManager:
 
     def send_data(self, connection, data):
         logging.info("Sending data {} to {}" .format(data, connection.get_address()))
-        self._socket_server.sendto(data.encode('utf-8'), connection.get_address())
+        binary_data = data.encode("utf-8")
+        bytes_sent = 0
+        while bytes_sent < len(binary_data):
+            bytes_sent += self._socket_server.sendto(binary_data[bytes_sent:], connection.get_address())
 
     def _handle_receive(self):
         try:

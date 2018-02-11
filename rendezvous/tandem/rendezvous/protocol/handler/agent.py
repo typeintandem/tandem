@@ -6,18 +6,22 @@ from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     SetupParameters,
 )
+from tandem.shared.utils.static_value import static_value as staticvalue
 
 
 class AgentProtocolHandler(ProtocolHandlerBase):
-    def __init__(self, connection_manager):
-        self._connection_manager = connection_manager
+    @staticvalue
+    def _protocol_message_utils(self):
+        return RendezvousProtocolUtils
 
-    def handle_message(self, data, sender_address):
-        message_types = {
-            RendezvousProtocolMessageType.ConnectRequest.value: self._handle_connect_request,
+    @staticvalue
+    def _protocol_message_handlers(self):
+        return {
+            RendezvousProtocolMessageType.ConnectRequest.value: self._handle_connect_request
         }
 
-        return ProtocolHandlerBase.handle_message(RendezvousProtocolUtils, message_types, data, sender_address)
+    def __init__(self, connection_manager):
+        self._connection_manager = connection_manager
 
     def _handle_connect_request(self, message, sender_address):
         new_connection = Connection(sender_address, message.private_address)
@@ -30,16 +34,16 @@ class AgentProtocolHandler(ProtocolHandlerBase):
             if not(connection == new_connection):
                 self._connection_manager.send_data(
                     connection,
-                    RendezvousProtocolUtils.serialize(SetupParameters({
-                        "uuid": message.uuid,
-                        "connect_to": [(new_connection.get_public_address(), new_connection.get_private_address())],
-                    })),
+                    self._protocol_message_utils().serialize(SetupParameters(
+                        uuid=message.uuid,
+                        connect_to=[(new_connection.get_public_address(), new_connection.get_private_address())],
+                    )),
                 )
 
                 self._connection_manager.send_data(
                     new_connection,
-                    RendezvousProtocolUtils.serialize(SetupParameters({
-                        "uuid": message.uuid,
-                        "connect_to": [(connection.get_public_address(), connection.get_private_address())],
-                    })),
+                    self._protocol_message_utils().serialize(SetupParameters(
+                        uuid=message.uuid,
+                        connect_to=[(connection.get_public_address(), connection.get_private_address())],
+                    )),
                 )

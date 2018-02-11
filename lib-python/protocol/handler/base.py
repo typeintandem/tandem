@@ -3,12 +3,17 @@ from tandem.shared.protocol.messages.base import ProtocolMarshalError
 
 
 class ProtocolHandlerBase(object):
-    @staticmethod
-    def handle_message(utils, message_types, data, sender_address):
-        try:
-            message = utils.deserialize(data)
+    def _protocol_message_utils(self):
+        return None
 
-            for message_type, handler in message_types.items():
+    def _protocol_message_handlers(self):
+        return None
+
+    def handle_message(self, data, sender_address):
+        try:
+            message = self._protocol_message_utils().deserialize(data)
+
+            for message_type, handler in self._protocol_message_handlers().items():
                 if message_type == message.type.value:
                     handler(message, sender_address)
 

@@ -1,8 +1,7 @@
-import argparse
 import socket
 import json
-import time
 from tandem.shared.protocol.messages.rendezvous import RendezvousProtocolUtils, ConnectRequest
+
 
 def recv_data(sock):
     print("Waiting to receive data")
@@ -10,9 +9,11 @@ def recv_data(sock):
     print("Received data: {} from address: {}".format(data, address))
     return json.loads(data), address
 
+
 def send_data(sock, data, address):
     print("Sending data: {} to address: {}".format(data, address))
     sock.sendto(json.dumps(data).encode('utf-8'), address)
+
 
 def main():
     self_address = ('localhost', 60001)
@@ -23,12 +24,13 @@ def main():
     sock.bind(self_address)
 
     print("Connecting to rendezvous server")
-    send_data(sock, RendezvousProtocolUtils.serialize(ConnectRequest({
-        'uuid': '1',
-        'private_address': self_address
-    })), server_address)
+    send_data(sock, RendezvousProtocolUtils.serialize(ConnectRequest(
+        uuid='1',
+        private_address=self_address
+    )), server_address)
 
     while(True):
         data, address = recv_data(sock)
+
 
 main()

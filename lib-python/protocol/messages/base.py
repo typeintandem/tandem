@@ -11,19 +11,24 @@ class ProtocolMessageTypeBase(enum.Enum):
 
 
 class ProtocolMessageBase(object):
-    def __init__(self, message_type, payload):
+    def __init__(self, message_type, **kwargs):
         for key in self._payload_keys():
-            setattr(self, key, payload.get(key, None))
+            setattr(self, key, kwargs.get(key, None))
+
         self.type = message_type
+
+    def _payload_keys(self):
+        return None
 
     def to_payload(self):
         return {key: getattr(self, key, None) for key in self._payload_keys()}
 
-    def _payload_keys(self):
-        return []
-
 
 class ProtocolUtilsBase(object):
+    @classmethod
+    def _protocol_message_constructors(cls):
+        return None
+
     @staticmethod
     def serialize(message):
         as_dict = {
@@ -33,17 +38,17 @@ class ProtocolUtilsBase(object):
         }
         return json.dumps(as_dict)
 
-    @staticmethod
-    def _deserialize(message_types, data):
+    @classmethod
+    def deserialize(cls, data):
         try:
             as_dict = json.loads(data)
             as_dict = json.loads(as_dict)
             data_message_type = as_dict["type"]
             data_payload = as_dict["payload"]
 
-            for message_type, constructor in message_types.items():
+            for message_type, constructor in cls._protocol_message_constructors().items():
                 if message_type == data_message_type:
-                    return constructor(data_payload)
+                    return constructor(**data_payload)
 
             raise ProtocolMarshalError
 
