@@ -1,12 +1,10 @@
 def static_value(inner_function):
-    value = None
+    dict_value = {}  # Using dictionary to workaround Python2's lack of `nonlocal`
 
     def outer_function(*args, **kwargs):
-        nonlocal value
+        if dict_value.get('value', None) is None:
+            dict_value['value'] = inner_function(*args, **kwargs)
 
-        if value is None:
-            value = inner_function(*args, **kwargs)
-
-        return value
+        return dict_value['value']
 
     return outer_function

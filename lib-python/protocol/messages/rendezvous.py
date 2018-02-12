@@ -13,7 +13,7 @@ class RendezvousProtocolMessageType(ProtocolMessageTypeBase):
 
 class ConnectRequest(ProtocolMessageBase):
     def __init__(self, **kwargs):
-        super().__init__(RendezvousProtocolMessageType.ConnectRequest, **kwargs)
+        super(ConnectRequest, self).__init__(RendezvousProtocolMessageType.ConnectRequest, **kwargs)
 
     @staticvalue
     def _payload_keys(self):
@@ -22,7 +22,10 @@ class ConnectRequest(ProtocolMessageBase):
 
 class SetupParameters(ProtocolMessageBase):
     def __init__(self, **kwargs):
-        super().__init__(RendezvousProtocolMessageType.SetupParameters, **kwargs)
+        super(SetupParameters, self).__init__(
+            RendezvousProtocolMessageType.SetupParameters,
+            **kwargs
+        )
 
     @staticvalue
     def _payload_keys(self):

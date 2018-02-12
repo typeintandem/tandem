@@ -10,7 +10,7 @@ from tandem.shared.protocol.messages.rendezvous import (
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 
-class AgentProtocolHandler(ProtocolHandlerBase):
+class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
     @staticvalue
     def _protocol_message_utils(self):
         return RendezvousProtocolUtils

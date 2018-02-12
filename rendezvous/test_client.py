@@ -12,7 +12,7 @@ def recv_data(sock):
 
 def send_data(sock, data, address):
     print("Sending data: {} to address: {}".format(data, address))
-    sock.sendto(json.dumps(data).encode('utf-8'), address)
+    sock.sendto(data.encode('utf-8'), address)
 
 
 def main():

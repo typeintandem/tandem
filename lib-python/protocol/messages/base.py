@@ -42,7 +42,6 @@ class ProtocolUtilsBase(object):
     def deserialize(cls, data):
         try:
             as_dict = json.loads(data)
-            as_dict = json.loads(as_dict)
             data_message_type = as_dict["type"]
             data_payload = as_dict["payload"]
 
