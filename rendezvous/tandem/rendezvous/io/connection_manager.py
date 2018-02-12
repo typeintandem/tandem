@@ -33,7 +33,10 @@ class ConnectionManager:
         binary_data = data.encode("utf-8")
         bytes_sent = 0
         while bytes_sent < len(binary_data):
-            bytes_sent += self._socket_server.sendto(binary_data[bytes_sent:], connection.get_address())
+            bytes_sent += self._socket_server.sendto(
+                binary_data[bytes_sent:],
+                connection.get_address()
+            )
 
     def _handle_receive(self):
         try:

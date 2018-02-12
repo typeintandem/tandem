@@ -3,10 +3,12 @@ import socket
 import json
 import time
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--self_port", default=60000, type=int)
     return parser.parse_args()
+
 
 def recv_data(sock):
     print("Waiting to receive data")
@@ -14,9 +16,11 @@ def recv_data(sock):
     print("Received data: {} from address: {}".format(data, address))
     return json.loads(data), address
 
+
 def send_data(sock, data, address):
     print("Sending data: {} to address: {}".format(data, address))
     sock.sendto(json.dumps(data), address)
+
 
 def main():
     args = get_args()
@@ -42,5 +46,6 @@ def main():
             send_data(sock, (new_data, new_address), connected_address)
 
         connected_clients.append((new_data, new_address))
+
 
 main()

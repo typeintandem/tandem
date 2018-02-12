@@ -37,7 +37,10 @@ class AgentProtocolHandler(ProtocolHandlerBase):
                     connection,
                     self._protocol_message_utils().serialize(SetupParameters(
                         uuid=message.uuid,
-                        connect_to=[(new_connection.get_public_address(), new_connection.get_private_address())],
+                        connect_to=[(
+                            new_connection.get_public_address(),
+                            new_connection.get_private_address()
+                        )],
                     )),
                 )
 
@@ -45,6 +48,9 @@ class AgentProtocolHandler(ProtocolHandlerBase):
                     new_connection,
                     self._protocol_message_utils().serialize(SetupParameters(
                         uuid=message.uuid,
-                        connect_to=[(connection.get_public_address(), connection.get_private_address())],
+                        connect_to=[(
+                            connection.get_public_address(),
+                            connection.get_private_address()
+                        )],
                     )),
                 )

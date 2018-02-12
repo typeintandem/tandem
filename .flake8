@@ -1,3 +1,4 @@
 [flake8]
-max-line-length = 120
+max-line-length = 100
 ignore = E722
+exclude = plugins
