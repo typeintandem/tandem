@@ -1,4 +1,5 @@
-from tandem.rendezvous.stores.connection import Connection, ConnectionStore
+from tandem.rendezvous.models.connection import Connection
+from tandem.rendezvous.stores.connection import ConnectionStore
 from tandem.rendezvous.stores.session import SessionStore
 from tandem.shared.protocol.handler.base import ProtocolHandlerBase
 from tandem.shared.protocol.messages.rendezvous import (

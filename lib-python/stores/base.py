@@ -1,7 +1,3 @@
-class ModelBase(object):
-    pass
-
-
 class StoreBase(object):
     instance = None
 
