@@ -2,7 +2,7 @@ import signal
 import logging
 import threading
 import argparse
-from tandem.executables.agent import TandemAgent
+from tandem.rendezvous.executables.rendezvous import TandemRendezvous
 
 should_shutdown = threading.Event()
 
@@ -26,29 +26,31 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    parser = argparse.ArgumentParser(description="Starts the Tandem agent.")
+    parser = argparse.ArgumentParser(
+        description="Starts the Tandem rendezvous server."
+    )
     parser.add_argument(
         "--host",
-        default="",
+        default="localhost",
         help="The host address to bind to.",
     )
     parser.add_argument(
         "--port",
-        default=0,
+        default=60000,
         type=int,
         help="The port to listen on.",
     )
     parser.add_argument(
         "--log-file",
-        default="/tmp/tandem-agent.log",
+        default="/tmp/tandem-rendezvous.log",
         help="The location of the log file.",
     )
     args = parser.parse_args()
 
     set_up_logging(args.log_file)
 
-    # Run the agent until asked to terminate
-    with TandemAgent(args.host, args.port):
+    # Run the rendezvous server until asked to terminate
+    with TandemRendezvous(args.host, args.port):
         should_shutdown.wait()
 
 

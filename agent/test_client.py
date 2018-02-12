@@ -1,4 +1,3 @@
-import sys
 import os
 import time
 import random
@@ -50,7 +49,7 @@ def print_raw_message(agent_stdout):
 def get_string_ports():
     starting_port = random.randint(60600, 62600)
     port1 = str(starting_port)
-    port2 = str(starting_port+1)
+    port2 = str(starting_port + 1)
     return port1, port2
 
 
@@ -232,7 +231,7 @@ def crdt_test():
     )
     print("Agent 2 made a second edit!")
 
-     # Expect agent1 to receive a RequestWrite message
+    # Expect agent1 to receive a RequestWrite message
     print_raw_message(agent1.stdout)
 
     # Allow changes to be applied
