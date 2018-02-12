@@ -1,6 +1,9 @@
 import socket
 import json
-from tandem.shared.protocol.messages.rendezvous import RendezvousProtocolUtils, ConnectRequest
+from tandem.shared.protocol.messages.rendezvous import (
+    RendezvousProtocolUtils,
+    ConnectRequest
+)
 
 
 def recv_data(sock):

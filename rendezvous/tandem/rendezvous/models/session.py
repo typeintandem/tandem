@@ -14,4 +14,6 @@ class Session(ModelBase):
         self._connections.remove(connection.get_address())
 
     def get_connections(self):
-        return ConnectionStore.get_instance().get_connections(self._connections)
+        return ConnectionStore.get_instance().get_connections(
+            self._connections
+        )

@@ -26,7 +26,9 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    parser = argparse.ArgumentParser(description="Starts the Tandem rendezvous server.")
+    parser = argparse.ArgumentParser(
+        description="Starts the Tandem rendezvous server."
+    )
     parser.add_argument(
         "--host",
         default="localhost",

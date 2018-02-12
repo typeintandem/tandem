@@ -44,8 +44,9 @@ class ProtocolUtilsBase(object):
             as_dict = json.loads(data)
             data_message_type = as_dict["type"]
             data_payload = as_dict["payload"]
+            items = cls._protocol_message_constructors().items()
 
-            for message_type, constructor in cls._protocol_message_constructors().items():
+            for message_type, constructor in items:
                 if message_type == data_message_type:
                     return constructor(**data_payload)
 

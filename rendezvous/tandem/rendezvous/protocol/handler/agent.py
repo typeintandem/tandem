@@ -18,7 +18,8 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
     @staticvalue
     def _protocol_message_handlers(self):
         return {
-            RendezvousProtocolMessageType.ConnectRequest.value: self._handle_connect_request
+            RendezvousProtocolMessageType.ConnectRequest.value:
+                self._handle_connect_request
         }
 
     def __init__(self, connection_manager):
@@ -26,7 +27,9 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
 
     def _handle_connect_request(self, message, sender_address):
         new_connection = Connection(sender_address, message.private_address)
-        session = SessionStore.get_instance().get_session_with_uuid(message.uuid)
+        session = SessionStore.get_instance().get_session_with_uuid(
+            message.uuid
+        )
 
         ConnectionStore.get_instance().register_connection(new_connection)
         session.add_connection(new_connection)
