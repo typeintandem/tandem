@@ -1,10 +1,9 @@
 import logging
-from tandem.io.document import Document
-from tandem.io.std_streams import StdStreams
-from tandem.io.connection_acceptor import ConnectionAcceptor
-from tandem.io.connection_manager import ConnectionManager
-from tandem.protocol.editor.handler import EditorProtocolHandler
-from tandem.protocol.interagent.handler import InteragentProtocolHandler
+from tandem.agent.io.document import Document
+from tandem.agent.io.std_streams import StdStreams
+from tandem.agent.io.udp_gateway import UDPGateway
+from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
+from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -15,22 +14,19 @@ class TandemAgent:
         self._requested_port = port
         self._document = Document()
         self._std_streams = StdStreams(self._on_std_input)
-        self._connection_acceptor = ConnectionAcceptor(
+        self._interagent_gateway = UDPGateway(
             self._requested_host,
             self._requested_port,
-            self._on_new_connection,
-        )
-        self._connection_manager = ConnectionManager(
             self._on_interagent_message,
         )
         self._editor_protocol = EditorProtocolHandler(
             self._std_streams,
-            self._connection_manager,
+            self._interagent_gateway,
             self._document,
         )
         self._interagent_protocol = InteragentProtocolHandler(
             self._std_streams,
-            self._connection_manager,
+            self._interagent_gateway,
             self._document,
         )
         self._main_executor = ThreadPoolExecutor(max_workers=1)
@@ -45,14 +41,16 @@ class TandemAgent:
     def start(self):
         self._document.start()
         self._std_streams.start()
-        self._connection_acceptor.start()
+        self._interagent_gateway.start()
         logging.info("Tandem Agent has started.")
 
     def stop(self):
-        self._std_streams.stop()
-        self._connection_acceptor.stop()
-        self._connection_manager.stop()
-        self._document.stop()
+        def atomic_shutdown():
+            self._interagent_protocol.stop()
+            self._interagent_gateway.stop()
+            self._std_streams.stop()
+            self._document.stop()
+        self._main_executor.submit(atomic_shutdown)
         self._main_executor.shutdown()
         logging.info("Tandem Agent has shut down.")
 
@@ -61,17 +59,9 @@ class TandemAgent:
         self._main_executor.submit(self._editor_protocol.handle_message, data)
 
     def _on_interagent_message(self, data, address):
-        # Do not call directly - called by a connection
+        # Do not call directly - called by _interagent_gateway
         self._main_executor.submit(
             self._interagent_protocol.handle_message,
             data,
-            address,
-        )
-
-    def _on_new_connection(self, socket, address):
-        # Do not call directly - called by _connection_acceptor
-        self._main_executor.submit(
-            self._interagent_protocol.handle_new_connection,
-            socket,
             address,
         )

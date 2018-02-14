@@ -13,7 +13,7 @@ from tandem.edit import Edit
 
 # sys hack to add enum, required by the messages module file
 sys.path.append(os.path.join(os.path.dirname(__file__), "enum-dist"))
-import tandem.agent.tandem.protocol.editor.messages as m  # noqa
+import tandem.agent.tandem.agent.protocol.messages.editor as m  # noqa
 
 
 DEBUG = False

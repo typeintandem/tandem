@@ -2,8 +2,8 @@ import os
 import time
 import random
 from subprocess import Popen, PIPE
-import tandem.protocol.editor.messages as m
-from tandem.configuration import BASE_DIR
+import tandem.agent.protocol.messages.editor as m
+from tandem.agent.configuration import BASE_DIR
 
 
 def start_agent(extra_args=None):

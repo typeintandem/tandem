@@ -2,7 +2,7 @@ import signal
 import logging
 import threading
 import argparse
-from tandem.executables.agent import TandemAgent
+from tandem.agent.executables.agent import TandemAgent
 
 should_shutdown = threading.Event()
 

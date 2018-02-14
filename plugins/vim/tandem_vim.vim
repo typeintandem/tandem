@@ -30,7 +30,7 @@ if local_path not in sys.path:
     sys.path.insert(0, local_path)
 
 import tandem_lib.tandem_plugin as plugin
-import tandem_lib.agent.tandem.protocol.editor.messages as m
+import tandem_lib.agent.tandem.agent.protocol.messages.editor as m
 
 class TandemVimPlugin:
     def __init__(self):
