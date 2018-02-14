@@ -2,11 +2,10 @@ import json
 import os
 import logging
 import socket
-import tandem.protocol.editor.messages as em
-
-from tandem.models.peer import Peer
-from tandem.stores.peer import PeerStore
-from tandem.protocol.interagent.messages import (
+import tandem.agent.protocol.messages.editor as em
+from tandem.agent.models.peer import Peer
+from tandem.agent.stores.peer import PeerStore
+from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
     NewOperations,
     Hello

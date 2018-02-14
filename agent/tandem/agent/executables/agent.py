@@ -1,9 +1,9 @@
 import logging
-from tandem.io.document import Document
-from tandem.io.std_streams import StdStreams
-from tandem.io.udp_gateway import UDPGateway
-from tandem.protocol.editor.handler import EditorProtocolHandler
-from tandem.protocol.interagent.handler import InteragentProtocolHandler
+from tandem.agent.io.document import Document
+from tandem.agent.io.std_streams import StdStreams
+from tandem.agent.io.udp_gateway import UDPGateway
+from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
+from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from concurrent.futures import ThreadPoolExecutor
 
 

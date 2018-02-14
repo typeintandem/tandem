@@ -1,6 +1,6 @@
 import logging
 from tandem.rendezvous.io.connection_manager import ConnectionManager
-from tandem.rendezvous.protocol.handler.agent import (
+from tandem.rendezvous.protocol.handlers.agent import (
     AgentRendezvousProtocolHandler
 )
 from concurrent.futures import ThreadPoolExecutor

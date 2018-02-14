@@ -1,5 +1,5 @@
 import socket
-from tandem.io.connection import Connection
+from tandem.agent.io.connection import Connection
 
 
 class ConnectionManager:

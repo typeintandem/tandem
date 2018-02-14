@@ -1,5 +1,5 @@
-from tandem.stores.fragment import FragmentStore
-from tandem.models.fragment import Fragment
+from tandem.agent.stores.fragment import FragmentStore
+from tandem.agent.models.fragment import Fragment
 
 
 class FragmentUtils(object):

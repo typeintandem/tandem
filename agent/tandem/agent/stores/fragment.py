@@ -1,4 +1,4 @@
-from tandem.models.fragment import FragmentGroup
+from tandem.agent.models.fragment import FragmentGroup
 from tandem.shared.stores.base import StoreBase
 
 

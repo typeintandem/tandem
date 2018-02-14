@@ -1,17 +1,16 @@
 import logging
 import json
-import tandem.protocol.editor.messages as em
-# import tandem.protocol.interagent.messages as im
+import tandem.agent.protocol.messages.editor as em
 
-from tandem.models.peer import Peer
-from tandem.stores.peer import PeerStore
-from tandem.protocol.interagent.messages import (
+from tandem.agent.models.peer import Peer
+from tandem.agent.stores.peer import PeerStore
+from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
     InteragentProtocolUtils,
     NewOperations,
     Bye,
 )
-from tandem.shared.protocol.handler.base import ProtocolHandlerBase
+from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 

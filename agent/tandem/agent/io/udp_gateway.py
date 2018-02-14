@@ -1,6 +1,6 @@
 import socket
 import logging
-from tandem.utils.fragment import FragmentUtils
+from tandem.agent.utils.fragment import FragmentUtils
 from threading import Thread
 
 

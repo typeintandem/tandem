@@ -8,7 +8,7 @@ if plugin_location not in sys.path:
     sys.path.insert(0, plugin_location)
 
 import tandem_lib.tandem_plugin as plugin
-import tandem_lib.agent.tandem.protocol.editor.messages as m
+import tandem_lib.agent.tandem.agent.protocol.messages.editor as m
 
 
 @neovim.plugin
