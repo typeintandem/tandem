@@ -23,6 +23,10 @@ class ProtocolMessageBase(object):
     def to_payload(self):
         return {key: getattr(self, key, None) for key in self._payload_keys()}
 
+    @classmethod
+    def from_payload(cls, **kwargs):
+        return cls(**kwargs)
+
 
 class ProtocolUtilsBase(object):
     @classmethod
@@ -46,9 +50,9 @@ class ProtocolUtilsBase(object):
             data_payload = as_dict["payload"]
             items = cls._protocol_message_constructors().items()
 
-            for message_type, constructor in items:
+            for message_type, target_class in items:
                 if message_type == data_message_type:
-                    return constructor(**data_payload)
+                    return target_class.from_payload(**data_payload)
 
             raise ProtocolMarshalError
 

@@ -6,3 +6,7 @@ class StoreBase(object):
         if not cls.instance:
             cls.instance = cls()
         return cls.instance
+
+    @classmethod
+    def reset_instance(cls):
+        cls.instance = None

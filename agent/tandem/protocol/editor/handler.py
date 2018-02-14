@@ -1,14 +1,22 @@
+import json
 import os
 import logging
 import socket
 import tandem.protocol.editor.messages as em
-import tandem.protocol.interagent.messages as im
+
+from tandem.models.peer import Peer
+from tandem.stores.peer import PeerStore
+from tandem.protocol.interagent.messages import (
+    InteragentProtocolUtils,
+    NewOperations,
+    Hello
+)
 
 
 class EditorProtocolHandler:
-    def __init__(self, std_streams, peer_manager, document):
+    def __init__(self, std_streams, gateway, document):
         self._std_streams = std_streams
-        self._peer_manager = peer_manager
+        self._gateway = gateway
         self._document = document
 
     def handle_message(self, data):
@@ -35,7 +43,13 @@ class EditorProtocolHandler:
             "Tandem Agent is attempting to establish a "
             "connection to {}:{}.".format(hostname, message.port),
         )
-        self._peer_manager.connect_to(hostname, message.port)
+
+        address = (hostname, message.port)
+        new_peer = Peer(address)
+        payload = InteragentProtocolUtils.serialize(Hello())
+        self._gateway.write_data(payload, address)
+        PeerStore.get_instance().add_peer(new_peer)
+
         logging.info(
             "Tandem Agent connected to {}:{}."
             .format(hostname, message.port),
@@ -68,7 +82,12 @@ class EditorProtocolHandler:
         for operations_list in nested_operations:
             operations.extend(operations_list)
 
-        self._peer_manager.broadcast_new_operations(operations)
+        peers = PeerStore.get_instance().get_peers()
+        addresses = [peer.get_address() for peer in peers]
+        payload = InteragentProtocolUtils.serialize(NewOperations(
+            operations_binary=json.dumps(operations)
+        ))
+        self._gateway.write_data(payload, addresses)
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()

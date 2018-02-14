@@ -1,58 +1,60 @@
 import logging
 import json
 import tandem.protocol.editor.messages as em
-import tandem.protocol.interagent.messages as im
+# import tandem.protocol.interagent.messages as im
+
+from tandem.models.peer import Peer
+from tandem.stores.peer import PeerStore
+from tandem.protocol.interagent.messages import (
+    InteragentProtocolMessageType,
+    InteragentProtocolUtils,
+    NewOperations,
+    Bye,
+)
+from tandem.shared.protocol.handler.base import ProtocolHandlerBase
+from tandem.shared.utils.static_value import static_value as staticvalue
 
 
-class InteragentProtocolHandler:
-    def __init__(self, std_streams, peer_manager, document):
+class InteragentProtocolHandler(ProtocolHandlerBase):
+    @staticvalue
+    def _protocol_message_utils(self):
+        return InteragentProtocolUtils
+
+    @staticvalue
+    def _protocol_message_handlers(self):
+        return {
+            InteragentProtocolMessageType.Hello.value: self._handle_hello,
+            InteragentProtocolMessageType.Bye.value: self._handle_bye,
+            InteragentProtocolMessageType.NewOperations.value:
+                self._handle_new_operations,
+        }
+
+    def __init__(self, std_streams, gateway, document):
         self._std_streams = std_streams
-        self._peer_manager = peer_manager
+        self._gateway = gateway
         self._document = document
         self._next_editor_sequence = 0
 
-    def handle_message(self, raw_data, sender_address):
-        try:
-            message = im.deserialize(raw_data)
-            if type(message) is im.Hello:
-                self._handle_hello(message, sender_address)
-            elif type(message) is im.Bye:
-                self._handle_bye(message, sender_address)
-            elif type(message) is im.NewOperations:
-                self._handle_new_operations(message, sender_address)
-            else:
-                logging.debug("Received unknown interagent message.")
-        except im.InteragentProtocolMarshalError:
-            logging.info("Ignoring invalid interagent protocol message.")
-        except:
-            logging.exception(
-                "Exception when handling interagent protocol message:")
-            raise
-
     def _handle_hello(self, message, sender_address):
-        self._peer_manager.register_peer(sender_address)
+        new_peer = Peer(sender_address)
+        PeerStore.get_instance().add_peer(new_peer)
 
         # Send newly connected agent a copy of the document
         operations = self._document.get_document_operations()
         if len(operations) == 0:
             return
-        self._peer_manager.send_operations_list(operations, sender_address)
+
+        payload = InteragentProtocolUtils.serialize(NewOperations(
+            operations_binary=json.dumps(operations)
+        ))
+        self._gateway.write_data(payload, new_peer.get_address())
 
     def _handle_bye(self, message, sender_address):
-        self._peer_manager.remove_peer(sender_address)
+        peer = PeerStore.get_instance().get_peer(sender_address)
+        PeerStore.get_instance().remove_peer(peer)
 
     def _handle_new_operations(self, message, sender_address):
-        if not message.is_fragmented():
-            return self._handle_assembled_operations(message.operations_binary)
-
-        peer = self._peer_manager.get_peer(sender_address)
-        operations_binary = peer.integrate_new_operations_message(message)
-
-        if operations_binary is not None:
-            self._handle_assembled_operations(operations_binary)
-
-    def _handle_assembled_operations(self, operations_binary):
-        operations_list = json.loads(operations_binary.decode("utf-8"))
+        operations_list = json.loads(message.operations_binary)
         self._document.enqueue_remote_operations(operations_list)
         if not self._document.write_request_sent():
             self._std_streams.write_string_message(
@@ -64,3 +66,11 @@ class InteragentProtocolHandler:
                 .format(self._next_editor_sequence),
             )
             self._next_editor_sequence += 1
+
+    def stop(self):
+        peers = PeerStore.get_instance().get_peers()
+        self._gateway.write_data(
+            InteragentProtocolUtils.serialize(Bye()),
+            [peer.get_address() for peer in peers],
+        )
+        PeerStore.reset_instance()

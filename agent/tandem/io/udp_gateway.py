@@ -1,5 +1,6 @@
 import socket
 import logging
+from tandem.utils.fragment import FragmentUtils
 from threading import Thread
 
 
@@ -23,21 +24,33 @@ class UDPGateway:
         self._socket.close()
         self._reader.join()
 
-    def write_binary_data(self, binary_data, address):
+    def write_data(self, messages, addresses):
+        if type(messages) is not list:
+            messages = [messages]
+
+        if type(addresses) is not list:
+            addresses = [addresses]
+
+        for address in addresses:
+            for message in messages:
+                self._send_datagrams(message, address)
+
+    def _send_datagrams(self, message, address):
+        if FragmentUtils.should_fragment(message, self._max_payload_length):
+            messages = FragmentUtils.fragment(
+                message,
+                self._max_payload_length
+            )
+
+            return self.write_data(messages, address)
+
+        if type(message) is str:
+            message = message.encode('utf-8')
+
         bytes_sent = 0
-        while bytes_sent < len(binary_data):
+        while bytes_sent < len(message):
             bytes_sent += \
-                self._socket.sendto(binary_data[bytes_sent:], address)
-
-    def max_payload_length(self):
-        return self._max_payload_length
-
-    def split_payload(self, binary_payload, header_length=0):
-        max_payload_length = self._max_payload_length - header_length
-        return [
-            binary_payload[i:i + max_payload_length]
-            for i in range(0, len(binary_payload), max_payload_length)
-        ]
+                self._socket.sendto(message[bytes_sent:], address)
 
     def _read_datagrams(self):
         try:
@@ -45,7 +58,15 @@ class UDPGateway:
                 raw_data, address = self._socket.recvfrom(4096)
                 host, port = address
                 logging.debug("Received data from {}:{}.".format(host, port))
-                self._handler_function(raw_data, address)
+
+                if FragmentUtils.is_fragment(raw_data):
+                    FragmentUtils.defragment(
+                        raw_data,
+                        address,
+                        self._handler_function,
+                    )
+                else:
+                    self._handler_function(raw_data, address)
         except:
             logging.info(
                 "Tandem Agent has closed the UDP gateway on port {}."
