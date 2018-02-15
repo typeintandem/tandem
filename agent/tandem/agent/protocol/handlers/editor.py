@@ -18,7 +18,10 @@ class EditorProtocolHandler:
         self._gateway = gateway
         self._document = document
 
-    def handle_message(self, data):
+    def handle_message(self, retrieve_io_data):
+        io_data = retrieve_io_data()
+        data = io_data.get_data()
+
         try:
             message = em.deserialize(data)
             if type(message) is em.ConnectTo:
@@ -46,7 +49,8 @@ class EditorProtocolHandler:
         address = (hostname, message.port)
         new_peer = Peer(address)
         payload = InteragentProtocolUtils.serialize(Hello())
-        self._gateway.write_data(payload, address)
+        io_data = self._gateway.generate_io_data(payload, address)
+        self._gateway.write_io_data(io_data)
         PeerStore.get_instance().add_peer(new_peer)
 
         logging.info(
@@ -61,9 +65,10 @@ class EditorProtocolHandler:
         # Even if no text patches need to be applied, we need to reply to
         # the plugin to allow it to accept changes from the user again
         text_patches_message = em.ApplyPatches(text_patches)
-        self._std_streams.write_string_message(
+        io_data = self._std_streams.generate_io_data(
             em.serialize(text_patches_message),
         )
+        self._std_streams.write_io_data(io_data)
         logging.debug(
             "Sent apply patches message for seq: {}".format(message.seq),
         )
@@ -84,9 +89,10 @@ class EditorProtocolHandler:
         peers = PeerStore.get_instance().get_peers()
         addresses = [peer.get_address() for peer in peers]
         payload = InteragentProtocolUtils.serialize(NewOperations(
-            operations_binary=json.dumps(operations)
+            operations_list=json.dumps(operations)
         ))
-        self._gateway.write_data(payload, addresses)
+        io_data = self._gateway.generate_io_data(payload, addresses)
+        self._gateway.write_io_data(io_data)
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()
@@ -97,4 +103,5 @@ class EditorProtocolHandler:
         if (contents != document_text_content):
             document_lines = document_text_content.split(os.linesep)
             apply_text = em.serialize(em.ApplyText(document_lines))
-            self._std_streams.write_string_message(apply_text)
+            io_data = self._std_streams.generate_io_data(apply_text)
+            self._std_streams.write_io_data(io_data)

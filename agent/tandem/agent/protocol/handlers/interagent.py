@@ -15,6 +15,13 @@ from tandem.shared.utils.static_value import static_value as staticvalue
 
 
 class InteragentProtocolHandler(ProtocolHandlerBase):
+    def handle_message(self, retrieve_io_data):
+        io_data = retrieve_io_data()
+        super(InteragentProtocolHandler, self).handle_message(
+            io_data.get_data(),
+            io_data.get_address(),
+        )
+
     @staticvalue
     def _protocol_message_utils(self):
         return InteragentProtocolUtils
@@ -44,21 +51,26 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
             return
 
         payload = InteragentProtocolUtils.serialize(NewOperations(
-            operations_binary=json.dumps(operations)
+            operations_list=json.dumps(operations)
         ))
-        self._gateway.write_data(payload, new_peer.get_address())
+        io_data = self._gateway.generate_io_data(
+            payload,
+            new_peer.get_address(),
+        )
+        self._gateway.write_io_data(io_data)
 
     def _handle_bye(self, message, sender_address):
         peer = PeerStore.get_instance().get_peer(sender_address)
         PeerStore.get_instance().remove_peer(peer)
 
     def _handle_new_operations(self, message, sender_address):
-        operations_list = json.loads(message.operations_binary)
+        operations_list = json.loads(message.operations_list)
         self._document.enqueue_remote_operations(operations_list)
         if not self._document.write_request_sent():
-            self._std_streams.write_string_message(
+            io_data = self._std_streams.generate_io_data(
                 em.serialize(em.WriteRequest(self._next_editor_sequence)),
             )
+            self._std_streams.write_io_data(io_data)
             self._document.set_write_request_sent(True)
             logging.debug(
                 "Sent write request seq: {}"
@@ -68,8 +80,9 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
 
     def stop(self):
         peers = PeerStore.get_instance().get_peers()
-        self._gateway.write_data(
+        io_data = self._gateway.generate_io_data(
             InteragentProtocolUtils.serialize(Bye()),
             [peer.get_address() for peer in peers],
         )
+        self._gateway.write_io_data(io_data)
         PeerStore.reset_instance()

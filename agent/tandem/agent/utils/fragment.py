@@ -5,6 +5,7 @@ from tandem.agent.models.fragment import Fragment
 class FragmentUtils(object):
     HEADER = b"\x54\x01"
     FRAGMENT_HEADER = b"\x46\x52"
+    FRAGMENT_HEADER_LENGTH = len(HEADER) + len(FRAGMENT_HEADER) + 6
 
     MAX_SEQUENCE_NUMBER = int(0xFFFF)
     next_sequence_number = -1
@@ -17,8 +18,8 @@ class FragmentUtils(object):
         )
 
     @staticmethod
-    def should_fragment(message, payload_length=512):
-        return len(message) > payload_length
+    def should_fragment(message, max_payload_length=512):
+        return len(message) > max_payload_length
 
     @classmethod
     def get_next_sequence_number(cls):
@@ -54,16 +55,16 @@ class FragmentUtils(object):
         new_fragment = Fragment(total_fragments, fragment_number, payload)
         return new_fragment, sequence_number
 
-    @staticmethod
-    def fragment(payload, message_length=512):
+    @classmethod
+    def fragment(cls, payload, max_message_length=512):
         if type(payload) is str:
-            payload = payload.encode('utf-8')
+            payload = payload.encode("utf-8")
 
-        payload_length = message_length - 10
+        max_payload_length = max_message_length - cls.FRAGMENT_HEADER_LENGTH
 
         payloads = [
-            payload[i:i + payload_length]
-            for i in range(0, len(payload), payload_length)
+            payload[i:i + max_payload_length]
+            for i in range(0, len(payload), max_payload_length)
         ]
 
         fragments = [
@@ -80,7 +81,7 @@ class FragmentUtils(object):
         return messages
 
     @staticmethod
-    def defragment(raw_data, sender_address, handler):
+    def defragment(raw_data, sender_address):
         fragment_store = FragmentStore.get_instance()
         fragment, sequence_number = FragmentUtils.deserialize(raw_data)
         fragment_store.insert_fragment(
@@ -93,14 +94,10 @@ class FragmentUtils(object):
             sequence_number,
         )
 
-        defragmented_data = None
-
+        defragmented_data = fragment_group.defragment()
         if fragment_group.is_complete():
-            defragmented_data = fragment_group.defragment()
             fragment_store.remove_fragment_group(
                 sender_address,
                 sequence_number,
             )
-
-        if defragmented_data is not None:
-            handler(defragmented_data, sender_address)
+        return defragmented_data

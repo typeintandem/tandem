@@ -1,72 +1,73 @@
 import socket
 import logging
-from tandem.agent.utils.fragment import FragmentUtils
-from threading import Thread
+from tandem.agent.io.base import InterfaceDataBase, InterfaceBase
 
 
-class UDPGateway:
-    def __init__(self, host, port, handler_function, max_payload_length=512):
+class UDPData(InterfaceDataBase):
+    def __init__(self, raw_data, address):
+        super(UDPData, self).__init__(raw_data)
+        self._address = address
+
+    def get_address(self):
+        return self._address
+
+
+class UDPGateway(InterfaceBase):
+    def __init__(self, host, port, handler_function):
+        super(UDPGateway, self).__init__(handler_function)
         self._host = host
         self._port = port
         self._socket = socket.socket(
             socket.AF_INET,
             socket.SOCK_DGRAM,
         )
-        self._reader = Thread(target=self._read_datagrams)
-        self._handler_function = handler_function
-        self._max_payload_length = max_payload_length
 
     def start(self):
         self._socket.bind((self._host, self._port))
-        self._reader.start()
+        super(UDPGateway, self).start()
 
     def stop(self):
         self._socket.close()
-        self._reader.join()
+        super(UDPGateway, self).stop()
 
-    def write_data(self, messages, addresses):
+    def generate_io_data(self, messages, addresses):
         if type(messages) is not list:
             messages = [messages]
 
         if type(addresses) is not list:
             addresses = [addresses]
 
+        data = []
         for address in addresses:
             for message in messages:
-                self._send_datagrams(message, address)
+                if type(message) is str:
+                    message = message.encode("utf-8")
+                data.append(UDPData(message, address))
 
-    def _send_datagrams(self, message, address):
-        if FragmentUtils.should_fragment(message, self._max_payload_length):
-            messages = FragmentUtils.fragment(
-                message,
-                self._max_payload_length
-            )
+        return data
 
-            return self.write_data(messages, address)
+    def write_io_data(self, io_datas):
+        if type(io_datas) is not list:
+            io_datas = [io_datas]
 
-        if type(message) is str:
-            message = message.encode('utf-8')
+        for io_data in io_datas:
+            message = io_data.get_data()
+            address = io_data.get_address()
+            bytes_sent = 0
 
-        bytes_sent = 0
-        while bytes_sent < len(message):
-            bytes_sent += \
-                self._socket.sendto(message[bytes_sent:], address)
+            while bytes_sent < len(message):
+                bytes_sent += self._socket.sendto(
+                    message[bytes_sent:],
+                    address
+                )
 
-    def _read_datagrams(self):
+    def _read_data(self):
         try:
             while True:
                 raw_data, address = self._socket.recvfrom(4096)
                 host, port = address
                 logging.debug("Received data from {}:{}.".format(host, port))
-
-                if FragmentUtils.is_fragment(raw_data):
-                    FragmentUtils.defragment(
-                        raw_data,
-                        address,
-                        self._handler_function,
-                    )
-                else:
-                    self._handler_function(raw_data, address)
+                self._received_data(UDPData(raw_data, address))
         except:
             logging.info(
                 "Tandem Agent has closed the UDP gateway on port {}."

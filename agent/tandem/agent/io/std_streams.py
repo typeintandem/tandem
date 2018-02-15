@@ -1,29 +1,29 @@
 import sys
 import logging
-from threading import Thread
+from tandem.agent.io.base import InterfaceDataBase, InterfaceBase
 
 
-class StdStreams:
+class STDData(InterfaceDataBase):
+    pass
+
+
+class STDStreams(InterfaceBase):
     def __init__(self, handler_function):
-        self._handler_function = handler_function
-        self._reader = Thread(target=self._stdin_read)
-
-    def start(self):
-        self._reader.start()
+        super(STDStreams, self).__init__(handler_function)
 
     def stop(self):
-        self._reader.join()
+        super(STDStreams, self).stop()
         sys.stdout.close()
 
-    def write_string_message(self, string_message):
-        sys.stdout.write(string_message)
+    def write_io_data(self, io_data):
+        sys.stdout.write(io_data.get_data())
         sys.stdout.write("\n")
         sys.stdout.flush()
 
-    def _stdin_read(self):
+    def _read_data(self):
         try:
             for line in sys.stdin:
-                self._handler_function(line)
+                self._received_data(STDData(line))
         except:
             logging.exception("Exception when reading from stdin:")
             raise

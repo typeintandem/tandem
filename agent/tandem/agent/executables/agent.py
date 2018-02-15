@@ -1,7 +1,7 @@
 import logging
 from tandem.agent.io.document import Document
-from tandem.agent.io.std_streams import StdStreams
-from tandem.agent.io.udp_gateway import UDPGateway
+from tandem.agent.io.std_streams import STDStreams
+from tandem.agent.io.fragmented_udp_gateway import FragmentedUDPGateway
 from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from concurrent.futures import ThreadPoolExecutor
@@ -13,11 +13,11 @@ class TandemAgent:
         # This is the port the user specified on the command line (it can be 0)
         self._requested_port = port
         self._document = Document()
-        self._std_streams = StdStreams(self._on_std_input)
-        self._interagent_gateway = UDPGateway(
+        self._std_streams = STDStreams(self._on_std_input)
+        self._interagent_gateway = FragmentedUDPGateway(
             self._requested_host,
             self._requested_port,
-            self._on_interagent_message,
+            self._gateway_message_handler,
         )
         self._editor_protocol = EditorProtocolHandler(
             self._std_streams,
@@ -54,14 +54,16 @@ class TandemAgent:
         self._main_executor.shutdown()
         logging.info("Tandem Agent has shut down.")
 
-    def _on_std_input(self, data):
+    def _on_std_input(self, retrieve_data):
         # Called by _std_streams after receiving a new message from the plugin
-        self._main_executor.submit(self._editor_protocol.handle_message, data)
+        self._main_executor.submit(
+            self._editor_protocol.handle_message,
+            retrieve_data,
+        )
 
-    def _on_interagent_message(self, data, address):
+    def _gateway_message_handler(self, retrieve_data):
         # Do not call directly - called by _interagent_gateway
         self._main_executor.submit(
             self._interagent_protocol.handle_message,
-            data,
-            address,
+            retrieve_data,
         )

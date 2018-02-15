@@ -10,7 +10,7 @@ class PeerStore(StoreBase):
 
     def get_peers(self, addresses=None):
         if addresses is None:
-            addresses = [address for address in self._peers]
+            return [peer for _, peer in self._peers.items()]
 
         return [self.get_peer(address) for address in addresses]
 

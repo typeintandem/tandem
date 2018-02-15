@@ -56,7 +56,7 @@ class NewOperations(ProtocolMessageBase):
 
     @staticvalue
     def _payload_keys(self):
-        return ['operations_binary']
+        return ['operations_list']
 
 
 class InteragentProtocolUtils(ProtocolUtilsBase):
