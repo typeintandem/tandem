@@ -16,7 +16,7 @@ class Hello(ProtocolMessageBase):
     def __init__(self, **kwargs):
         super(Hello, self).__init__(
             InteragentProtocolMessageType.Hello,
-            **kwargs
+            **kwargs,
         )
 
     @staticvalue
@@ -28,7 +28,7 @@ class Bye(ProtocolMessageBase):
     def __init__(self, **kwargs):
         super(Bye, self).__init__(
             InteragentProtocolMessageType.Bye,
-            **kwargs
+            **kwargs,
         )
 
     @staticvalue
@@ -51,7 +51,7 @@ class NewOperations(ProtocolMessageBase):
     def __init__(self, **kwargs):
         super(NewOperations, self).__init__(
             InteragentProtocolMessageType.NewOperations,
-            **kwargs
+            **kwargs,
         )
 
     @staticvalue
