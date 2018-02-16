@@ -27,10 +27,13 @@ class FragmentedUDPGateway(UDPGateway):
         raw_data = io_data.get_data()
         address = io_data.get_address()
 
-        if FragmentUtils.is_fragment(raw_data):
-            defragmented_data = FragmentUtils.defragment(raw_data, address)
-            if defragmented_data:
-                new_data = FragmentedUDPData(defragmented_data, address)
-                super(FragmentedUDPGateway, self)._received_data(new_data)
-        else:
-            super(FragmentedUDPGateway, self)._received_data(io_data)
+        def retrieve_io_data():
+            if FragmentUtils.is_fragment(raw_data):
+                defragmented_data = FragmentUtils.defragment(raw_data, address)
+                if defragmented_data:
+                    new_data = FragmentedUDPData(defragmented_data, address)
+                    return new_data
+            else:
+                return io_data
+
+        return self._incoming_data_handler(retrieve_io_data)
