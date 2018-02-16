@@ -2,7 +2,7 @@
 
 if [[ "$1" == "" ]]; then
   echo "Please supply a path to the plugin target destination."
-  exit
+  exit 1
 fi
 
 INSTALL_PATH="$1"
