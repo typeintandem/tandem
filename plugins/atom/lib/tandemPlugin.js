@@ -70,7 +70,6 @@ export default class TandemPlugin {
     return this._isActive;
   }
 
-  // TODO: collect changes and process later once didStopChanging?
   _sendPatches(event) {
     if (this._processingMessage) {
       return;
@@ -78,7 +77,7 @@ export default class TandemPlugin {
 
     const patches = createPatches(event);
     const message = new m.NewPatches(patches);
-    this._agent.stdin.write(m.serialize(message)); // TODO: encode?
+    this._agent.stdin.write(m.serialize(message));
     this._agent.stdin.write('\n');
   }
 
@@ -95,7 +94,7 @@ export default class TandemPlugin {
     if (this._connectTo) {
       const { hostIP, hostPort } = this._connectTo;
       const message = new m.ConnectTo(hostIP, hostPort);
-      this._agent.stdin.write(m.serialize(message)); // TODO: encode?
+      this._agent.stdin.write(m.serialize(message));
       this.agent.stdin.write('\n');
     }
 
@@ -148,7 +147,8 @@ export default class TandemPlugin {
   _shutDownAgent() {
     this._processingMessage = false;
     this._subscriptions.dispose();
-    this._agent.kill('SIGINT'); // TODO: fix
+    // TODO: Ensure that the agent is disposed
+    this._agent.kill('SIGINT');
   }
 
   start(textBuffer, hostIP, hostPort) {

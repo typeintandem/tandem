@@ -5,7 +5,11 @@
   "description": "Decentralized collaborative, cross-platform editing",
   "keywords": [],
   "activationCommands": {
-    "atom-workspace": ["tandem:connect", "tandem:start", "tandem:stop"]
+    "atom-workspace": [
+      "tandem:connect",
+      "tandem:start",
+      "tandem:stop"
+    ]
   },
   "repository": "https://github.com/geoffxy/tandem",
   "license": "MIT",
