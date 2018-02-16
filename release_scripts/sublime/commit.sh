@@ -13,7 +13,7 @@ HASH=$( git rev-parse master )
 
 cd $INSTALL_PATH
 git add .
-git commit -m "Cut from $HASH" --author="Team Lightly <teamlightly@gmail.com>"
+git commit -m "Cut release from $HASH" --author="Team Lightly <teamlightly@gmail.com>"
 git push origin master
 
 echo "Release $HASH authored and pushed."
