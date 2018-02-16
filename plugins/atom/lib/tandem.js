@@ -1,6 +1,6 @@
 'use babel';
 
-import { CompositeDisposable, Disposable } from 'atom';
+import { CompositeDisposable } from 'atom';
 import TandemPlugin from './tandemPlugin';
 import ConnectView from './connectView';
 
@@ -41,8 +41,11 @@ export default {
     this._subscriptions.dispose();
   },
 
-  _getTextEditor() {
+  _getTextEditor(newEditor) {
     return new Promise((res) => {
+      if (newEditor) {
+        return res(atom.workspace.open());
+      }
       const editor = atom.workspace.getActiveTextEditor();
       if (editor) {
         return res(editor);
@@ -69,7 +72,7 @@ export default {
     const ip = args[0];
     const port = args[1];
 
-    this._getTextEditor().then((editor) => {
+    this._getTextEditor(/* newEditor */ true).then((editor) => {
       this._tandemAgent.start(editor.getBuffer(), ip, port);
     });
   },
