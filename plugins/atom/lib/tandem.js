@@ -54,7 +54,6 @@ export default {
 
   _start() {
     this._getTextEditor().then((editor) => {
-      console.log('starting tandem agent');
       this._tandemAgent.start(editor.getBuffer());
     });
   },

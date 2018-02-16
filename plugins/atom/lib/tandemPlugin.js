@@ -98,9 +98,7 @@ export default class TandemPlugin {
       this.agent.stdin.write('\n');
     }
 
-    const msg = `Bound agent to port ${this._agentPort}`;
-    console.log(msg);
-
+    atom.notifications.addSuccess(`Bound agent to port ${this._agentPort}`);
 
     this._agent.stdout.setEncoding('utf-8');
     this._agent.stdout.on('data', this._readAgent.bind(this));
@@ -153,14 +151,12 @@ export default class TandemPlugin {
 
   start(textBuffer, hostIP, hostPort) {
     if (this._isActive) {
-      const msg = `Cannot start. An instance is already running on :${this._agentPort}`;
-      console.log(msg);
+      atom.notifications.addError(`Cannot start. An instance is already running on :${this._agentPort}`);
       return;
     }
 
     if (!!hostIP && !hostPort) {
-      const msg = 'Cannot start. IP specified. You must also provide a port';
-      console.log(msg);
+      atom.notifications.addError('Cannot start. IP specified. You must also provide a port');
       return;
     }
 
@@ -177,13 +173,11 @@ export default class TandemPlugin {
 
   stop() {
     if (!this._isActive) {
-      const msg = 'Cannot stop. No instance running.';
-      console.log(msg);
+      atom.notifications.addError('Cannot stop. No instance running.');
       return;
     }
 
     this._shutDownAgent();
-    const msg = 'Tandem instance shut down.';
-    console.log(msg);
+    atom.notifications.addInfo('Tandem instance shut down.');
   }
 }
