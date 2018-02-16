@@ -36,3 +36,6 @@ cp -r enum-dist/ $INSTALL_PATH/enum-dist/
 cp *.py $INSTALL_PATH
 cp *.sublime-* $INSTALL_PATH
 cp README.md $INSTALL_PATH
+
+# Required by Package Control
+touch $INSTALL_PATH/.no-sublime-package
