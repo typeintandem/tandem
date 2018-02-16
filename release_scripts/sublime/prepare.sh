@@ -16,19 +16,23 @@ if [[ $MASTER_HASH != $HASH ]]; then
 fi
 
 if [[ "$1" == "" ]]; then
-  echo "Please supply a path to the plugin target destination."
+  echo "ERROR: Please supply a path to the plugin target destination."
   exit 1
 fi
 
 INSTALL_PATH="$1"
 
+# Make sure the path is up-to-date
+cd $INSTALL_PATH
+git checkout master
+git pull origin master
+cd $SCRIPT_PATH
+
 # Clean existing items in plugin path
 rm -rf $INSTALL_PATH/agent
 rm -rf $INSTALL_PATH/crdt
 rm -rf $INSTALL_PATH/enum-dist
-rm -f $INSTALL_PATH/*.py
-rm -f $INSTALL_PATH/*.sublime-*
-rm -f $INSTALL_PATH/README.md
+rm -f $INSTALL_PATH/*
 
 # Create agent and crdt subdirectories
 mkdir $INSTALL_PATH/agent/

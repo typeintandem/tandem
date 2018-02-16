@@ -3,7 +3,7 @@
 set -e
 
 if [[ "$1" == "" ]]; then
-  echo "Please supply a path to the plugin target destination."
+  echo "ERROR: Please supply a path to the plugin target destination."
   exit 1
 fi
 
