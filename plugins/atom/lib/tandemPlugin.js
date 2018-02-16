@@ -143,10 +143,10 @@ export default class TandemPlugin {
   }
 
   _shutDownAgent() {
-    this._processingMessage = false;
     this._subscriptions.dispose();
-    // TODO: Ensure that the agent is disposed
-    this._agent.kill('SIGINT');
+    this._processingMessage = false;
+    this._agent.kill('SIGKILL');
+    this._isActive = false;
   }
 
   start(textBuffer, hostIP, hostPort) {
