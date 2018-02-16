@@ -4,13 +4,23 @@
 # at the destination. The destination supplised should be a local copy of the
 # plugin repository.
 
+SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
+
+cd $SCRIPT_PATH
+MASTER_HASH=$( git rev-parse master )
+HASH=$( git rev-parse HEAD )
+
+if [[ $MASTER_HASH != $HASH ]]; then
+  echo "ERROR: You must be on master when preparing a release."
+  exit
+fi
+
 if [[ "$1" == "" ]]; then
   echo "Please supply a path to the plugin target destination."
   exit
 fi
 
 INSTALL_PATH="$1"
-SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
 
 # Clean existing items in plugin path
 rm -rf $INSTALL_PATH/agent
@@ -46,3 +56,5 @@ cp README.md $INSTALL_PATH
 
 # Required by Package Control
 touch $INSTALL_PATH/.no-sublime-package
+
+echo "Release succesfully prepared."
