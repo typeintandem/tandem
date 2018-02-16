@@ -1,51 +1,13 @@
 'use babel';
 
 import { CompositeDisposable } from 'atom';
-import { getStringPort, spawnAgent } from './utils';
+import {
+  createPatches,
+  eventForBuffer,
+  getStringPort,
+  spawnAgent,
+} from './utils';
 import * as m from './messages';
-
-const createPatches = event =>
-  [
-    {
-      start: {
-        row: event.oldRange.start.row,
-        column: event.oldRange.start.column,
-      },
-      end: {
-        row: event.oldRange.end.row,
-        column: event.oldRange.end.column,
-      },
-      text: '',
-    },
-    {
-      start: {
-        row: event.oldRange.start.row,
-        column: event.oldRange.start.column,
-      },
-      end: {
-        row: 0,
-        column: 0,
-      },
-      text: event.newText,
-    },
-  ];
-
-const eventForBuffer = (buffer) => {
-  return {
-    oldRange: {
-      start: {
-        row: 0,
-        column: 0,
-      },
-      end: {
-        row: 0,
-        column: 0,
-      },
-    },
-    newText: buffer.getText(),
-  };
-};
-
 
 export default class TandemPlugin {
   constructor() {
@@ -93,9 +55,9 @@ export default class TandemPlugin {
 
     if (this._connectTo) {
       const { hostIP, hostPort } = this._connectTo;
-      const message = new m.ConnectTo(hostIP, hostPort);
+      const message = new m.ConnectTo(hostIP, parseInt(hostPort, 10));
       this._agent.stdin.write(m.serialize(message));
-      this.agent.stdin.write('\n');
+      this._agent.stdin.write('\n');
     }
 
     atom.notifications.addSuccess(`Bound agent to port ${this._agentPort}`);
@@ -160,7 +122,7 @@ export default class TandemPlugin {
       return;
     }
 
-    this._connectTo = hostIP ? Object.freeze({ ip: hostIP, port: hostPort }) : null;
+    this._connectTo = hostIP ? Object.freeze({ hostIP, hostPort }) : null;
     this._initialize(textBuffer);
 
     this._startAgent();
