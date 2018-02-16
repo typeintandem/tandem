@@ -24,13 +24,13 @@ export default {
 
     this._subscriptions = new CompositeDisposable();
     this._subscriptions.add(atom.commands.add('atom-workspace', {
-      'tandem:connect': () => this._connect(),
+      'tandem:join-existing-session': () => this._connect(),
     }));
     this._subscriptions.add(atom.commands.add('atom-workspace', {
-      'tandem:start': () => this._start(),
+      'tandem:start-session': () => this._start(),
     }));
     this._subscriptions.add(atom.commands.add('atom-workspace', {
-      'tandem:stop': () => this._stop(),
+      'tandem:leave-session': () => this._stop(),
     }));
   },
 

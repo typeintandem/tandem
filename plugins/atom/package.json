@@ -6,9 +6,9 @@
   "keywords": [],
   "activationCommands": {
     "atom-workspace": [
-      "tandem:connect",
-      "tandem:start",
-      "tandem:stop"
+      "tandem:join-existing-session",
+      "tandem:start-session",
+      "tandem:leave-session"
     ]
   },
   "repository": "https://github.com/geoffxy/tandem",
