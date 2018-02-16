@@ -9,18 +9,18 @@ SUBLIME_REPO = "https://github.com/rageandqq/tandem"
 
 def main():
     if len(sys.argv) < 2:
-        print("Pass in repo as the first argument. Choose from: [sublime]")
-        return
+        print("ERROR: Pass in repo as the first argument. Choose from: [sublime]")
+        sys.exit(1)
     elif len(sys.argv) < 3:
-        print("You must also pass in repository SHA as the argument.")
-        return
+        print("ERROR: You must also pass in repository SHA as the argument.")
+        sys.exit(1)
 
     repo_type = sys.argv[1].lower()
     if repo_type == "sublime":
         repo_url = SUBLIME_REPO
     else:
-        print("Please pass in one of [sublime] as the repo.")
-        return
+        print("ERROR: Please pass in one of [sublime] as the repo.")
+        sys.exit(1)
 
     master_SHA = sys.argv[2]
 
@@ -36,7 +36,7 @@ def main():
             break
 
     if release_repo is None:
-        print("Error: {} repo not found".format(repo_type))
+        print("ERROR: {} repo not found".format(repo_type))
 
     tags = release_repo.get_tags()
     last_tag = None
@@ -47,6 +47,9 @@ def main():
     if (last_tag is None):
         last_tag = '0.0.0'
     else:
+        if last_tag.commit.sha == master_SHA:
+            print("ERROR: Cannot create release with same SHA")
+            sys.exit(1)
         last_tag = last_tag.name
 
     tag = semver.bump_minor(last_tag)
