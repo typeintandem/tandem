@@ -1,24 +1,33 @@
+import json
 import os
 import logging
-import tandem.protocol.editor.messages as em
-import tandem.protocol.interagent.messages as im
+import socket
+import tandem.agent.protocol.messages.editor as em
+from tandem.agent.models.peer import Peer
+from tandem.agent.stores.peer import PeerStore
+from tandem.agent.protocol.messages.interagent import (
+    InteragentProtocolUtils,
+    NewOperations,
+    Hello
+)
 
 
 class EditorProtocolHandler:
-    def __init__(self, std_streams, connection_manager, document):
+    def __init__(self, std_streams, gateway, document):
         self._std_streams = std_streams
-        self._connection_manager = connection_manager
+        self._gateway = gateway
         self._document = document
 
-    def handle_message(self, data):
+    def handle_message(self, retrieve_io_data):
+        io_data = retrieve_io_data()
+        data = io_data.get_data()
+
         try:
             message = em.deserialize(data)
             if type(message) is em.ConnectTo:
                 self._handle_connect_to(message)
             elif type(message) is em.WriteRequestAck:
                 self._handle_write_request_ack(message)
-            elif type(message) is em.UserChangedEditorText:
-                self._handle_user_changed_editor_text(message)
             elif type(message) is em.NewPatches:
                 self._handle_new_patches(message)
             elif type(message) is em.CheckDocumentSync:
@@ -31,14 +40,22 @@ class EditorProtocolHandler:
             raise
 
     def _handle_connect_to(self, message):
+        hostname = socket.gethostbyname(message.host)
         logging.info(
             "Tandem Agent is attempting to establish a "
-            "connection to {}:{}.".format(message.host, message.port),
+            "connection to {}:{}.".format(hostname, message.port),
         )
-        self._connection_manager.connect_to(message.host, message.port)
+
+        address = (hostname, message.port)
+        new_peer = Peer(address)
+        payload = InteragentProtocolUtils.serialize(Hello())
+        io_data = self._gateway.generate_io_data(payload, address)
+        self._gateway.write_io_data(io_data)
+        PeerStore.get_instance().add_peer(new_peer)
+
         logging.info(
             "Tandem Agent connected to {}:{}."
-            .format(message.host, message.port),
+            .format(hostname, message.port),
         )
 
     def _handle_write_request_ack(self, message):
@@ -48,16 +65,13 @@ class EditorProtocolHandler:
         # Even if no text patches need to be applied, we need to reply to
         # the plugin to allow it to accept changes from the user again
         text_patches_message = em.ApplyPatches(text_patches)
-        self._std_streams.write_string_message(
-            em.serialize(text_patches_message)
+        io_data = self._std_streams.generate_io_data(
+            em.serialize(text_patches_message),
         )
-        logging.debug("Sent apply patches message for seq: {}".format(
-            message.seq
-        ))
-
-    def _handle_user_changed_editor_text(self, message):
-        text_changed = im.serialize(im.TextChanged(message.contents))
-        self._connection_manager.broadcast(text_changed)
+        self._std_streams.write_io_data(io_data)
+        logging.debug(
+            "Sent apply patches message for seq: {}".format(message.seq),
+        )
 
     def _handle_new_patches(self, message):
         nested_operations = [
@@ -71,8 +85,14 @@ class EditorProtocolHandler:
         operations = []
         for operations_list in nested_operations:
             operations.extend(operations_list)
-        new_operations_message = im.serialize(im.NewOperations(operations))
-        self._connection_manager.broadcast(new_operations_message)
+
+        peers = PeerStore.get_instance().get_peers()
+        addresses = [peer.get_address() for peer in peers]
+        payload = InteragentProtocolUtils.serialize(NewOperations(
+            operations_list=json.dumps(operations)
+        ))
+        io_data = self._gateway.generate_io_data(payload, addresses)
+        self._gateway.write_io_data(io_data)
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()
@@ -83,4 +103,5 @@ class EditorProtocolHandler:
         if (contents != document_text_content):
             document_lines = document_text_content.split(os.linesep)
             apply_text = em.serialize(em.ApplyText(document_lines))
-            self._std_streams.write_string_message(apply_text)
+            io_data = self._std_streams.generate_io_data(apply_text)
+            self._std_streams.write_io_data(io_data)

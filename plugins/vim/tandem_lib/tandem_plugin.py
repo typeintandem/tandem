@@ -7,8 +7,8 @@ from subprocess import Popen, PIPE
 from threading import Thread, Event
 
 from diff_match_patch import diff_match_patch
-import agent.tandem.protocol.editor.messages as m
-from agent.tandem.configuration import BASE_DIR
+import agent.tandem.agent.protocol.messages.editor as m
+from agent.tandem.agent.configuration import BASE_DIR
 
 DEBUG = True
 is_active = False
