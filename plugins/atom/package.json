@@ -1,0 +1,27 @@
+{
+  "name": "tandem",
+  "main": "./lib/tandem",
+  "version": "0.0.0",
+  "description": "Decentralized collaborative, cross-platform editing",
+  "keywords": [],
+  "activationCommands": {
+    "atom-workspace": ["tandem:connect", "tandem:start", "tandem:stop"]
+  },
+  "repository": "https://github.com/geoffxy/tandem",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "atom": "^1.1.0",
+    "child_process": "^1.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^4.17.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-config-standard": "^11.0.0-beta.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1"
+  }
+}
