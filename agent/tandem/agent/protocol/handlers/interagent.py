@@ -7,6 +7,7 @@ from tandem.agent.stores.peer import PeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
     InteragentProtocolUtils,
+    PingBack,
     NewOperations,
     Bye,
 )
@@ -29,6 +30,8 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
     @staticvalue
     def _protocol_message_handlers(self):
         return {
+            InteragentProtocolMessageType.Ping.value: self._handle_ping,
+            InteragentProtocolMessageType.PingBack.value: self._handle_pingback,
             InteragentProtocolMessageType.Hello.value: self._handle_hello,
             InteragentProtocolMessageType.Bye.value: self._handle_bye,
             InteragentProtocolMessageType.NewOperations.value:
@@ -40,6 +43,13 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         self._gateway = gateway
         self._document = document
         self._next_editor_sequence = 0
+
+    def _handle_ping(self, message, sender_address):
+        io_data = self._gateway.generate_io_data(PingBack(), sender_address)
+        self._gateway.write_io_data(io_data)
+
+    def _handle_pingback(self, message, sender_address):
+        pass
 
     def _handle_hello(self, message, sender_address):
         new_peer = Peer(sender_address)
