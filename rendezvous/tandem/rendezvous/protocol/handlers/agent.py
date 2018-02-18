@@ -1,4 +1,5 @@
 import uuid
+import logging
 from tandem.rendezvous.models.connection import Connection
 from tandem.rendezvous.stores.session import SessionStore
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
@@ -12,12 +13,11 @@ from tandem.shared.protocol.messages.rendezvous import (
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 
-def uuid_valid(self, candidate):
+def parse_uuid(candidate):
     try:
-        uuid.UUID(candidate)
-        return True
+        return uuid.UUID(candidate)
     except ValueError:
-        return False
+        return None
 
 
 class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
@@ -38,31 +38,47 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
         self._connection_manager = connection_manager
 
     def _handle_new_session(self, message, sender_address):
-        host_id = message.host_id
-        if not uuid_valid(host_id):
+        host_id = parse_uuid(message.host_id)
+        if host_id is None:
+            logging.info(
+                "Rejecting NewSession request from {}:{} due to malformed host id."
+                .format(sender_address[0], sender_address[1]),
+            )
             self._send_error_message(sender_address, "Invalid host id.")
             return
         session_id, session = SessionStore.get_instance().new_session()
-        new_connection = Connection(sender_address, message.private_address)
+        new_connection = Connection(host_id, sender_address, message.private_address)
         session.add_connection(new_connection)
+        logging.info(
+            "Creating new session {} requested by {}:{}"
+            .format(str(session_id), sender_address[0], sender_address[1]),
+        )
         self._connection_manager.send_data(
             new_connection.get_public_address(),
             self._protocol_message_utils().serialize(SessionCreated(
-                session_id=session_id
+                session_id=str(session_id),
             )),
         )
 
     def _handle_connect_request(self, message, sender_address):
         # Validate request identifiers
-        connection_id = message.my_id
-        session_id = message.session_id
-        if not uuid_valid(connection_id) or not uuid_valid(session_id):
+        connection_id = parse_uuid(message.my_id)
+        session_id = parse_uuid(message.session_id)
+        if connection_id is None or session_id is None:
+            logging.info(
+                "Rejecting ConnectRequest from {}:{} due to malformed connection and/or session id."
+                .format(sender_address[0], sender_address[1]),
+            )
             self._send_error_message(sender_address, "Invalid ids.")
             return
 
         # Validate and fetch the requested session
         session = SessionStore.get_instance().get_session(session_id)
         if session is None:
+            logging.info(
+                "Rejecting ConnectRequest from {}:{} due to invalid session id."
+                .format(sender_address[0], sender_address[1]),
+            )
             self._send_error_message(sender_address, "Invalid session.")
             return
 
@@ -79,8 +95,17 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
             # session "claims" the ID. This is not foolproof, but it makes
             # it more difficult for someone to join an existing session as
             # someone else.
+            logging.info(
+                "Rejecting ConnectRequest from {}:{} due to existing connection with the same id."
+                .format(sender_address[0], sender_address[1]),
+            )
             self._send_error_message(sender_address, "Invalid session.")
             return
+
+        logging.info(
+            "Connection {} is joining session {} requested by {}:{}"
+            .format(str(connection_id), str(session_id), sender_address[0], sender_address[1]),
+        )
 
         for member_connection in session.get_connections():
             if not(member_connection == initiator):
@@ -110,8 +135,8 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
         self._connection_manager.send_data(
             recipient.get_public_address(),
             self._protocol_message_utils().serialize(SetupParameters(
-                session_id=session_id,
-                peer_id=should_connect_to.get_id(),
+                session_id=str(session_id),
+                peer_id=str(should_connect_to.get_id()),
                 initiate=initiate,
                 connect_to=[
                     should_connect_to.get_public_address(),

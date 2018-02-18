@@ -79,7 +79,7 @@ class Error(ProtocolMessageBase):
     Sent by the server to send an error message.
     """
     def __init__(self, **kwargs):
-        super(SetupParameters, self).__init__(
+        super(Error, self).__init__(
             RendezvousProtocolMessageType.Error,
             **kwargs,
         )

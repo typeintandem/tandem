@@ -32,7 +32,7 @@ class ConnectionManager:
         self._acceptor.join()
 
     def send_data(self, address, data):
-        logging.info("Sending data {} to {}" .format(
+        logging.debug("Sending data {} to {}" .format(
             data,
             address,
         ))
@@ -48,7 +48,7 @@ class ConnectionManager:
         try:
             while True:
                 data, address = self._socket_server.recvfrom(4096)
-                logging.info("Received data {} from {}" .format(data, address))
+                logging.debug("Received data {} from {}" .format(data, address))
                 self._handler_function(data, address)
         except:
             logging.info(
