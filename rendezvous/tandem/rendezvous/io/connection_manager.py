@@ -48,7 +48,7 @@ class ConnectionManager:
         try:
             while True:
                 data, address = self._socket_server.recvfrom(4096)
-                logging.debug("Received data {} from {}" .format(data, address))
+                logging.debug("Received data {} from {}".format(data, address))
                 self._handler_function(data, address)
         except:
             logging.info(

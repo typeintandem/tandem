@@ -1,6 +1,5 @@
 import uuid
 import socket
-import json
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     ConnectRequest,

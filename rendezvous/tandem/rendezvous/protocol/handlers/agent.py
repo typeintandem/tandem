@@ -64,15 +64,20 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
             # it more difficult for someone to join an existing session as
             # someone else.
             logging.info(
-                "Rejecting ConnectRequest from {}:{} due to existing connection"
-                " with the same id.".format(sender_address[0], sender_address[1]),
+                "Rejecting ConnectRequest from {}:{} due to existing"
+                " connection with the same id."
+                .format(sender_address[0], sender_address[1]),
             )
             self._send_error_message(sender_address, "Invalid session.")
             return
 
         logging.info(
-            "Connection {} is joining session {} requested by {}:{}"
-            .format(str(connection_id), str(session_id), sender_address[0], sender_address[1]),
+            "Connection {} is joining session {} requested by {}:{}".format(
+                str(connection_id),
+                str(session_id),
+                sender_address[0],
+                sender_address[1],
+            ),
         )
 
         for member_connection in session.get_connections():
