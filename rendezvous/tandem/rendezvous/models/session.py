@@ -1,19 +1,19 @@
 from tandem.shared.models.base import ModelBase
-from tandem.rendezvous.stores.connection import ConnectionStore
 
 
 class Session(ModelBase):
-    def __init__(self, uuid):
-        self._connections = []
-        self._uuid = uuid
+    def __init__(self, session_id):
+        self._connections = {}
+        self._session_id = session_id
 
     def add_connection(self, connection):
-        self._connections.append(connection.get_address())
+        self._connections[connection.get_id()] = connection
 
     def remove_connection(self, connection):
-        self._connections.remove(connection.get_address())
+        del self._connections[connection.get_id()]
+
+    def get_connection(self, id):
+        self._connections.get(id, None)
 
     def get_connections(self):
-        return ConnectionStore.get_instance().get_connections(
-            self._connections
-        )
+        return [connection for _, connection in self._connections.items()]
