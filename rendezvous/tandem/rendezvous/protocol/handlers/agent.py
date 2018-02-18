@@ -7,7 +7,6 @@ from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolMessageType,
     RendezvousProtocolUtils,
     SetupParameters,
-    SessionCreated,
     Error,
 )
 from tandem.shared.utils.static_value import static_value as staticvalue
@@ -28,8 +27,6 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
     @staticvalue
     def _protocol_message_handlers(self):
         return {
-            RendezvousProtocolMessageType.NewSession.value:
-                self._handle_new_session,
             RendezvousProtocolMessageType.ConnectRequest.value:
                 self._handle_connect_request,
         }
@@ -37,50 +34,21 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
     def __init__(self, connection_manager):
         self._connection_manager = connection_manager
 
-    def _handle_new_session(self, message, sender_address):
-        host_id = parse_uuid(message.host_id)
-        if host_id is None:
-            logging.info(
-                "Rejecting NewSession request from {}:{} due to malformed host id."
-                .format(sender_address[0], sender_address[1]),
-            )
-            self._send_error_message(sender_address, "Invalid host id.")
-            return
-        session_id, session = SessionStore.get_instance().new_session()
-        new_connection = Connection(host_id, sender_address, message.private_address)
-        session.add_connection(new_connection)
-        logging.info(
-            "Creating new session {} requested by {}:{}"
-            .format(str(session_id), sender_address[0], sender_address[1]),
-        )
-        self._connection_manager.send_data(
-            new_connection.get_public_address(),
-            self._protocol_message_utils().serialize(SessionCreated(
-                session_id=str(session_id),
-            )),
-        )
-
     def _handle_connect_request(self, message, sender_address):
         # Validate request identifiers
         connection_id = parse_uuid(message.my_id)
         session_id = parse_uuid(message.session_id)
         if connection_id is None or session_id is None:
             logging.info(
-                "Rejecting ConnectRequest from {}:{} due to malformed connection and/or session id."
+                "Rejecting ConnectRequest from {}:{} due to malformed"
+                " connection and/or session id."
                 .format(sender_address[0], sender_address[1]),
             )
             self._send_error_message(sender_address, "Invalid ids.")
             return
 
-        # Validate and fetch the requested session
-        session = SessionStore.get_instance().get_session(session_id)
-        if session is None:
-            logging.info(
-                "Rejecting ConnectRequest from {}:{} due to invalid session id."
-                .format(sender_address[0], sender_address[1]),
-            )
-            self._send_error_message(sender_address, "Invalid session.")
-            return
+        # Fetch or create the session
+        session = SessionStore.get_instance().get_or_create_session(session_id)
 
         # Make sure the agent requesting to join is new or has the same
         # "identity" as an agent already in the session.
@@ -90,14 +58,14 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
         if existing_connection is None:
             session.add_connection(initiator)
         elif not(initiator == existing_connection):
-            # Reject the connection request for security reasons, since the
-            # client # gets to choose their ID. The first agent to join a
+            # Reject the connection request for security reasons since the
+            # client gets to choose their ID. The first agent to join a
             # session "claims" the ID. This is not foolproof, but it makes
             # it more difficult for someone to join an existing session as
             # someone else.
             logging.info(
-                "Rejecting ConnectRequest from {}:{} due to existing connection with the same id."
-                .format(sender_address[0], sender_address[1]),
+                "Rejecting ConnectRequest from {}:{} due to existing connection"
+                " with the same id.".format(sender_address[0], sender_address[1]),
             )
             self._send_error_message(sender_address, "Invalid session.")
             return

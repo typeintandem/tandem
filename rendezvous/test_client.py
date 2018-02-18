@@ -4,8 +4,6 @@ import json
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     ConnectRequest,
-    NewSession,
-    SessionCreated,
 )
 
 
@@ -22,44 +20,40 @@ def send_data(sock, data, address):
 
 
 def test_create_and_join_existing_session(sock, server_address, self_address):
-    host_id = uuid.uuid4()
-    send_data(sock, RendezvousProtocolUtils.serialize(NewSession(
-        host_id=str(host_id),
+    print("===== Test Creation and Join =====")
+    peer1_id = uuid.uuid4()
+    session_id = uuid.uuid4()
+
+    send_data(sock, RendezvousProtocolUtils.serialize(ConnectRequest(
+        session_id=str(session_id),
+        my_id=str(peer1_id),
         private_address=self_address,
     )), server_address)
 
-    data, address = recv_data(sock)
-    message = RendezvousProtocolUtils.deserialize(data)
-
-    if type(message) is not SessionCreated:
-        print("Received unexpected message.")
-        return
-
-    session_id = uuid.UUID(message.session_id)
-    peer_address = (socket.gethostbyname("localhost"), 60002)
-    peer_id = uuid.uuid4()
+    peer2_address = (socket.gethostbyname("localhost"), 60002)
+    peer2_id = uuid.uuid4()
     sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock2.bind(peer_address)
+    sock2.bind(peer2_address)
 
     send_data(sock2, RendezvousProtocolUtils.serialize(ConnectRequest(
-        my_id=str(peer_id),
+        my_id=str(peer2_id),
         session_id=str(session_id),
-        private_address=peer_address,
+        private_address=peer2_address,
     )), server_address)
 
-    print("--- Host Received:")
+    print("--- Peer 1 Received:")
     recv_data(sock)
 
-    print("--- Joiner Received:")
+    print("--- Peer 2 Received:")
     recv_data(sock2)
     sock2.close()
 
 
 def test_invalid_id(sock, server_address, self_address):
-    print("")
-    print("=== Test Invalid ID ===")
-    send_data(sock, RendezvousProtocolUtils.serialize(NewSession(
-        host_id="123",
+    print("===== Test Invalid ID =====")
+    send_data(sock, RendezvousProtocolUtils.serialize(ConnectRequest(
+        session_id="123",
+        my_id="123",
         private_address=self_address,
     )), server_address)
     recv_data(sock)
