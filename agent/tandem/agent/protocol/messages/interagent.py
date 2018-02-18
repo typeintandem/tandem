@@ -44,7 +44,7 @@ class PingBack(ProtocolMessageBase):
 
     @staticvalue
     def _payload_keys(self):
-        return []
+        return ["id"]
 
 
 class Hello(ProtocolMessageBase):

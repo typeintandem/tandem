@@ -10,6 +10,7 @@ from tandem.agent.protocol.messages.interagent import (
     NewOperations,
     Hello
 )
+from tandem.agent.models.connection_state import ConnectionState
 
 
 class EditorProtocolHandler:
@@ -47,7 +48,7 @@ class EditorProtocolHandler:
         )
 
         address = (hostname, message.port)
-        new_peer = Peer(address)
+        new_peer = Peer("temp", address, ConnectionState.HELLO)
         payload = InteragentProtocolUtils.serialize(Hello())
         io_data = self._gateway.generate_io_data(payload, address)
         self._gateway.write_io_data(io_data)

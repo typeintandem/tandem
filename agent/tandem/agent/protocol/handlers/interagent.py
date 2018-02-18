@@ -11,6 +11,7 @@ from tandem.agent.protocol.messages.interagent import (
     NewOperations,
     Bye,
 )
+from tandem.agent.models.connection_state import ConnectionState
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.utils.static_value import static_value as staticvalue
 
@@ -52,7 +53,7 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         pass
 
     def _handle_hello(self, message, sender_address):
-        new_peer = Peer(sender_address)
+        new_peer = Peer("temp", sender_address, ConnectionState.HELLO)
         PeerStore.get_instance().add_peer(new_peer)
 
         # Send newly connected agent a copy of the document
