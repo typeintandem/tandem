@@ -17,13 +17,6 @@ from tandem.shared.utils.static_value import static_value as staticvalue
 
 
 class InteragentProtocolHandler(ProtocolHandlerBase):
-    def handle_message(self, retrieve_io_data):
-        io_data = retrieve_io_data()
-        super(InteragentProtocolHandler, self).handle_message(
-            io_data.get_data(),
-            io_data.get_address(),
-        )
-
     @staticvalue
     def _protocol_message_utils(self):
         return InteragentProtocolUtils
@@ -39,14 +32,15 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
                 self._handle_new_operations,
         }
 
-    def __init__(self, std_streams, gateway, document):
+    def __init__(self, id, std_streams, gateway, document):
+        self._id = id
         self._std_streams = std_streams
         self._gateway = gateway
         self._document = document
         self._next_editor_sequence = 0
 
     def _handle_ping(self, message, sender_address):
-        io_data = self._gateway.generate_io_data(PingBack(), sender_address)
+        io_data = self._gateway.generate_io_data(PingBack(id=str(self._id)), sender_address)
         self._gateway.write_io_data(io_data)
 
     def _handle_pingback(self, message, sender_address):

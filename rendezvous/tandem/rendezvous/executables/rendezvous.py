@@ -36,7 +36,7 @@ class TandemRendezvous(object):
 
     def _on_receive_message(self, data, address):
         self._main_executor.submit(
-            self._rendezvous_protocol.handle_message,
+            self._rendezvous_protocol.handle_raw_data,
             data,
             address,
         )

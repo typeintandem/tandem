@@ -1,4 +1,5 @@
 import logging
+import uuid
 from tandem.agent.io.document import Document
 from tandem.agent.io.std_streams import STDStreams
 from tandem.agent.io.fragmented_udp_gateway import FragmentedUDPGateway
@@ -9,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class TandemAgent:
     def __init__(self, host, port):
+        self._id = uuid.uuid4()
         self._requested_host = host
         # This is the port the user specified on the command line (it can be 0)
         self._requested_port = port
@@ -25,6 +27,7 @@ class TandemAgent:
             self._document,
         )
         self._interagent_protocol = InteragentProtocolHandler(
+            self._id,
             self._std_streams,
             self._interagent_gateway,
             self._document,
@@ -64,6 +67,12 @@ class TandemAgent:
     def _gateway_message_handler(self, retrieve_data):
         # Do not call directly - called by _interagent_gateway
         self._main_executor.submit(
-            self._interagent_protocol.handle_message,
+            self._handle_nullable_data,
+            self._interagent_protocol.handle_raw_data,
             retrieve_data,
         )
+
+    def _handle_nullable_data(self, handler, retrieve_data):
+        io_data = retrieve_data()
+        if io_data is not None:
+            handler(io_data.get_data(), io_data.get_address())
