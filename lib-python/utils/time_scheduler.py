@@ -4,8 +4,17 @@ from threading import Thread, Event
 
 
 class TimeScheduler:
-    def __init__(self, executor):
+    """
+    Schedules tasks to run in the future on an executor.
+
+    The queue of tasks to execute is inspected every
+    resolution_seconds. So the minimal delay for a task
+    is the resolution of this scheduler.
+    """
+    def __init__(self, executor, resolution_seconds=0.1):
         self._executor = executor
+        self._resolution_seconds = resolution_seconds
+
         self._shutting_down = False
         self._shut_down_event = Event()
         self._runner = Thread(target=self._run_scheduler)
@@ -13,7 +22,7 @@ class TimeScheduler:
 
     def run_after(self, delay_seconds, function, *args, **kwargs):
         """
-        Runs the specified function on the executor after delay_seconds.
+        Schedules the specified function on the executor after delay_seconds.
 
         This returns a handle that can be used with the cancel()
         function to cancel the request to run this function.
@@ -28,7 +37,7 @@ class TimeScheduler:
 
     def run_every(self, interval_seconds, function, *args, **kwargs):
         """
-        Runs the specified function once every interval_seconds.
+        Schedules the specified function at least every interval_seconds.
 
         This returns a handle that can be used with the cancel()
         function to cancel this interval.
@@ -62,9 +71,22 @@ class TimeScheduler:
             pass
 
     def start(self):
+        """
+        Starts this scheduler.
+
+        Until this is called, no tasks will actually be scheduled.
+        However the scheduler will still accept schedule requests.
+        """
         self._runner.start()
 
     def stop(self):
+        """
+        Stops this scheduler.
+
+        All remaining pending tasks after this returns will no
+        longer be scheduled. This does not wait for all pending
+        tasks to be scheduled.
+        """
         self._shutting_down = True
         self._shut_down_event.set()
         self._runner.join()
@@ -88,12 +110,11 @@ class TimeScheduler:
 
     def _run_scheduler(self):
         while not self._shutting_down:
-            seconds_until_next_event = self._scheduler.run(blocking=False)
-            if seconds_until_next_event is not None:
-                self._shut_down_event.wait(timeout=seconds_until_next_event)
+            self._scheduler.run(blocking=False)
+            self._shut_down_event.wait(timeout=self._resolution_seconds)
 
     def _schedule_on_executor(self, function, *args, **kwargs):
-        res = self._executor.submit(function, *args, **kwargs)
+        self._executor.submit(function, *args, **kwargs)
 
 
 class IntervalHandle:
