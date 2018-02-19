@@ -1,4 +1,5 @@
 from tandem.shared.stores.base import StoreBase
+from tandem.agent.models.connection_state import ConnectionState
 
 
 class PeerStore(StoreBase):
@@ -13,6 +14,12 @@ class PeerStore(StoreBase):
             return [peer for _, peer in self._peers.items()]
 
         return [self.get_peer(address) for address in addresses]
+
+    def get_all_connected_peers(self):
+        return [
+            peer for _, peer in self._peers.items()
+            if peer.get_connection_state() == ConnectionState.OPEN
+        ]
 
     def get_peer_by_id(self, id):
         for _, peer in self._peers.items():

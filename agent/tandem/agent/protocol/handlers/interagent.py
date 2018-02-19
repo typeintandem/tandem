@@ -89,13 +89,14 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         peer_store = PeerStore.get_instance()
         peer_store.add_peer(promoted_peer)
 
-        # TODO: Send this repeatedly
-        io_data = self._gateway.generate_io_data(
-            InteragentProtocolUtils.serialize(Syn()),
-            promoted_address,
-        )
-        for _ in range(2):
-            self._gateway.write_io_data(io_data)
+        if promoted_peer.get_connection_state() == ConnectionState.SEND_SYN:
+            # TODO: Send this repeatedly
+            io_data = self._gateway.generate_io_data(
+                InteragentProtocolUtils.serialize(Syn()),
+                promoted_address,
+            )
+            for _ in range(2):
+                self._gateway.write_io_data(io_data)
 
     def _handle_syn(self, message, sender_address):
         peer_store = PeerStore.get_instance()

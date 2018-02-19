@@ -98,7 +98,10 @@ class EditorProtocolHandler:
         for operations_list in nested_operations:
             operations.extend(operations_list)
 
-        peers = PeerStore.get_instance().get_peers()
+        peers = PeerStore.get_instance().get_all_connected_peers()
+        if len(peers) == 0:
+            return
+
         addresses = [peer.get_address() for peer in peers]
         payload = InteragentProtocolUtils.serialize(NewOperations(
             operations_list=json.dumps(operations)
