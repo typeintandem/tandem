@@ -10,6 +10,7 @@ class InteragentProtocolMessageType(ProtocolMessageTypeBase):
     # Connection setup messages
     Ping = "ia-ping"
     PingBack = "ia-ping-back"
+    Syn = "ia-syn"
     Hello = "ia-hello"
 
     # Regular interagent messages
@@ -47,7 +48,7 @@ class PingBack(ProtocolMessageBase):
         return ["id"]
 
 
-class Hello(ProtocolMessageBase):
+class Syn(ProtocolMessageBase):
     """
     Sent by the connection initiator to indicate that it has
     completed its connection set up and wishes to begin
@@ -55,6 +56,24 @@ class Hello(ProtocolMessageBase):
 
     The initiator should continue sending this message until
     it receives a regular protocol message from the non-initiator.
+    """
+    def __init__(self, **kwargs):
+        super(Syn, self).__init__(
+            InteragentProtocolMessageType.Syn,
+            **kwargs,
+        )
+
+    @staticvalue
+    def _payload_keys(self):
+        return []
+
+
+class Hello(ProtocolMessageBase):
+    """
+    Sent directly from one agent to another to introduce itself.
+
+    This message is used to directly establish a connection. It
+    is sent after receiving a ConnectTo message from the plugin.
     """
     def __init__(self, **kwargs):
         super(Hello, self).__init__(
@@ -101,6 +120,7 @@ class InteragentProtocolUtils(ProtocolUtilsBase):
         return {
             InteragentProtocolMessageType.Ping.value: Ping,
             InteragentProtocolMessageType.PingBack.value: PingBack,
+            InteragentProtocolMessageType.Syn.value: Syn,
             InteragentProtocolMessageType.Hello.value: Hello,
             InteragentProtocolMessageType.Bye.value: Bye,
             InteragentProtocolMessageType.NewOperations.value: NewOperations,

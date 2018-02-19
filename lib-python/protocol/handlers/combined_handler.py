@@ -1,7 +1,7 @@
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 
 
-class CombinedHandler(ProtocolHandlerBase):
+class CombinedProtocolHandler(ProtocolHandlerBase):
     def __init__(self, *handlers):
         self._handlers = [handler for handler in handlers]
 

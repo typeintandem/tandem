@@ -2,7 +2,7 @@ import logging
 import json
 import tandem.agent.protocol.messages.editor as em
 
-from tandem.agent.models.peer import Peer
+from tandem.agent.models.peer import DirectPeer
 from tandem.agent.stores.peer import PeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
@@ -26,6 +26,7 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         return {
             InteragentProtocolMessageType.Ping.value: self._handle_ping,
             InteragentProtocolMessageType.PingBack.value: self._handle_pingback,
+            InteragentProtocolMessageType.Syn.value: self._handle_syn,
             InteragentProtocolMessageType.Hello.value: self._handle_hello,
             InteragentProtocolMessageType.Bye.value: self._handle_bye,
             InteragentProtocolMessageType.NewOperations.value:
@@ -46,8 +47,11 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
     def _handle_pingback(self, message, sender_address):
         pass
 
+    def _handle_syn(self, message, sender_address):
+        pass
+
     def _handle_hello(self, message, sender_address):
-        new_peer = Peer("temp", sender_address, ConnectionState.HELLO)
+        new_peer = DirectPeer(sender_address)
         PeerStore.get_instance().add_peer(new_peer)
 
         # Send newly connected agent a copy of the document

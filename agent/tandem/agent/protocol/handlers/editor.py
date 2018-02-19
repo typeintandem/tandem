@@ -3,7 +3,7 @@ import os
 import logging
 import socket
 import tandem.agent.protocol.messages.editor as em
-from tandem.agent.models.peer import Peer
+from tandem.agent.models.peer import DirectPeer
 from tandem.agent.stores.peer import PeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
@@ -43,12 +43,12 @@ class EditorProtocolHandler:
     def _handle_connect_to(self, message):
         hostname = socket.gethostbyname(message.host)
         logging.info(
-            "Tandem Agent is attempting to establish a "
-            "connection to {}:{}.".format(hostname, message.port),
+            "Tandem Agent is attempting to establish a direct"
+            " connection to {}:{}.".format(hostname, message.port),
         )
 
         address = (hostname, message.port)
-        new_peer = Peer("temp", address, ConnectionState.HELLO)
+        new_peer = DirectPeer(address)
         payload = InteragentProtocolUtils.serialize(Hello())
         io_data = self._gateway.generate_io_data(payload, address)
         self._gateway.write_io_data(io_data)

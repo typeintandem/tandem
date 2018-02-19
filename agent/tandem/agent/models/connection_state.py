@@ -2,6 +2,6 @@ import enum
 
 
 class ConnectionState(enum.Enum):
-    HELLO = "hello"
+    SYN = "syn"
     WAIT = "wait"
     OPEN = "open"

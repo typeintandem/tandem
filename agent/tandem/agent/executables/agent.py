@@ -5,6 +5,8 @@ from tandem.agent.io.std_streams import STDStreams
 from tandem.agent.io.fragmented_udp_gateway import FragmentedUDPGateway
 from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
+from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
+from tandem.shared.protocol.handlers.combined_handler import CombinedProtocolHandler
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -31,6 +33,13 @@ class TandemAgent:
             self._std_streams,
             self._interagent_gateway,
             self._document,
+        )
+        self._rendezvous_protocol = RendezvousProtocolHandler(
+            self._interagent_gateway,
+        )
+        self._gateway_handlers = CombinedProtocolHandler(
+            self._interagent_protocol,
+            self._rendezvous_protocol,
         )
         self._main_executor = ThreadPoolExecutor(max_workers=1)
 
@@ -68,7 +77,7 @@ class TandemAgent:
         # Do not call directly - called by _interagent_gateway
         self._main_executor.submit(
             self._handle_nullable_data,
-            self._interagent_protocol.handle_raw_data,
+            self._gateway_handlers.handle_raw_data,
             retrieve_data,
         )
 
