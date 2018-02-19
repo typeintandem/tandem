@@ -6,11 +6,17 @@ class Peer(ModelBase):
     def __init__(self, address):
         self._address = address
 
+    def get_id(self):
+        return None
+
     def get_address(self):
         return self._address
 
     def get_connection_state(self):
         return ConnectionState.OPEN
+
+    def set_connection_state(self, state):
+        pass
 
 
 class DirectPeer(Peer):
@@ -29,3 +35,6 @@ class HolePunchedPeer(Peer):
 
     def get_connection_state(self):
         return self._connection_state
+
+    def set_connection_state(self, state):
+        self._connection_state = state

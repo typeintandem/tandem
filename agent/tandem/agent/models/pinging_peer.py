@@ -1,6 +1,6 @@
 from tandem.shared.models.base import ModelBase
 from tandem.agent.models.connection_state import ConnectionState
-from tandem.agent.models.peer import Peer
+from tandem.agent.models.peer import HolePunchedPeer
 
 
 class PingingPeer(ModelBase):
@@ -17,23 +17,24 @@ class PingingPeer(ModelBase):
         return self._id
 
     def get_addresses(self):
-        return addresses
+        return self._addresses
 
     def initiated_connection(self):
         return self._initiated_connection
 
-    def ready_to_promote(self):
-        return self._get_active_address() is not None
+    def bump_ping_count(self, address):
+        if address in self._address_ping_counts:
+            self._address_ping_counts[address] += 1
 
     def maybe_promote_to_peer(self):
         active_address = self._get_active_address()
         if active_address is None:
             return None
         peer_connection_state = (
-            ConnectionState.HELLO if self._initiated_connection
-            else ConnectionState.WAIT
+            ConnectionState.SEND_SYN if self._initiated_connection
+            else ConnectionState.WAIT_FOR_SYN
         )
-        return Peer(self._id, active_address, peer_connection_state)
+        return HolePunchedPeer(self._id, active_address, peer_connection_state)
 
     def _get_active_address(self):
         for address, replies_received in self._address_ping_counts.items():

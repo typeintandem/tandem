@@ -1,15 +1,18 @@
 import logging
 import json
+import uuid
 import tandem.agent.protocol.messages.editor as em
 
 from tandem.agent.models.peer import DirectPeer
 from tandem.agent.stores.peer import PeerStore
+from tandem.agent.stores.pinging_peer import PingingPeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
     InteragentProtocolUtils,
     PingBack,
     NewOperations,
     Bye,
+    Syn,
 )
 from tandem.agent.models.connection_state import ConnectionState
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
@@ -41,40 +44,97 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         self._next_editor_sequence = 0
 
     def _handle_ping(self, message, sender_address):
-        io_data = self._gateway.generate_io_data(PingBack(id=str(self._id)), sender_address)
-        self._gateway.write_io_data(io_data)
+        peer_id = uuid.UUID(message.id)
+        pinging_peer_store = PingingPeerStore.get_instance()
+        peer_store = PeerStore.get_instance()
+
+        pinging_peer = pinging_peer_store.get_peer(peer_id)
+        regular_peer = peer_store.get_peer_by_id(peer_id)
+
+        # Only reply to peers we know about to prevent the other
+        # peer from thinking it can reach this peer successfully
+        if pinging_peer is not None or regular_peer is not None:
+            logging.debug(
+                "Replying to ping from {} at {}:{}."
+                .format(message.id, sender_address[0], sender_address[1]),
+            )
+            io_data = self._gateway.generate_io_data(
+                InteragentProtocolUtils.serialize(PingBack(id=str(self._id))),
+                sender_address,
+            )
+            self._gateway.write_io_data(io_data)
 
     def _handle_pingback(self, message, sender_address):
-        pass
+        peer_id = uuid.UUID(message.id)
+        pinging_peer_store = PingingPeerStore.get_instance()
+        pinging_peer = pinging_peer_store.get_peer(peer_id)
+        if pinging_peer is None:
+            return
+
+        logging.debug(
+            "Counting ping from {} at {}:{}."
+            .format(message.id, sender_address[0], sender_address[1]),
+        )
+        pinging_peer.bump_ping_count(sender_address)
+        promoted_peer = pinging_peer.maybe_promote_to_peer()
+        if promoted_peer is None:
+            return
+
+        promoted_address = promoted_peer.get_address()
+        logging.debug(
+            "Promoted peer from {} with address {}:{}."
+            .format(message.id, promoted_address[0], promoted_address[1]),
+        )
+        pinging_peer_store.remove_peer(pinging_peer)
+        peer_store = PeerStore.get_instance()
+        peer_store.add_peer(promoted_peer)
+
+        # TODO: Send this repeatedly
+        io_data = self._gateway.generate_io_data(
+            InteragentProtocolUtils.serialize(Syn()),
+            promoted_address,
+        )
+        for _ in range(2):
+            self._gateway.write_io_data(io_data)
 
     def _handle_syn(self, message, sender_address):
-        pass
+        peer_store = PeerStore.get_instance()
+        peer = peer_store.get_peer(sender_address)
+        if peer is None or peer.get_connection_state() == ConnectionState.SEND_SYN:
+            return
+        peer.set_connection_state(ConnectionState.OPEN)
+        self._send_all_operations(peer, even_if_empty=True)
+        peer_address = peer.get_address()
+        logging.debug(
+            "Connection to peer at {}:{} is open."
+            .format(peer_address[0], peer_address[1]),
+        )
 
     def _handle_hello(self, message, sender_address):
         new_peer = DirectPeer(sender_address)
         PeerStore.get_instance().add_peer(new_peer)
-
-        # Send newly connected agent a copy of the document
-        operations = self._document.get_document_operations()
-        if len(operations) == 0:
-            return
-
-        payload = InteragentProtocolUtils.serialize(NewOperations(
-            operations_list=json.dumps(operations)
-        ))
-        io_data = self._gateway.generate_io_data(
-            payload,
-            new_peer.get_address(),
-        )
-        self._gateway.write_io_data(io_data)
+        self._send_all_operations(new_peer)
 
     def _handle_bye(self, message, sender_address):
         peer = PeerStore.get_instance().get_peer(sender_address)
         PeerStore.get_instance().remove_peer(peer)
 
     def _handle_new_operations(self, message, sender_address):
+        peer_store = PeerStore.get_instance()
+        peer = peer_store.get_peer(sender_address)
+        if peer is not None and peer.get_connection_state() == ConnectionState.SEND_SYN:
+            peer.set_connection_state(ConnectionState.OPEN)
+            peer_address = peer.get_address()
+            logging.debug(
+                "Connection to peer at {}:{} is open."
+                .format(peer_address[0], peer_address[1]),
+            )
+
         operations_list = json.loads(message.operations_list)
+        if len(operations_list) == 0:
+            return
         self._document.enqueue_remote_operations(operations_list)
+
         if not self._document.write_request_sent():
             io_data = self._std_streams.generate_io_data(
                 em.serialize(em.WriteRequest(self._next_editor_sequence)),
@@ -86,6 +146,20 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
                 .format(self._next_editor_sequence),
             )
             self._next_editor_sequence += 1
+
+    def _send_all_operations(self, peer, even_if_empty=False):
+        operations = self._document.get_document_operations()
+        if not even_if_empty and len(operations) == 0:
+            return
+
+        payload = InteragentProtocolUtils.serialize(NewOperations(
+            operations_list=json.dumps(operations)
+        ))
+        io_data = self._gateway.generate_io_data(
+            payload,
+            peer.get_address(),
+        )
+        self._gateway.write_io_data(io_data)
 
     def stop(self):
         peers = PeerStore.get_instance().get_peers()

@@ -36,6 +36,7 @@ class TandemAgent:
             self._document,
         )
         self._rendezvous_protocol = RendezvousProtocolHandler(
+            self._id,
             self._interagent_gateway,
         )
         self._gateway_handlers = CombinedProtocolHandler(

@@ -14,6 +14,12 @@ class PeerStore(StoreBase):
 
         return [self.get_peer(address) for address in addresses]
 
+    def get_peer_by_id(self, id):
+        for _, peer in self._peers.items():
+            if peer.get_id() == id:
+                return peer
+        return None
+
     def add_peer(self, peer):
         self._peers[peer.get_address()] = peer
 

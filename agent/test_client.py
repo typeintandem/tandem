@@ -284,7 +284,7 @@ def hole_punch_test():
     agent2.stdin.write("\n")
     agent2.stdin.flush()
 
-    time.sleep(2)
+    time.sleep(3)
 
     # Shut down the agents
     agent1.stdin.close()

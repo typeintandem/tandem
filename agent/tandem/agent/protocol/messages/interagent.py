@@ -30,7 +30,7 @@ class Ping(ProtocolMessageBase):
 
     @staticvalue
     def _payload_keys(self):
-        return []
+        return ["id"]
 
 
 class PingBack(ProtocolMessageBase):
@@ -38,7 +38,7 @@ class PingBack(ProtocolMessageBase):
     Sent in response to a Ping message to acknowledge receipt.
     """
     def __init__(self, **kwargs):
-        super(Ping, self).__init__(
+        super(PingBack, self).__init__(
             InteragentProtocolMessageType.PingBack,
             **kwargs,
         )
