@@ -24,6 +24,7 @@ class TandemAgent:
             self._gateway_message_handler,
         )
         self._editor_protocol = EditorProtocolHandler(
+            self._id,
             self._std_streams,
             self._interagent_gateway,
             self._document,
