@@ -31,14 +31,17 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
         self._time_scheduler = time_scheduler
 
     def _handle_setup_parameters(self, message, sender_address):
+        public_address = (message.public[0], message.public[1])
+        private_address = (message.private[0], message.private[1])
         logging.debug(
-            "Received SetupParameters - connect to: {}"
-            .format(message.peer_id),
+            "Received SetupParameters - Connect to {} at public {}:{} "
+            "and private {}:{}"
+            .format(message.peer_id, *public_address, *private_address),
         )
         new_peer = PingingPeer(
             id=uuid.UUID(message.peer_id),
-            public_address=(message.public[0], message.public[1]),
-            private_address=(message.private[0], message.private[1]),
+            public_address=public_address,
+            private_address=private_address,
             initiated_connection=message.initiate,
         )
         pinging_peer_store = PingingPeerStore.get_instance()

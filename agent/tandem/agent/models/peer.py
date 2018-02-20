@@ -19,11 +19,6 @@ class Peer(ModelBase):
         pass
 
 
-class DirectPeer(Peer):
-    def __init__(self, address):
-        super(DirectPeer, self).__init__(address)
-
-
 class HolePunchedPeer(Peer):
     def __init__(self, id, address, connection_state):
         super(HolePunchedPeer, self).__init__(address)

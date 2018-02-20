@@ -3,7 +3,7 @@ import json
 import uuid
 import tandem.agent.protocol.messages.editor as em
 
-from tandem.agent.models.peer import DirectPeer
+from tandem.agent.models.peer import Peer
 from tandem.agent.stores.peer import PeerStore
 from tandem.agent.stores.pinging_peer import PingingPeerStore
 from tandem.agent.protocol.messages.interagent import (
@@ -113,7 +113,7 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         )
 
     def _handle_hello(self, message, sender_address):
-        new_peer = DirectPeer(sender_address)
+        new_peer = Peer(sender_address)
         PeerStore.get_instance().add_peer(new_peer)
         self._send_all_operations(new_peer)
 
