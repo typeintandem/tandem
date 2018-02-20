@@ -38,23 +38,20 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
         logging.debug("Received SetupParameters - connect to: {}".format(message.peer_id))
         new_peer = PingingPeer(
             id=uuid.UUID(message.peer_id),
-            addresses=[
-                (peer_info[0], peer_info[1])
-                for peer_info in message.connect_to
-            ],
+            public_address=(message.public[0], message.public[1]),
+            private_address=(message.private[0], message.private[1]),
             initiated_connection=message.initiate,
         )
         pinging_peer_store = PingingPeerStore.get_instance()
         pinging_peer_store.add_peer(new_peer)
 
-        ping_handle = self._time_scheduler.run_every(
+        new_peer.set_ping_interval_handle(self._time_scheduler.run_every(
             HolePunchingUtils.PING_INTERVAL,
             HolePunchingUtils.send_ping,
             self._gateway,
             new_peer,
             self._id,
-        )
-        new_peer.set_ping_handle(ping_handle)
+        ))
 
 
     def _handle_error(self, message, sender_address):

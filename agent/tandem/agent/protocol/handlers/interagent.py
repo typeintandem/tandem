@@ -60,11 +60,7 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
                 "Replying to ping from {} at {}:{}."
                 .format(message.id, sender_address[0], sender_address[1]),
             )
-            io_data = self._gateway.generate_io_data(
-                InteragentProtocolUtils.serialize(PingBack(id=str(self._id))),
-                sender_address,
-            )
-            self._gateway.write_io_data(io_data)
+            HolePunchingUtils.send_pingback(self._gateway, sender_address, self._id)
 
     def _handle_pingback(self, message, sender_address):
         peer_id = uuid.UUID(message.id)
@@ -87,19 +83,17 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
             "Promoted peer from {} with address {}:{}."
             .format(message.id, promoted_address[0], promoted_address[1]),
         )
-        self._time_scheduler.cancel(pinging_peer.get_ping_handle())
         pinging_peer_store.remove_peer(pinging_peer)
         peer_store = PeerStore.get_instance()
         peer_store.add_peer(promoted_peer)
 
         if promoted_peer.get_connection_state() == ConnectionState.SEND_SYN:
-            handle = self._time_scheduler.run_every(
+            promoted_peer.set_interval_handle(self._time_scheduler.run_every(
                 HolePunchingUtils.SYN_INTERVAL,
                 HolePunchingUtils.send_syn,
                 self._gateway,
                 promoted_peer,
-            )
-            promoted_peer.append_handle(handle)
+            ))
 
     def _handle_syn(self, message, sender_address):
         peer_store = PeerStore.get_instance()
@@ -107,9 +101,6 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         if peer is None or peer.get_connection_state() == ConnectionState.SEND_SYN:
             return
         peer.set_connection_state(ConnectionState.OPEN)
-        for handle in peer.get_handles():
-            self._time_scheduler.cancel(handle)
-        peer.clear_handles()
         self._send_all_operations(peer, even_if_empty=True)
         peer_address = peer.get_address()
         logging.debug(
@@ -131,9 +122,6 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         peer = peer_store.get_peer(sender_address)
         if peer is not None and peer.get_connection_state() == ConnectionState.SEND_SYN:
             peer.set_connection_state(ConnectionState.OPEN)
-            for handle in peer.get_handles():
-                self._time_scheduler.cancel(handle)
-            peer.clear_handles()
             peer_address = peer.get_address()
             logging.debug(
                 "Connection to peer at {}:{} is open."

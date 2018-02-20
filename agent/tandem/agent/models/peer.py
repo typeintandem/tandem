@@ -18,15 +18,6 @@ class Peer(ModelBase):
     def set_connection_state(self, state):
         pass
 
-    def append_handle(self, handle):
-        pass
-
-    def get_handles(self):
-        return []
-
-    def clear_handles(self):
-        pass
-
 
 class DirectPeer(Peer):
     def __init__(self, address):
@@ -38,7 +29,7 @@ class HolePunchedPeer(Peer):
         super(HolePunchedPeer, self).__init__(address)
         self._id = id
         self._connection_state = connection_state
-        self._handles = []
+        self._interval_handle = None
 
     def get_id(self):
         return self._id
@@ -48,12 +39,9 @@ class HolePunchedPeer(Peer):
 
     def set_connection_state(self, state):
         self._connection_state = state
+        if self._interval_handle is not None:
+            self._interval_handle.cancel()
+            self._interval_handle = None
 
-    def append_handle(self, handle):
-        self._handles.append(handle)
-
-    def get_handles(self):
-        return self._handles
-
-    def clear_handles(self):
-        self._handles.clear()
+    def set_interval_handle(self, interval_handle):
+        self._interval_handle = interval_handle

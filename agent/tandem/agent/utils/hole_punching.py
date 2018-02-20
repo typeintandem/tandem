@@ -1,6 +1,7 @@
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
     Ping,
+    PingBack,
     Syn,
 )
 
@@ -14,6 +15,14 @@ class HolePunchingUtils:
         io_data = gateway.generate_io_data(
             InteragentProtocolUtils.serialize(Ping(id=str(id))),
             peer.get_addresses(),
+        )
+        gateway.write_io_data(io_data)
+
+    @staticmethod
+    def send_pingback(gateway, address, id):
+        io_data = gateway.generate_io_data(
+            InteragentProtocolUtils.serialize(PingBack(id=str(id))),
+            address,
         )
         gateway.write_io_data(io_data)
 
