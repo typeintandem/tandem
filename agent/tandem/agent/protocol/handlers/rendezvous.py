@@ -7,10 +7,6 @@ from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     RendezvousProtocolMessageType,
 )
-from tandem.agent.protocol.messages.interagent import (
-    InteragentProtocolUtils,
-    Ping,
-)
 from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.utils.static_value import static_value as staticvalue
 
@@ -35,7 +31,10 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
         self._time_scheduler = time_scheduler
 
     def _handle_setup_parameters(self, message, sender_address):
-        logging.debug("Received SetupParameters - connect to: {}".format(message.peer_id))
+        logging.debug(
+            "Received SetupParameters - connect to: {}"
+            .format(message.peer_id),
+        )
         new_peer = PingingPeer(
             id=uuid.UUID(message.peer_id),
             public_address=(message.public[0], message.public[1]),
@@ -52,7 +51,6 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
             new_peer,
             self._id,
         ))
-
 
     def _handle_error(self, message, sender_address):
         logging.info("Rendezvous Error: {}".format(message.message))

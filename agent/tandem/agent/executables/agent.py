@@ -6,7 +6,9 @@ from tandem.agent.io.fragmented_udp_gateway import FragmentedUDPGateway
 from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
-from tandem.shared.protocol.handlers.combined_handler import CombinedProtocolHandler
+from tandem.shared.protocol.handlers.combined_handler import (
+    CombinedProtocolHandler,
+)
 from tandem.shared.utils.time_scheduler import TimeScheduler
 from concurrent.futures import ThreadPoolExecutor
 

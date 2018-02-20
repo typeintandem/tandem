@@ -11,7 +11,6 @@ from tandem.agent.protocol.messages.interagent import (
     NewOperations,
     Hello
 )
-from tandem.agent.models.connection_state import ConnectionState
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     ConnectRequest,

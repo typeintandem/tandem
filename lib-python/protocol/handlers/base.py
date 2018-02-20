@@ -28,7 +28,9 @@ class ProtocolHandlerBase(object):
                 )
 
         except ProtocolMarshalError:
-            logging.info("Protocol message was ignored because it was not valid JSON.")
+            logging.info(
+                "Protocol message was ignored because it was not valid JSON.",
+            )
 
         except:
             logging.exception("Exception when handling protocol message:")
@@ -36,7 +38,8 @@ class ProtocolHandlerBase(object):
 
     def handle_message(self, message_as_dict, sender_address):
         try:
-            message = self._protocol_message_utils().deserialize(message_as_dict)
+            message = \
+                self._protocol_message_utils().deserialize(message_as_dict)
             items = self._protocol_message_handlers().items()
 
             for message_type, handler in items:

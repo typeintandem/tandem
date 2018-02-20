@@ -9,10 +9,8 @@ from tandem.agent.stores.pinging_peer import PingingPeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
     InteragentProtocolUtils,
-    PingBack,
     NewOperations,
     Bye,
-    Syn,
 )
 from tandem.agent.models.connection_state import ConnectionState
 from tandem.agent.utils.hole_punching import HolePunchingUtils
@@ -29,7 +27,8 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
     def _protocol_message_handlers(self):
         return {
             InteragentProtocolMessageType.Ping.value: self._handle_ping,
-            InteragentProtocolMessageType.PingBack.value: self._handle_pingback,
+            InteragentProtocolMessageType.PingBack.value:
+                self._handle_pingback,
             InteragentProtocolMessageType.Syn.value: self._handle_syn,
             InteragentProtocolMessageType.Hello.value: self._handle_hello,
             InteragentProtocolMessageType.Bye.value: self._handle_bye,
@@ -60,7 +59,11 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
                 "Replying to ping from {} at {}:{}."
                 .format(message.id, sender_address[0], sender_address[1]),
             )
-            HolePunchingUtils.send_pingback(self._gateway, sender_address, self._id)
+            HolePunchingUtils.send_pingback(
+                self._gateway,
+                sender_address,
+                self._id,
+            )
 
     def _handle_pingback(self, message, sender_address):
         peer_id = uuid.UUID(message.id)
@@ -98,7 +101,8 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
     def _handle_syn(self, message, sender_address):
         peer_store = PeerStore.get_instance()
         peer = peer_store.get_peer(sender_address)
-        if peer is None or peer.get_connection_state() == ConnectionState.SEND_SYN:
+        if (peer is None or
+                peer.get_connection_state() == ConnectionState.SEND_SYN):
             return
         peer.set_connection_state(ConnectionState.OPEN)
         self._send_all_operations(peer, even_if_empty=True)
@@ -120,7 +124,8 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
     def _handle_new_operations(self, message, sender_address):
         peer_store = PeerStore.get_instance()
         peer = peer_store.get_peer(sender_address)
-        if peer is not None and peer.get_connection_state() == ConnectionState.SEND_SYN:
+        if (peer is not None and
+                peer.get_connection_state() == ConnectionState.SEND_SYN):
             peer.set_connection_state(ConnectionState.OPEN)
             peer_address = peer.get_address()
             logging.debug(

@@ -6,7 +6,13 @@ from tandem.agent.models.peer import HolePunchedPeer
 class PingingPeer(ModelBase):
     PROMOTE_AFTER = 3
 
-    def __init__(self, id, public_address, private_address, initiated_connection=False):
+    def __init__(
+        self,
+        id,
+        public_address,
+        private_address,
+        initiated_connection=False,
+    ):
         self._id = id
         # If true, this agent initiated the connection to this peer
         self._initiated_connection = initiated_connection
@@ -44,7 +50,8 @@ class PingingPeer(ModelBase):
         return HolePunchedPeer(self._id, active_address, peer_connection_state)
 
     def _get_active_address(self):
-        private_address_count = self._address_ping_counts[self._private_address]
+        private_address_count = \
+            self._address_ping_counts[self._private_address]
         public_address_count = self._address_ping_counts[self._public_address]
 
         # Prefer private address
