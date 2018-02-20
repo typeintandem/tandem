@@ -258,7 +258,7 @@ class SessionInfo:
 
     @staticmethod
     def from_payload(payload):
-        return JoinSession(payload["session_id"])
+        return SessionInfo(payload["session_id"])
 
 
 def serialize(message):
