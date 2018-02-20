@@ -11,6 +11,7 @@ from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
     Ping,
 )
+from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 
@@ -28,9 +29,10 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
                 self._handle_error,
         }
 
-    def __init__(self, id, gateway):
+    def __init__(self, id, gateway, time_scheduler):
         self._id = id
         self._gateway = gateway
+        self._time_scheduler = time_scheduler
 
     def _handle_setup_parameters(self, message, sender_address):
         logging.debug("Received SetupParameters - connect to: {}".format(message.peer_id))
@@ -45,13 +47,15 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
         pinging_peer_store = PingingPeerStore.get_instance()
         pinging_peer_store.add_peer(new_peer)
 
-        # TODO: Replace this with delayed pings
-        io_data = self._gateway.generate_io_data(
-            InteragentProtocolUtils.serialize(Ping(id=str(self._id))),
-            new_peer.get_addresses(),
+        ping_handle = self._time_scheduler.run_every(
+            HolePunchingUtils.PING_INTERVAL,
+            HolePunchingUtils.send_ping,
+            self._gateway,
+            new_peer,
+            self._id,
         )
-        for _ in range(5):
-            self._gateway.write_io_data(io_data)
+        new_peer.set_ping_handle(ping_handle)
+
 
     def _handle_error(self, message, sender_address):
         logging.info("Rendezvous Error: {}".format(message.message))

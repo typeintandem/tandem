@@ -259,6 +259,7 @@ def crdt_test():
 
 def hole_punch_test():
     agent1_port, agent2_port = get_string_ports()
+    agent3_port = str(int(agent2_port) + 1)
 
     agent1 = start_agent(["--port", agent1_port])
     agent2 = start_agent([
@@ -266,6 +267,12 @@ def hole_punch_test():
         agent2_port,
         "--log-file",
         "/tmp/tandem-agent-2.log",
+    ])
+    agent3 = start_agent([
+        "--port",
+        agent3_port,
+        "--log-file",
+        "/tmp/tandem-agent-3.log",
     ])
 
     # Wait for the agents to start up
@@ -283,17 +290,23 @@ def hole_punch_test():
     agent2.stdin.write(m.serialize(join_session))
     agent2.stdin.write("\n")
     agent2.stdin.flush()
+    agent3.stdin.write(m.serialize(join_session))
+    agent3.stdin.write("\n")
+    agent3.stdin.flush()
 
-    time.sleep(3)
+    time.sleep(10)
 
     # Shut down the agents
     agent1.stdin.close()
     agent1.terminate()
     agent2.stdin.close()
     agent2.terminate()
+    agent3.stdin.close()
+    agent3.terminate()
 
     agent1.wait()
     agent2.wait()
+    agent3.wait()
 
 
 def main():

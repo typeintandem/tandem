@@ -7,6 +7,7 @@ from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
 from tandem.shared.protocol.handlers.combined_handler import CombinedProtocolHandler
+from tandem.shared.utils.time_scheduler import TimeScheduler
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -16,6 +17,8 @@ class TandemAgent:
         self._requested_host = host
         # This is the port the user specified on the command line (it can be 0)
         self._requested_port = port
+        self._main_executor = ThreadPoolExecutor(max_workers=1)
+        self._time_scheduler = TimeScheduler(self._main_executor)
         self._document = Document()
         self._std_streams = STDStreams(self._on_std_input)
         self._interagent_gateway = FragmentedUDPGateway(
@@ -34,16 +37,17 @@ class TandemAgent:
             self._std_streams,
             self._interagent_gateway,
             self._document,
+            self._time_scheduler,
         )
         self._rendezvous_protocol = RendezvousProtocolHandler(
             self._id,
             self._interagent_gateway,
+            self._time_scheduler,
         )
         self._gateway_handlers = CombinedProtocolHandler(
             self._interagent_protocol,
             self._rendezvous_protocol,
         )
-        self._main_executor = ThreadPoolExecutor(max_workers=1)
 
     def __enter__(self):
         self.start()
@@ -53,6 +57,7 @@ class TandemAgent:
         self.stop()
 
     def start(self):
+        self._time_scheduler.start()
         self._document.start()
         self._std_streams.start()
         self._interagent_gateway.start()
@@ -64,6 +69,7 @@ class TandemAgent:
             self._interagent_gateway.stop()
             self._std_streams.stop()
             self._document.stop()
+            self._time_scheduler.stop()
         self._main_executor.submit(atomic_shutdown)
         self._main_executor.shutdown()
         logging.info("Tandem Agent has shut down.")

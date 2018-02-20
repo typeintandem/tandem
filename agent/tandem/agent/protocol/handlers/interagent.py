@@ -15,6 +15,7 @@ from tandem.agent.protocol.messages.interagent import (
     Syn,
 )
 from tandem.agent.models.connection_state import ConnectionState
+from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.utils.static_value import static_value as staticvalue
 
@@ -36,11 +37,12 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
                 self._handle_new_operations,
         }
 
-    def __init__(self, id, std_streams, gateway, document):
+    def __init__(self, id, std_streams, gateway, document, time_scheduler):
         self._id = id
         self._std_streams = std_streams
         self._gateway = gateway
         self._document = document
+        self._time_scheduler = time_scheduler
         self._next_editor_sequence = 0
 
     def _handle_ping(self, message, sender_address):
@@ -85,18 +87,19 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
             "Promoted peer from {} with address {}:{}."
             .format(message.id, promoted_address[0], promoted_address[1]),
         )
+        self._time_scheduler.cancel(pinging_peer.get_ping_handle())
         pinging_peer_store.remove_peer(pinging_peer)
         peer_store = PeerStore.get_instance()
         peer_store.add_peer(promoted_peer)
 
         if promoted_peer.get_connection_state() == ConnectionState.SEND_SYN:
-            # TODO: Send this repeatedly
-            io_data = self._gateway.generate_io_data(
-                InteragentProtocolUtils.serialize(Syn()),
-                promoted_address,
+            handle = self._time_scheduler.run_every(
+                HolePunchingUtils.SYN_INTERVAL,
+                HolePunchingUtils.send_syn,
+                self._gateway,
+                promoted_peer,
             )
-            for _ in range(2):
-                self._gateway.write_io_data(io_data)
+            promoted_peer.append_handle(handle)
 
     def _handle_syn(self, message, sender_address):
         peer_store = PeerStore.get_instance()
@@ -104,6 +107,9 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         if peer is None or peer.get_connection_state() == ConnectionState.SEND_SYN:
             return
         peer.set_connection_state(ConnectionState.OPEN)
+        for handle in peer.get_handles():
+            self._time_scheduler.cancel(handle)
+        peer.clear_handles()
         self._send_all_operations(peer, even_if_empty=True)
         peer_address = peer.get_address()
         logging.debug(
@@ -125,6 +131,9 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         peer = peer_store.get_peer(sender_address)
         if peer is not None and peer.get_connection_state() == ConnectionState.SEND_SYN:
             peer.set_connection_state(ConnectionState.OPEN)
+            for handle in peer.get_handles():
+                self._time_scheduler.cancel(handle)
+            peer.clear_handles()
             peer_address = peer.get_address()
             logging.debug(
                 "Connection to peer at {}:{} is open."
