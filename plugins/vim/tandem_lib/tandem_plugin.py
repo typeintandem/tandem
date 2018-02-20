@@ -72,16 +72,16 @@ class TandemPlugin(object):
         ])
         self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
+        message = None
         if self._connect_to is not None:
-            host_ip, host_port = self._connect_to
-            message = m.ConnectTo(host_ip, int(host_port))
-            self._agent.stdin.write(m.serialize(message))
-            self._agent.stdin.write("\n")
-            self._agent.stdin.flush()
+            message = m.JoinSession(self._connect_to)
+        else:
+            message = m.HostSession()
+        self._agent.stdin.write(m.serialize(message))
+        self._agent.stdin.write("\n")
+        self._agent.stdin.flush()
 
         self._output_checker.start()
-
-        self._vim.command('echom "Bound agent to port: {}"'.format(self._agent_port))
 
     def _check_document_sync(self):
         global is_active
@@ -280,17 +280,13 @@ class TandemPlugin(object):
     def _handle_message(self, message):
         self._message_handler(message)
 
-    def start(self, host_ip=None, host_port=None):
+    def start(self, session_id=None):
         global is_active
         if is_active:
             print "Cannot start. An instance is already running on :{}".format(self._agent_port)
             return
 
-        if host_ip is not None and host_port is None:
-            print "Cannot start. IP specified. You must also provide a port"
-            return
-
-        self._connect_to = (host_ip, host_port) if host_ip is not None else None
+        self._connect_to = session_id
 
         self._target_buffer = self._vim.current.buffer
 
