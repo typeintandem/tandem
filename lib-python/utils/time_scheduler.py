@@ -27,12 +27,9 @@ class TimeScheduler:
         This returns a handle that can be used with the cancel()
         function to cancel the request to run this function.
         """
-        return self._scheduler.enter(
-            delay_seconds,
-            0,
-            self._executor.submit,
-            (function, *args),
-            kwargs,
+        return _Handle(
+            self,
+            self._schedule_after(delay_seconds, function, *args, **kwargs),
         )
 
     def run_every(self, interval_seconds, function, *args, **kwargs):
@@ -46,7 +43,7 @@ class TimeScheduler:
         between each invocation of the function. It does not guarantee
         that the function runs exactly every interval_seconds.
         """
-        interval_handle = IntervalHandle(interval_seconds)
+        interval_handle = _IntervalHandle(self, interval_seconds)
         self._schedule_interval(
             function,
             interval_handle,
@@ -54,21 +51,6 @@ class TimeScheduler:
             **kwargs,
         )
         return interval_handle
-
-    def cancel(self, handle):
-        """
-        Cancels the request to run a function or the interval.
-
-        If the handle is invalid the call will be a no-op.
-        """
-        try:
-            event_handle = (
-                handle if type(handle) is not IntervalHandle
-                else handle.get_event_handle()
-            )
-            self._scheduler.cancel(event_handle)
-        except ValueError:
-            pass
 
     def start(self):
         """
@@ -91,8 +73,23 @@ class TimeScheduler:
         self._shut_down_event.set()
         self._runner.join()
 
+    def _cancel(self, event_handle):
+        try:
+            self._scheduler.cancel(event_handle)
+        except ValueError:
+            pass
+
+    def _schedule_after(self, delay_seconds, function, *args, **kwargs):
+        return self._scheduler.enter(
+            delay_seconds,
+            0,
+            self._executor.submit,
+            (function, *args),
+            kwargs,
+        )
+
     def _schedule_interval(self, function, interval_handle, *args, **kwargs):
-        event_handle = self.run_after(
+        event_handle = self._schedule_after(
             interval_handle.get_interval_seconds(),
             self._run_interval,
             function,
@@ -114,13 +111,19 @@ class TimeScheduler:
             self._shut_down_event.wait(timeout=self._resolution_seconds)
 
 
-class IntervalHandle:
-    def __init__(self, interval_seconds):
-        self._event_handle = None
-        self._interval_seconds = interval_seconds
+class _Handle:
+    def __init__(self, scheduler, event_handle):
+        self._scheduler = scheduler
+        self._event_handle = event_handle
 
-    def get_event_handle(self):
-        return self._event_handle
+    def cancel(self):
+        self._scheduler._cancel(self._event_handle)
+
+
+class _IntervalHandle(_Handle):
+    def __init__(self, scheduler, interval_seconds):
+        super(_IntervalHandle, self).__init__(scheduler, None)
+        self._interval_seconds = interval_seconds
 
     def get_interval_seconds(self):
         return self._interval_seconds
