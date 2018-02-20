@@ -39,7 +39,7 @@ class SetupParameters(ProtocolMessageBase):
 
     @staticvalue
     def _payload_keys(self):
-        return ["session_id", "peer_id", "initiate", "connect_to"]
+        return ["session_id", "peer_id", "initiate", "public", "private"]
 
 
 class Error(ProtocolMessageBase):

@@ -111,10 +111,8 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
                 session_id=str(session_id),
                 peer_id=str(should_connect_to.get_id()),
                 initiate=initiate,
-                connect_to=[
-                    should_connect_to.get_public_address(),
-                    should_connect_to.get_private_address(),
-                ],
+                public=should_connect_to.get_public_address(),
+                private=should_connect_to.get_private_address(),
             )),
         )
 
