@@ -30,7 +30,7 @@ class TimeScheduler:
         return self._scheduler.enter(
             delay_seconds,
             0,
-            self._schedule_on_executor,
+            self._executor.submit,
             (function, *args),
             kwargs,
         )
@@ -112,9 +112,6 @@ class TimeScheduler:
         while not self._shutting_down:
             self._scheduler.run(blocking=False)
             self._shut_down_event.wait(timeout=self._resolution_seconds)
-
-    def _schedule_on_executor(self, function, *args, **kwargs):
-        self._executor.submit(function, *args, **kwargs)
 
 
 class IntervalHandle:
