@@ -1,9 +1,9 @@
 import logging
 import uuid
 from tandem.agent.models.connection import HolePunchedConnection
-from tandem.agent.models.peer import Peer
 from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
+from tandem.shared.models.peer import Peer
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,

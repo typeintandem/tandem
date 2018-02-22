@@ -5,7 +5,6 @@ import tandem.agent.protocol.messages.editor as em
 
 from tandem.agent.models.connection import DirectConnection
 from tandem.agent.models.connection_state import ConnectionState
-from tandem.agent.models.peer import Peer
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
     InteragentProtocolUtils,
@@ -15,6 +14,7 @@ from tandem.agent.protocol.messages.interagent import (
 )
 from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
+from tandem.shared.models.peer import Peer
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.utils.static_value import static_value as staticvalue
 
