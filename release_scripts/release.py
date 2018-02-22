@@ -5,11 +5,13 @@ from github import Github
 
 # Test repo. Replace with final production repository
 SUBLIME_REPO = "https://github.com/rageandqq/tandem"
+VIM_REPO = "https://github.com/rageandqq/tandem_vim"
 
 
 def main():
     if len(sys.argv) < 2:
-        print("ERROR: Pass in repo as the first argument. Choose from: [sublime]")
+        print("ERROR: Pass in repo as the first argument. "
+              "Choose from: [sublime | vim]")
         sys.exit(1)
     elif len(sys.argv) < 3:
         print("ERROR: You must also pass in repository SHA as the argument.")
@@ -18,8 +20,10 @@ def main():
     repo_type = sys.argv[1].lower()
     if repo_type == "sublime":
         repo_url = SUBLIME_REPO
+    elif repo_type == "vim":
+        repo_url = VIM_REPO
     else:
-        print("ERROR: Please pass in one of [sublime] as the repo.")
+        print("ERROR: Please pass in one of [sublime | vim] as the repo.")
         sys.exit(1)
 
     master_SHA = sys.argv[2]
