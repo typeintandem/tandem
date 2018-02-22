@@ -11,10 +11,10 @@ class HolePunchingUtils:
     SYN_INTERVAL = 0.15
 
     @staticmethod
-    def send_ping(gateway, peer, id):
+    def send_ping(gateway, addresses, id):
         io_data = gateway.generate_io_data(
             InteragentProtocolUtils.serialize(Ping(id=str(id))),
-            peer.get_addresses(),
+            addresses
         )
         gateway.write_io_data(io_data)
 
@@ -27,9 +27,9 @@ class HolePunchingUtils:
         gateway.write_io_data(io_data)
 
     @staticmethod
-    def send_syn(gateway, peer):
+    def send_syn(gateway, address):
         io_data = gateway.generate_io_data(
             InteragentProtocolUtils.serialize(Syn()),
-            peer.get_address(),
+            address,
         )
         gateway.write_io_data(io_data)

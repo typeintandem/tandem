@@ -1,13 +1,14 @@
 import logging
 import uuid
-from tandem.agent.models.pinging_peer import PingingPeer
-from tandem.agent.stores.pinging_peer import PingingPeerStore
+from tandem.agent.models.connection import HolePunchedConnection
+from tandem.agent.models.peer import Peer
+from tandem.agent.stores.connection import ConnectionStore
+from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     RendezvousProtocolMessageType,
 )
-from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 
@@ -38,22 +39,23 @@ class RendezvousProtocolHandler(ProtocolHandlerBase):
             "and private {}:{}"
             .format(message.peer_id, *public_address, *private_address),
         )
-        new_peer = PingingPeer(
+        peer = Peer(
             id=uuid.UUID(message.peer_id),
             public_address=public_address,
             private_address=private_address,
+        )
+        new_connection = HolePunchedConnection(
+            peer=peer,
             initiated_connection=message.initiate,
         )
-        pinging_peer_store = PingingPeerStore.get_instance()
-        pinging_peer_store.add_peer(new_peer)
-
-        new_peer.set_ping_interval_handle(self._time_scheduler.run_every(
+        new_connection.set_interval_handle(self._time_scheduler.run_every(
             HolePunchingUtils.PING_INTERVAL,
             HolePunchingUtils.send_ping,
             self._gateway,
-            new_peer,
+            peer.get_addresses(),
             self._id,
         ))
+        ConnectionStore.get_instance().add_connection(new_connection)
 
     def _handle_error(self, message, sender_address):
         logging.info("Rendezvous Error: {}".format(message.message))

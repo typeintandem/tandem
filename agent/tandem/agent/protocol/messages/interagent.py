@@ -74,6 +74,9 @@ class Hello(ProtocolMessageBase):
 
     This message is used to directly establish a connection. It
     is sent after receiving a ConnectTo message from the plugin.
+
+    The should_reply flag is set if the agent wants the remote
+    peer to respond with a Hello message containing its ID.
     """
     def __init__(self, **kwargs):
         super(Hello, self).__init__(
@@ -83,7 +86,7 @@ class Hello(ProtocolMessageBase):
 
     @staticvalue
     def _payload_keys(self):
-        return []
+        return ["id", "should_reply"]
 
 
 class Bye(ProtocolMessageBase):

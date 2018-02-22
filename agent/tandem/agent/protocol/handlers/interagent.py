@@ -3,16 +3,17 @@ import json
 import uuid
 import tandem.agent.protocol.messages.editor as em
 
+from tandem.agent.models.connection import DirectConnection
+from tandem.agent.models.connection_state import ConnectionState
 from tandem.agent.models.peer import Peer
-from tandem.agent.stores.peer import PeerStore
-from tandem.agent.stores.pinging_peer import PingingPeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolMessageType,
     InteragentProtocolUtils,
     NewOperations,
     Bye,
+    Hello,
 )
-from tandem.agent.models.connection_state import ConnectionState
+from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
 from tandem.shared.utils.static_value import static_value as staticvalue
@@ -46,91 +47,131 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
 
     def _handle_ping(self, message, sender_address):
         peer_id = uuid.UUID(message.id)
-        pinging_peer_store = PingingPeerStore.get_instance()
-        peer_store = PeerStore.get_instance()
+        connection = \
+            ConnectionStore.get_instance().get_connection_by_id(peer_id)
 
-        pinging_peer = pinging_peer_store.get_peer(peer_id)
-        regular_peer = peer_store.get_peer_by_id(peer_id)
+        # Only reply to peers we know about to prevent the other peer from
+        # thinking it can reach us successfully
+        if connection is None:
+            return
 
-        # Only reply to peers we know about to prevent the other
-        # peer from thinking it can reach this peer successfully
-        if pinging_peer is not None or regular_peer is not None:
-            logging.debug(
-                "Replying to ping from {} at {}:{}."
-                .format(message.id, sender_address[0], sender_address[1]),
-            )
-            HolePunchingUtils.send_pingback(
-                self._gateway,
-                sender_address,
-                self._id,
-            )
+        logging.debug(
+            "Replying to ping from {} at {}:{}."
+            .format(message.id, *sender_address),
+        )
+        HolePunchingUtils.send_pingback(
+            self._gateway,
+            sender_address,
+            self._id,
+        )
 
     def _handle_pingback(self, message, sender_address):
         peer_id = uuid.UUID(message.id)
-        pinging_peer_store = PingingPeerStore.get_instance()
-        pinging_peer = pinging_peer_store.get_peer(peer_id)
-        if pinging_peer is None:
+        connection = \
+            ConnectionStore.get_instance().get_connection_by_id(peer_id)
+        # Only count PingBack messages from peers we know about and from whom
+        # we expect PingBack messages
+        if (connection is None or
+                connection.get_connection_state() != ConnectionState.PING):
             return
 
         logging.debug(
             "Counting ping from {} at {}:{}."
-            .format(message.id, sender_address[0], sender_address[1]),
+            .format(message.id, *sender_address),
         )
-        pinging_peer.bump_ping_count(sender_address)
-        promoted_peer = pinging_peer.maybe_promote_to_peer()
-        if promoted_peer is None:
+        connection.bump_ping_count(sender_address)
+
+        # When the connection is ready to transition into the SYN/WAIT states,
+        # an active address will be available
+        if connection.get_active_address() is None:
             return
 
-        promoted_address = promoted_peer.get_address()
+        connection.set_connection_state(
+            ConnectionState.SEND_SYN
+            if connection.initiated_connection()
+            else ConnectionState.WAIT_FOR_SYN
+        )
         logging.debug(
             "Promoted peer from {} with address {}:{}."
-            .format(message.id, promoted_address[0], promoted_address[1]),
+            .format(message.id, *(connection.get_active_address())),
         )
-        pinging_peer_store.remove_peer(pinging_peer)
-        peer_store = PeerStore.get_instance()
-        peer_store.add_peer(promoted_peer)
 
-        if promoted_peer.get_connection_state() == ConnectionState.SEND_SYN:
-            promoted_peer.set_interval_handle(self._time_scheduler.run_every(
+        if connection.get_connection_state() == ConnectionState.SEND_SYN:
+            logging.debug(
+                "Will send SYN to {} at {}:{}"
+                .format(message.id, *(connection.get_active_address())),
+            )
+            connection.set_interval_handle(self._time_scheduler.run_every(
                 HolePunchingUtils.SYN_INTERVAL,
                 HolePunchingUtils.send_syn,
                 self._gateway,
-                promoted_peer,
+                connection.get_active_address(),
             ))
+        else:
+            logging.debug(
+                "Will wait for SYN from {} at {}:{}"
+                .format(message.id, *(connection.get_active_address())),
+            )
 
     def _handle_syn(self, message, sender_address):
-        peer_store = PeerStore.get_instance()
-        peer = peer_store.get_peer(sender_address)
-        if (peer is None or
-                peer.get_connection_state() == ConnectionState.SEND_SYN):
+        logging.debug("Received SYN from {}:{}".format(*sender_address))
+        connection = (
+            ConnectionStore.get_instance()
+            .get_connection_by_address(sender_address)
+        )
+        if (connection is None or
+                connection.get_connection_state() == ConnectionState.SEND_SYN):
             return
-        peer.set_connection_state(ConnectionState.OPEN)
-        self._send_all_operations(peer, even_if_empty=True)
-        peer_address = peer.get_address()
+
+        connection.set_connection_state(ConnectionState.OPEN)
+        self._send_all_operations(connection, even_if_empty=True)
         logging.debug(
             "Connection to peer at {}:{} is open."
-            .format(peer_address[0], peer_address[1]),
+            .format(*(connection.get_active_address())),
         )
 
     def _handle_hello(self, message, sender_address):
-        new_peer = Peer(sender_address)
-        PeerStore.get_instance().add_peer(new_peer)
-        self._send_all_operations(new_peer)
+        id = uuid.UUID(message.id)
+        new_connection = DirectConnection(Peer(
+            id=id,
+            public_address=sender_address,
+        ))
+        ConnectionStore.get_instance().add_connection(new_connection)
+        logging.info(
+            "Tandem Agent established a direct connection to {}:{}"
+            .format(*sender_address),
+        )
+
+        if message.should_reply:
+            io_data = self._gateway.generate_io_data(
+                InteragentProtocolUtils.serialize(Hello(
+                    id=str(self._id),
+                    should_reply=False,
+                )),
+                sender_address,
+            )
+            self._gateway.write_io_data(io_data)
+
+        self._send_all_operations(new_connection)
 
     def _handle_bye(self, message, sender_address):
-        peer = PeerStore.get_instance().get_peer(sender_address)
-        PeerStore.get_instance().remove_peer(peer)
+        connection_store = ConnectionStore.get_instance()
+        connection = connection_store.get_connection_by_address(sender_address)
+        if connection is None:
+            return
+        connection_store.remove_connection(connection)
 
     def _handle_new_operations(self, message, sender_address):
-        peer_store = PeerStore.get_instance()
-        peer = peer_store.get_peer(sender_address)
-        if (peer is not None and
-                peer.get_connection_state() == ConnectionState.SEND_SYN):
-            peer.set_connection_state(ConnectionState.OPEN)
-            peer_address = peer.get_address()
+        connection = (
+            ConnectionStore.get_instance()
+            .get_connection_by_address(sender_address)
+        )
+        if (connection is not None and
+                connection.get_connection_state() == ConnectionState.SEND_SYN):
+            connection.set_connection_state(ConnectionState.OPEN)
             logging.debug(
                 "Connection to peer at {}:{} is open."
-                .format(peer_address[0], peer_address[1]),
+                .format(*(connection.get_active_address())),
             )
 
         operations_list = json.loads(message.operations_list)
@@ -150,7 +191,7 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
             )
             self._next_editor_sequence += 1
 
-    def _send_all_operations(self, peer, even_if_empty=False):
+    def _send_all_operations(self, connection, even_if_empty=False):
         operations = self._document.get_document_operations()
         if not even_if_empty and len(operations) == 0:
             return
@@ -160,15 +201,15 @@ class InteragentProtocolHandler(ProtocolHandlerBase):
         ))
         io_data = self._gateway.generate_io_data(
             payload,
-            peer.get_address(),
+            connection.get_active_address(),
         )
         self._gateway.write_io_data(io_data)
 
     def stop(self):
-        peers = PeerStore.get_instance().get_peers()
+        connections = ConnectionStore.get_instance().get_open_connections()
         io_data = self._gateway.generate_io_data(
             InteragentProtocolUtils.serialize(Bye()),
-            [peer.get_address() for peer in peers],
+            [connection.get_active_address() for connection in connections],
         )
         self._gateway.write_io_data(io_data)
-        PeerStore.reset_instance()
+        ConnectionStore.reset_instance()

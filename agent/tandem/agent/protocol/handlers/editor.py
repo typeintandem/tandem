@@ -4,13 +4,12 @@ import logging
 import socket
 import uuid
 import tandem.agent.protocol.messages.editor as em
-from tandem.agent.models.peer import Peer
-from tandem.agent.stores.peer import PeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
     NewOperations,
     Hello
 )
+from tandem.agent.stores.connection import ConnectionStore
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     ConnectRequest,
@@ -58,16 +57,12 @@ class EditorProtocolHandler:
         )
 
         address = (hostname, message.port)
-        new_peer = Peer(address)
-        payload = InteragentProtocolUtils.serialize(Hello())
+        payload = InteragentProtocolUtils.serialize(Hello(
+            id=str(self._id),
+            should_reply=True,
+        ))
         io_data = self._gateway.generate_io_data(payload, address)
         self._gateway.write_io_data(io_data)
-        PeerStore.get_instance().add_peer(new_peer)
-
-        logging.info(
-            "Tandem Agent connected to {}:{}."
-            .format(hostname, message.port),
-        )
 
     def _handle_write_request_ack(self, message):
         logging.debug("Received ACK for seq: {}".format(message.seq))
@@ -97,11 +92,13 @@ class EditorProtocolHandler:
         for operations_list in nested_operations:
             operations.extend(operations_list)
 
-        peers = PeerStore.get_instance().get_all_connected_peers()
-        if len(peers) == 0:
+        connections = ConnectionStore.get_instance().get_open_connections()
+        if len(connections) == 0:
             return
 
-        addresses = [peer.get_address() for peer in peers]
+        addresses = [
+            connection.get_active_address() for connection in connections
+        ]
         payload = InteragentProtocolUtils.serialize(NewOperations(
             operations_list=json.dumps(operations)
         ))
