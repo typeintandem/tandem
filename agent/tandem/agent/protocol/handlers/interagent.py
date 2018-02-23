@@ -15,11 +15,11 @@ from tandem.agent.protocol.messages.interagent import (
 from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.models.peer import Peer
-from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
+from tandem.shared.protocol.handlers.addressed import AddressedHandler
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 
-class InteragentProtocolHandler(ProtocolHandlerBase):
+class InteragentProtocolHandler(AddressedHandler):
     @staticvalue
     def _protocol_message_utils(self):
         return InteragentProtocolUtils

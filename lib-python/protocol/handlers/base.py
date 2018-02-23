@@ -10,24 +10,25 @@ class ProtocolHandlerBase(object):
     def _protocol_message_handlers(self):
         return None
 
-    def _raw_data_to_dict(self, data):
-        try:
-            return json.loads(data)
-        except json.JSONDecodeError:
-            raise ProtocolMarshalError
+    def _extra_handler_arguments(self, io_data):
+        return []
 
-    def handle_raw_data(self, data, sender_address):
+    def handle_raw_data(self, retrieve_io_data):
+        io_data = retrieve_io_data()
+        if io_data is None:
+            return
+
         try:
-            as_dict = self._raw_data_to_dict(data)
-            handled = self.handle_message(as_dict, sender_address)
+            data_as_dict = json.loads(io_data.get_data())
+            handled = self.handle_message(data_as_dict, io_data)
 
             if not handled:
                 logging.info(
-                    "Protocol message was not handled. Deserialization"
-                    "failed or no handler was registered.",
+                    "Protocol message was not handled because "
+                    "no handler was registered.",
                 )
 
-        except ProtocolMarshalError:
+        except json.JSONDecodeError:
             logging.info(
                 "Protocol message was ignored because it was not valid JSON.",
             )
@@ -36,15 +37,15 @@ class ProtocolHandlerBase(object):
             logging.exception("Exception when handling protocol message:")
             raise
 
-    def handle_message(self, message_as_dict, sender_address):
+    def handle_message(self, data_as_dict, io_data):
         try:
             message = \
-                self._protocol_message_utils().deserialize(message_as_dict)
+                self._protocol_message_utils().deserialize(data_as_dict)
             items = self._protocol_message_handlers().items()
 
             for message_type, handler in items:
                 if message_type == message.type.value:
-                    handler(message, sender_address)
+                    handler(message, *self._extra_handler_arguments(io_data))
                     return True
 
             return False

@@ -6,9 +6,7 @@ from tandem.agent.io.fragmented_udp_gateway import FragmentedUDPGateway
 from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
-from tandem.shared.protocol.handlers.combined_handler import (
-    CombinedProtocolHandler,
-)
+from tandem.shared.protocol.handlers.multi import MultiProtocolHandler
 from tandem.shared.utils.time_scheduler import TimeScheduler
 from concurrent.futures import ThreadPoolExecutor
 
@@ -46,7 +44,7 @@ class TandemAgent:
             self._interagent_gateway,
             self._time_scheduler,
         )
-        self._gateway_handlers = CombinedProtocolHandler(
+        self._gateway_handlers = MultiProtocolHandler(
             self._interagent_protocol,
             self._rendezvous_protocol,
         )
@@ -86,12 +84,6 @@ class TandemAgent:
     def _gateway_message_handler(self, retrieve_data):
         # Do not call directly - called by _interagent_gateway
         self._main_executor.submit(
-            self._handle_nullable_data,
             self._gateway_handlers.handle_raw_data,
             retrieve_data,
         )
-
-    def _handle_nullable_data(self, handler, retrieve_data):
-        io_data = retrieve_data()
-        if io_data is not None:
-            handler(io_data.get_data(), io_data.get_address())

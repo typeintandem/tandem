@@ -4,7 +4,7 @@ from tandem.agent.models.connection import HolePunchedConnection
 from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
 from tandem.shared.models.peer import Peer
-from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
+from tandem.shared.protocol.handlers.addressed import AddressedHandler
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     RendezvousProtocolMessageType,
@@ -12,7 +12,7 @@ from tandem.shared.protocol.messages.rendezvous import (
 from tandem.shared.utils.static_value import static_value as staticvalue
 
 
-class RendezvousProtocolHandler(ProtocolHandlerBase):
+class RendezvousProtocolHandler(AddressedHandler):
     @staticvalue
     def _protocol_message_utils(self):
         return RendezvousProtocolUtils
