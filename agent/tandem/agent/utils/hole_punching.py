@@ -1,7 +1,6 @@
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
     Ping,
-    PingBack,
     Syn,
 )
 
@@ -11,25 +10,29 @@ class HolePunchingUtils:
     SYN_INTERVAL = 0.15
 
     @staticmethod
-    def send_ping(gateway, addresses, id):
-        io_data = gateway.generate_io_data(
-            InteragentProtocolUtils.serialize(Ping(id=str(id))),
-            addresses
-        )
-        gateway.write_io_data(io_data)
+    def generate_send_ping(gateway, addresses, id):
+        def send_ping():
+            HolePunchingUtils._send_message(
+                gateway,
+                addresses,
+                Ping(id=str(id)),
+            )
+        return send_ping
 
     @staticmethod
-    def send_pingback(gateway, address, id):
-        io_data = gateway.generate_io_data(
-            InteragentProtocolUtils.serialize(PingBack(id=str(id))),
-            address,
-        )
-        gateway.write_io_data(io_data)
+    def generate_send_syn(gateway, address):
+        def send_syn():
+            HolePunchingUtils._send_message(
+                gateway,
+                address,
+                Syn(),
+            )
+        return send_syn
 
     @staticmethod
-    def send_syn(gateway, address):
+    def _send_message(gateway, addresses, message):
         io_data = gateway.generate_io_data(
-            InteragentProtocolUtils.serialize(Syn()),
-            address,
+            InteragentProtocolUtils.serialize(message),
+            addresses,
         )
         gateway.write_io_data(io_data)

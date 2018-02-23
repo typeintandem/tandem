@@ -11,6 +11,7 @@ from tandem.agent.protocol.messages.interagent import (
     NewOperations,
     Bye,
     Hello,
+    PingBack,
 )
 from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
@@ -59,11 +60,11 @@ class InteragentProtocolHandler(AddressedHandler):
             "Replying to ping from {} at {}:{}."
             .format(message.id, *sender_address),
         )
-        HolePunchingUtils.send_pingback(
-            self._gateway,
+        io_data = self._gateway.generate_io_data(
+            InteragentProtocolUtils.serialize(PingBack(id=str(self._id))),
             sender_address,
-            self._id,
         )
+        self._gateway.write_io_data(io_data)
 
     def _handle_pingback(self, message, sender_address):
         peer_id = uuid.UUID(message.id)
@@ -103,9 +104,10 @@ class InteragentProtocolHandler(AddressedHandler):
             )
             connection.set_interval_handle(self._time_scheduler.run_every(
                 HolePunchingUtils.SYN_INTERVAL,
-                HolePunchingUtils.send_syn,
-                self._gateway,
-                connection.get_active_address(),
+                HolePunchingUtils.generate_send_syn(
+                    self._gateway,
+                    connection.get_active_address(),
+                ),
             ))
         else:
             logging.debug(

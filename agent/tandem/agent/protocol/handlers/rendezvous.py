@@ -50,10 +50,11 @@ class RendezvousProtocolHandler(AddressedHandler):
         )
         new_connection.set_interval_handle(self._time_scheduler.run_every(
             HolePunchingUtils.PING_INTERVAL,
-            HolePunchingUtils.send_ping,
-            self._gateway,
-            peer.get_addresses(),
-            self._id,
+            HolePunchingUtils.generate_send_ping(
+                self._gateway,
+                peer.get_addresses(),
+                self._id,
+            ),
         ))
         ConnectionStore.get_instance().add_connection(new_connection)
 
