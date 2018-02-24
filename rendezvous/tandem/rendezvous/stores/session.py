@@ -6,9 +6,9 @@ class SessionStore(StoreBase):
     def __init__(self):
         self._sessions = {}
 
-    def get_session_with_uuid(self, uuid):
-        session = self._sessions.get(uuid, None)
-        if not session:
-            session = Session(uuid)
-            self._sessions[uuid] = session
+    def get_or_create_session(self, session_id):
+        session = self._sessions.get(session_id, None)
+        if session is None:
+            session = Session(session_id)
+            self._sessions[session_id] = session
         return session
