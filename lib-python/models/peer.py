@@ -7,6 +7,13 @@ class Peer(ModelBase):
         self._public_address = public_address
         self._private_address = private_address
 
+    def __eq__(self, other):
+        return (
+            self._id == other._id and
+            self._public_address == other._public_address and
+            self._private_address == other._private_address
+        )
+
     def get_id(self):
         return self._id
 

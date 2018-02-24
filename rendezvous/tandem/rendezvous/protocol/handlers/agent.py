@@ -2,6 +2,7 @@ import uuid
 import logging
 from tandem.rendezvous.models.connection import Connection
 from tandem.rendezvous.stores.session import SessionStore
+from tandem.shared.models.peer import Peer
 from tandem.shared.protocol.handlers.addressed import AddressedHandler
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolMessageType,
@@ -63,7 +64,7 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
             logging.info(
                 "Rejecting ConnectRequest from {}:{} due to malformed"
                 " connection and/or session id."
-                .format(sender_address[0], sender_address[1]),
+                .format(*sender_address),
             )
             self._send_error_message(sender_address, "Invalid ids.")
             return
@@ -73,8 +74,11 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
 
         # Make sure the agent requesting to join is new or has the same
         # "identity" as an agent already in the session.
-        initiator = \
-            Connection(connection_id, sender_address, message.private_address)
+        initiator = Connection(Peer(
+            id=connection_id,
+            public_address=sender_address,
+            private_address=message.private_address,
+        ))
         existing_connection = session.get_connection(connection_id)
         if existing_connection is None:
             session.add_connection(initiator)
@@ -87,7 +91,7 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
             logging.info(
                 "Rejecting ConnectRequest from {}:{} due to existing"
                 " connection with the same id."
-                .format(sender_address[0], sender_address[1]),
+                .format(*sender_address),
             )
             self._send_error_message(sender_address, "Invalid session.")
             return
@@ -96,8 +100,7 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
             "Connection {} is joining session {} requested by {}:{}".format(
                 str(connection_id),
                 str(session_id),
-                sender_address[0],
-                sender_address[1],
+                *sender_address,
             ),
         )
 
@@ -127,13 +130,13 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
         initiate,
     ):
         self._connection_manager.send_data(
-            recipient.get_public_address(),
+            recipient.get_peer().get_public_address(),
             self._protocol_message_utils().serialize(SetupParameters(
                 session_id=str(session_id),
-                peer_id=str(should_connect_to.get_id()),
+                peer_id=str(should_connect_to.get_peer().get_id()),
                 initiate=initiate,
-                public=should_connect_to.get_public_address(),
-                private=should_connect_to.get_private_address(),
+                public=should_connect_to.get_peer().get_public_address(),
+                private=should_connect_to.get_peer().get_private_address(),
             )),
         )
 
