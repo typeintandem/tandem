@@ -11,8 +11,5 @@ class Connection(ModelBase):
     def get_id(self):
         return self._peer.get_id()
 
-    def get_public_address(self):
-        return self._peer.get_public_address()
-
-    def get_private_address(self):
-        return self._peer.get_private_address()
+    def get_peer(self):
+        return self._peer
