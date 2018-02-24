@@ -72,7 +72,6 @@ class TandemPlugin(object):
         ])
         self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
-        message = None
         if self._connect_to is not None:
             message = m.JoinSession(self._connect_to)
         else:
