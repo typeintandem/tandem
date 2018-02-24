@@ -2,7 +2,7 @@ import uuid
 import logging
 from tandem.rendezvous.models.connection import Connection
 from tandem.rendezvous.stores.session import SessionStore
-from tandem.shared.protocol.handlers.base import ProtocolHandlerBase
+from tandem.shared.protocol.handlers.addressed import AddressedHandler
 from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolMessageType,
     RendezvousProtocolUtils,
@@ -19,7 +19,20 @@ def parse_uuid(candidate):
         return None
 
 
-class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
+# TODO: Integrate the Rendezvous server with IO base classes and remove this
+class TempIOData:
+    def __init__(self, data, address):
+        self._data = data
+        self._address = address
+
+    def get_data(self):
+        return self._data
+
+    def get_address(self):
+        return self._address
+
+
+class AgentRendezvousProtocolHandler(AddressedHandler):
     @staticvalue
     def _protocol_message_utils(self):
         return RendezvousProtocolUtils
@@ -33,6 +46,14 @@ class AgentRendezvousProtocolHandler(ProtocolHandlerBase):
 
     def __init__(self, connection_manager):
         self._connection_manager = connection_manager
+
+    def handle_raw_data(self, data, address):
+        # TODO: Integrate with IO base classes and remove this
+        def retrieve_data():
+            return TempIOData(data, address)
+        super(AgentRendezvousProtocolHandler, self).handle_raw_data(
+            retrieve_data,
+        )
 
     def _handle_connect_request(self, message, sender_address):
         # Validate request identifiers

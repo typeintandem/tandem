@@ -11,14 +11,16 @@ class EditorProtocolMessageType(enum.Enum):
     ApplyPatches = "apply-patches"
     CheckDocumentSync = "check-document-sync"
     ConnectTo = "connect-to"
+    HostSession = "host-session"
+    JoinSession = "join-session"
+    NewPatches = "new-patches"
+    SessionInfo = "session-info"
+    UserChangedEditorText = "user-changed-editor-text"
     WriteRequest = "write-request"
     WriteRequestAck = "write-request-ack"
-    NewPatches = "new-patches"
-    UserChangedEditorText = "user-changed-editor-text"
 
 
 class UserChangedEditorText:
-
     """
     Sent by the editor plugin to the agent to
     notify it that the user changed the text buffer.
@@ -206,6 +208,59 @@ class ApplyPatches:
         return ApplyPatches(payload["patch_list"])
 
 
+class HostSession:
+    """
+    Sent by the plugin to the agent to ask it to start hosting a new
+    session.
+    """
+    def __init__(self):
+        self.type = EditorProtocolMessageType.HostSession
+
+    def to_payload(self):
+        return {}
+
+    @staticmethod
+    def from_payload(payload):
+        return HostSession()
+
+
+class JoinSession:
+    """
+    Sent by the plugin to the agent to ask it to join an existing
+    session.
+    """
+    def __init__(self, session_id):
+        self.type = EditorProtocolMessageType.JoinSession
+        self.session_id = session_id
+
+    def to_payload(self):
+        return {
+            "session_id": str(self.session_id),
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return JoinSession(payload["session_id"])
+
+
+class SessionInfo:
+    """
+    Sent by the agent to the plugin to pass it the session ID.
+    """
+    def __init__(self, session_id):
+        self.type = EditorProtocolMessageType.SessionInfo
+        self.session_id = session_id
+
+    def to_payload(self):
+        return {
+            "session_id": str(self.session_id),
+        }
+
+    @staticmethod
+    def from_payload(payload):
+        return SessionInfo(payload["session_id"])
+
+
 def serialize(message):
     as_dict = {
         "type": message.type.value,
@@ -245,6 +300,16 @@ def deserialize(data):
 
         elif message_type == EditorProtocolMessageType.CheckDocumentSync.value:
             return CheckDocumentSync.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.HostSession.value:
+            return HostSession.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.JoinSession.value:
+            return JoinSession.from_payload(payload)
+
+        elif message_type == EditorProtocolMessageType.SessionInfo.value:
+            return SessionInfo.from_payload(payload)
+
         else:
             raise EditorProtocolMarshalError
 

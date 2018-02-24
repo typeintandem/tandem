@@ -2,18 +2,24 @@ import json
 import os
 import logging
 import socket
+import uuid
 import tandem.agent.protocol.messages.editor as em
-from tandem.agent.models.peer import Peer
-from tandem.agent.stores.peer import PeerStore
 from tandem.agent.protocol.messages.interagent import (
     InteragentProtocolUtils,
     NewOperations,
     Hello
 )
+from tandem.agent.stores.connection import ConnectionStore
+from tandem.shared.protocol.messages.rendezvous import (
+    RendezvousProtocolUtils,
+    ConnectRequest,
+)
+from tandem.agent.configuration import RENDEZVOUS_ADDRESS
 
 
 class EditorProtocolHandler:
-    def __init__(self, std_streams, gateway, document):
+    def __init__(self, id, std_streams, gateway, document):
+        self._id = id
         self._std_streams = std_streams
         self._gateway = gateway
         self._document = document
@@ -32,6 +38,10 @@ class EditorProtocolHandler:
                 self._handle_new_patches(message)
             elif type(message) is em.CheckDocumentSync:
                 self._handle_check_document_sync(message)
+            elif type(message) is em.HostSession:
+                self._handle_host_session(message)
+            elif type(message) is em.JoinSession:
+                self._handle_join_session(message)
         except em.EditorProtocolMarshalError:
             logging.info("Ignoring invalid editor protocol message.")
         except:
@@ -42,21 +52,17 @@ class EditorProtocolHandler:
     def _handle_connect_to(self, message):
         hostname = socket.gethostbyname(message.host)
         logging.info(
-            "Tandem Agent is attempting to establish a "
-            "connection to {}:{}.".format(hostname, message.port),
+            "Tandem Agent is attempting to establish a direct"
+            " connection to {}:{}.".format(hostname, message.port),
         )
 
         address = (hostname, message.port)
-        new_peer = Peer(address)
-        payload = InteragentProtocolUtils.serialize(Hello())
+        payload = InteragentProtocolUtils.serialize(Hello(
+            id=str(self._id),
+            should_reply=True,
+        ))
         io_data = self._gateway.generate_io_data(payload, address)
         self._gateway.write_io_data(io_data)
-        PeerStore.get_instance().add_peer(new_peer)
-
-        logging.info(
-            "Tandem Agent connected to {}:{}."
-            .format(hostname, message.port),
-        )
 
     def _handle_write_request_ack(self, message):
         logging.debug("Received ACK for seq: {}".format(message.seq))
@@ -86,8 +92,13 @@ class EditorProtocolHandler:
         for operations_list in nested_operations:
             operations.extend(operations_list)
 
-        peers = PeerStore.get_instance().get_peers()
-        addresses = [peer.get_address() for peer in peers]
+        connections = ConnectionStore.get_instance().get_open_connections()
+        if len(connections) == 0:
+            return
+
+        addresses = [
+            connection.get_active_address() for connection in connections
+        ]
         payload = InteragentProtocolUtils.serialize(NewOperations(
             operations_list=json.dumps(operations)
         ))
@@ -105,3 +116,32 @@ class EditorProtocolHandler:
             apply_text = em.serialize(em.ApplyText(document_lines))
             io_data = self._std_streams.generate_io_data(apply_text)
             self._std_streams.write_io_data(io_data)
+
+    def _handle_host_session(self, message):
+        # Register with rendezvous
+        session_id = uuid.uuid4()
+        self._send_connect_request(session_id)
+
+        # Inform plugin of session id
+        session_info = em.serialize(em.SessionInfo(session_id=str(session_id)))
+        io_data = self._std_streams.generate_io_data(session_info)
+        self._std_streams.write_io_data(io_data)
+
+    def _handle_join_session(self, message):
+        # Parse ID to make sure it's a UUID
+        session_id = uuid.UUID(message.session_id)
+        self._send_connect_request(session_id)
+
+    def _send_connect_request(self, session_id):
+        io_data = self._gateway.generate_io_data(
+            RendezvousProtocolUtils.serialize(ConnectRequest(
+                session_id=str(session_id),
+                my_id=str(self._id),
+                private_address=(
+                    socket.gethostbyname(socket.gethostname()),
+                    self._gateway.get_port(),
+                ),
+            )),
+            RENDEZVOUS_ADDRESS,
+        )
+        self._gateway.write_io_data(io_data)

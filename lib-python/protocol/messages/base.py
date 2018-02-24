@@ -43,18 +43,13 @@ class ProtocolUtilsBase(object):
         return json.dumps(as_dict)
 
     @classmethod
-    def deserialize(cls, data):
-        try:
-            as_dict = json.loads(data)
-            data_message_type = as_dict["type"]
-            data_payload = as_dict["payload"]
-            items = cls._protocol_message_constructors().items()
+    def deserialize(cls, as_dict):
+        data_message_type = as_dict["type"]
+        data_payload = as_dict["payload"]
+        items = cls._protocol_message_constructors().items()
 
-            for message_type, target_class in items:
-                if message_type == data_message_type:
-                    return target_class.from_payload(**data_payload)
+        for message_type, target_class in items:
+            if message_type == data_message_type:
+                return target_class.from_payload(**data_payload)
 
-            raise ProtocolMarshalError
-
-        except json.JSONDecodeError:
-            raise ProtocolMarshalError
+        raise ProtocolMarshalError

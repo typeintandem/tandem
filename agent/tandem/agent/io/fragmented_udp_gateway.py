@@ -33,6 +33,8 @@ class FragmentedUDPGateway(UDPGateway):
                 if defragmented_data:
                     new_data = FragmentedUDPData(defragmented_data, address)
                     return new_data
+                else:
+                    return None
             else:
                 return io_data
 

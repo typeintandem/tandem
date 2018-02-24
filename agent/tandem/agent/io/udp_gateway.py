@@ -30,6 +30,9 @@ class UDPGateway(InterfaceBase):
         self._socket.close()
         super(UDPGateway, self).stop()
 
+    def get_port(self):
+        return self._socket.getsockname()[1]
+
     def generate_io_data(self, messages, addresses):
         if type(messages) is not list:
             messages = [messages]
