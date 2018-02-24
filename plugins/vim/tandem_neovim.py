@@ -24,9 +24,8 @@ class TandemNeovimPlugin(object):
 
     @neovim.command("Tandem", nargs="*", sync=True)
     def start(self, args):
-        host_ip = args[0] if len(args) >= 1 else None
-        port = args[1] if len(args) >= 2 else None
-        self._tandem.start(host_ip, port)
+        session_id = args[0] if len(args) >= 1 else None
+        self._tandem.start(session_id)
 
     @neovim.command("TandemStop", nargs="*", sync=True)
     def stop(self, args):
@@ -63,3 +62,8 @@ class TandemNeovimPlugin(object):
                 lambda: self._vim.funcs.TandemHandleWriteRequest(async=True),
             )
             self._text_applied.wait()
+        elif isinstance(message, m.SessionInfo):
+            self._vim.async_call(
+                lambda: self._vim.command('echom "Session ID: {}"'
+                                          .format(message.session_id)),
+            )

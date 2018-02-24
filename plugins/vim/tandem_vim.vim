@@ -47,6 +47,8 @@ class TandemVimPlugin:
             vim.command(":doautocmd User TandemApplyText")
         elif isinstance(message, m.WriteRequest):
             vim.command(":doautocmd User TandemWriteRequest")
+        elif isinstance(message, m.SessionInfo):
+            vim.command('echom "Session ID: {}"'.format(message.session_id))
 
     def _handle_apply_text(self):
         self._tandem.handle_apply_text(self._message)
@@ -67,8 +69,8 @@ class TandemVimPlugin:
         vim.command("autocmd User TandemApplyText py tandem_plugin._handle_apply_text()")
         vim.command("autocmd User TandemWriteRequest py tandem_plugin._handle_write_request()")
 
-    def start(self, host_ip=None, host_port=None):
-        self._tandem.start(host_ip, host_port)
+    def start(self, session_id=None):
+        self._tandem.start(session_id)
 
     def stop(self, invoked_from_autocmd=True):
         self._tandem.stop(invoked_from_autocmd)
