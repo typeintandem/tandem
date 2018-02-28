@@ -30,6 +30,10 @@ class UDPGateway(InterfaceBase):
     def start(self):
         self._socket.bind((self._host, self._port))
         super(UDPGateway, self).start()
+        logging.info("Tandem UDPGateway is listening on {}.".format((
+            self._host,
+            self._port
+        )))
 
     def stop(self):
         self._socket.close()
@@ -80,6 +84,6 @@ class UDPGateway(InterfaceBase):
                 self._received_data(raw_data, address)
         except:
             logging.info(
-                "Tandem Agent has closed the UDP gateway on port {}."
+                "Tandem has closed the UDP gateway on port {}."
                 .format(self._port),
             )
