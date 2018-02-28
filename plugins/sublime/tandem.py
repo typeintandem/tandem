@@ -105,6 +105,17 @@ class TandemStopCommand(sublime_plugin.TextCommand):
         return is_active
 
 
+class TandemSessionCommand(sublime_plugin.TextCommand):
+    def run(self, edit, show_gui=False):
+        global tandem_agent
+        tandem_agent.show_session_id(show_gui)
+
+    def is_enabled(self):
+        global is_active
+        return is_active
+
+
+
 class TandemPlugin:
 
     @property
@@ -122,6 +133,7 @@ class TandemPlugin:
         self._output_checker = Thread(target=self._check_message)
 
         self._text_applied = Event()
+        self._session_id = None
 
     def _start_agent(self):
         self._agent_port = get_string_port()
@@ -267,7 +279,7 @@ class TandemPlugin:
                         length_buffer[start_rc[0] + 1: end_rc[0] + 1] = []
 
                 patches.extend(
-                  self._create_patch(start_rc, end_rc, text)
+                    self._create_patch(start_rc, end_rc, text)
                 )
 
             patches = [p for p in patches if p is not None]
@@ -360,6 +372,7 @@ class TandemPlugin:
                 raise ValueError("Invalid message. ApplyPatches must be "
                                  "preceeded by a WriteRequest.")
             elif isinstance(message, m.SessionInfo):
+                self._session_id = message.session_id
                 show_message("Session ID: {}".format(message.session_id), True)
             else:
                 raise ValueError("Unsupported message.")
@@ -407,6 +420,20 @@ class TandemPlugin:
 
         msg = "Tandem instance shut down."
         show_message(msg, show_gui)
+
+    def show_session_id(self, show_gui):
+        global is_active
+        if not is_active:
+            msg = "No Tandem instance running."
+            show_message(msg, show_gui)
+            return
+
+        if self._session_id is not None:
+            message = "Session ID: {}".format(self._session_id)
+        else:
+            message = "Error: No Session ID assigned."
+
+        show_message(message, show_gui)
 
 
 class TandemTextChangedListener(sublime_plugin.EventListener):

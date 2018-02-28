@@ -1,5 +1,6 @@
 [
     { "caption": "Tandem: Start Session", "command": "tandem", "args": { "show_gui": "True" } },
     { "caption": "Tandem: Join Existing Session", "command": "tandem_connect" },
+    { "caption": "Tandem: Show Session ID", "command": "tandem_session", "args": { "show_gui": "True" } },
     { "caption": "Tandem: Leave Sesion", "command": "tandem_stop", "args": { "show_gui": "True" } }
 ]
