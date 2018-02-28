@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Given a destination, this script builds the sublime plugin for distribution
-# at the destination. The destination supplised should be a local copy of the
+# at the destination. The destination supplied should be a local copy of the
 # plugin repository.
 
 SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
