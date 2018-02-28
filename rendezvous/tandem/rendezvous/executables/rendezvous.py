@@ -13,12 +13,10 @@ class TandemRendezvous(object):
             host,
             port,
             self._on_receive_message,
-            [
-                FragmentProxy()
-            ]
+            [FragmentProxy()],
         )
         self._rendezvous_protocol = AgentRendezvousProtocolHandler(
-            self._udp_gateway
+            self._udp_gateway,
         )
         self._main_executor = ThreadPoolExecutor(max_workers=1)
 

@@ -26,9 +26,7 @@ class TandemAgent:
             self._requested_host,
             self._requested_port,
             self._gateway_message_handler,
-            [
-                FragmentProxy()
-            ]
+            [FragmentProxy()],
         )
         self._editor_protocol = EditorProtocolHandler(
             self._id,

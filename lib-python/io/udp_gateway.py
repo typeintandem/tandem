@@ -32,7 +32,7 @@ class UDPGateway(InterfaceBase):
         super(UDPGateway, self).start()
         logging.info("Tandem UDPGateway is listening on {}.".format((
             self._host,
-            self._port
+            self._port,
         )))
 
     def stop(self):
