@@ -39,6 +39,10 @@ mkdir $INSTALL_PATH/agent/
 mkdir $INSTALL_PATH/crdt/
 
 # Agent
+$(
+  cd $SCRIPT_PATH/../../agent/;
+  rm **/*.pyc
+)
 cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/agent/
 
 # CRDT
@@ -46,10 +50,15 @@ $(
   cd $SCRIPT_PATH/../../crdt/;
   npm run clean;
   rm -rf node_modules;
-  npm install --production;
+  npm install;
   npm run build
 )
-cp -r $SCRIPT_PATH/../../crdt/ $INSTALL_PATH/crdt/
+cp -r $SCRIPT_PATH/../../crdt/api/ $INSTALL_PATH/crdt/api/
+cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/crdt/build/
+cp -r $SCRIPT_PATH/../../crdt/io/ $INSTALL_PATH/crdt/io/
+cp -r $SCRIPT_PATH/../../crdt/stores/ $INSTALL_PATH/crdt/stores/
+cp -r $SCRIPT_PATH/../../crdt/utils/ $INSTALL_PATH/crdt/utils/
+cp -r $SCRIPT_PATH/../../crdt/index.js $INSTALL_PATH/crdt/
 
 # Sublime specific files
 cd $SCRIPT_PATH/../../plugins/sublime/
