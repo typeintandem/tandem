@@ -1,5 +1,5 @@
 from threading import Thread
-from tandem.agent.utils.proxy import ProxyUtils
+from tandem.shared.utils.proxy import ProxyUtils
 
 
 class InterfaceDataBase(object):

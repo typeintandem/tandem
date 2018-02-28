@@ -1,5 +1,5 @@
-from tandem.agent.io.proxies.base import ProxyBase
-from tandem.agent.utils.fragment import FragmentUtils
+from tandem.shared.io.proxies.base import ProxyBase
+from tandem.shared.utils.fragment import FragmentUtils
 
 
 class FragmentProxy(ProxyBase):

@@ -2,13 +2,13 @@ import logging
 import uuid
 from tandem.agent.io.document import Document
 from tandem.agent.io.std_streams import STDStreams
-from tandem.agent.io.udp_gateway import UDPGateway
+from tandem.shared.io.udp_gateway import UDPGateway
 from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
 from tandem.shared.protocol.handlers.multi import MultiProtocolHandler
 from tandem.shared.utils.time_scheduler import TimeScheduler
-from tandem.agent.io.proxies.fragment import FragmentProxy
+from tandem.shared.io.proxies.fragment import FragmentProxy
 from concurrent.futures import ThreadPoolExecutor
 
 

@@ -1,6 +1,6 @@
 import socket
 import logging
-from tandem.agent.io.base import InterfaceDataBase, InterfaceBase
+from tandem.shared.io.base import InterfaceDataBase, InterfaceBase
 
 
 class UDPData(InterfaceDataBase):
