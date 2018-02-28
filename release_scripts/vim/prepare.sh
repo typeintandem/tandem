@@ -39,6 +39,10 @@ mkdir $INSTALL_PATH/plugin/tandem_lib/agent/
 mkdir $INSTALL_PATH/plugin/tandem_lib/crdt/
 
 # Agent
+$(
+  cd $SCRIPT_PATH/../../agent/;
+  rm **/*.pyc
+)
 cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/plugin/tandem_lib/agent/
 
 # CRDT
@@ -49,7 +53,7 @@ $(
   npm install;
   npm run build
 )
-cp -r $SCRIPT_PATH/../../crdt/ $INSTALL_PATH/plugin/tandem_lib/crdt/
+cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
 
 # Sublime specific files
 cd $SCRIPT_PATH/../../plugins/vim/
