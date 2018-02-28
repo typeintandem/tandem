@@ -8,6 +8,8 @@ class STDData(InterfaceDataBase):
 
 
 class STDStreams(InterfaceBase):
+    data_class = STDData
+
     def __init__(self, handler_function):
         super(STDStreams, self).__init__(handler_function)
 
@@ -23,7 +25,7 @@ class STDStreams(InterfaceBase):
     def _read_data(self):
         try:
             for line in sys.stdin:
-                self._received_data(STDData(line))
+                self._received_data(line)
         except:
             logging.exception("Exception when reading from stdin:")
             raise

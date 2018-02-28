@@ -32,6 +32,9 @@ class TempIOData:
     def get_address(self):
         return self._address
 
+    def is_empty(self):
+        return self._data is None and self._address is None
+
 
 class AgentRendezvousProtocolHandler(AddressedHandler):
     @staticvalue

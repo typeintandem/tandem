@@ -15,7 +15,7 @@ class ProtocolHandlerBase(object):
 
     def handle_raw_data(self, retrieve_io_data):
         io_data = retrieve_io_data()
-        if io_data is None:
+        if io_data is None or io_data.is_empty():
             return
 
         try:
