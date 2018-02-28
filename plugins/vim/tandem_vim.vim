@@ -19,13 +19,18 @@ com! -nargs=* Tandem py tandem_plugin.start(<f-args>)
 " Stop agent (and disconnect from network) with `:TandemStop`
 com! TandemStop py tandem_plugin.stop(False)
 
+" Get the absolute path to the folder this script resides in, respecting
+" symlinks
+let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+
 python << EOF
 
 import os
 import sys
 import vim
 
-local_path = os.path.abspath("./")
+# Add the script path to the python path
+local_path = vim.eval("s:path")
 if local_path not in sys.path:
     sys.path.insert(0, local_path)
 
