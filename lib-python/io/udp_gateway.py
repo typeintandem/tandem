@@ -1,6 +1,6 @@
 import socket
 import logging
-from tandem.agent.io.base import InterfaceDataBase, InterfaceBase
+from tandem.shared.io.base import InterfaceDataBase, InterfaceBase
 
 
 class UDPData(InterfaceDataBase):
@@ -11,10 +11,15 @@ class UDPData(InterfaceDataBase):
     def get_address(self):
         return self._address
 
+    def is_empty(self):
+        return self._data is None and self._address is None
+
 
 class UDPGateway(InterfaceBase):
-    def __init__(self, host, port, handler_function):
-        super(UDPGateway, self).__init__(handler_function)
+    data_class = UDPData
+
+    def __init__(self, host, port, handler_function, proxies=[]):
+        super(UDPGateway, self).__init__(handler_function, proxies)
         self._host = host
         self._port = port
         self._socket = socket.socket(
@@ -25,6 +30,10 @@ class UDPGateway(InterfaceBase):
     def start(self):
         self._socket.bind((self._host, self._port))
         super(UDPGateway, self).start()
+        logging.info("Tandem UDPGateway is listening on {}.".format((
+            self._host,
+            self._port,
+        )))
 
     def stop(self):
         self._socket.close()
@@ -33,7 +42,9 @@ class UDPGateway(InterfaceBase):
     def get_port(self):
         return self._socket.getsockname()[1]
 
-    def generate_io_data(self, messages, addresses):
+    def _generate_io_data(self, *args, **kwargs):
+        messages, addresses = args
+
         if type(messages) is not list:
             messages = [messages]
 
@@ -70,9 +81,9 @@ class UDPGateway(InterfaceBase):
                 raw_data, address = self._socket.recvfrom(4096)
                 host, port = address
                 logging.debug("Received data from {}:{}.".format(host, port))
-                self._received_data(UDPData(raw_data, address))
+                self._received_data(raw_data, address)
         except:
             logging.info(
-                "Tandem Agent has closed the UDP gateway on port {}."
+                "Tandem has closed the UDP gateway on port {}."
                 .format(self._port),
             )

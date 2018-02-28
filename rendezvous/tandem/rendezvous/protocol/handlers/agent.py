@@ -20,19 +20,6 @@ def parse_uuid(candidate):
         return None
 
 
-# TODO: Integrate the Rendezvous server with IO base classes and remove this
-class TempIOData:
-    def __init__(self, data, address):
-        self._data = data
-        self._address = address
-
-    def get_data(self):
-        return self._data
-
-    def get_address(self):
-        return self._address
-
-
 class AgentRendezvousProtocolHandler(AddressedHandler):
     @staticvalue
     def _protocol_message_utils(self):
@@ -45,16 +32,8 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
                 self._handle_connect_request,
         }
 
-    def __init__(self, connection_manager):
-        self._connection_manager = connection_manager
-
-    def handle_raw_data(self, data, address):
-        # TODO: Integrate with IO base classes and remove this
-        def retrieve_data():
-            return TempIOData(data, address)
-        super(AgentRendezvousProtocolHandler, self).handle_raw_data(
-            retrieve_data,
-        )
+    def __init__(self, gateway):
+        self._gateway = gateway
 
     def _handle_connect_request(self, message, sender_address):
         # Validate request identifiers
@@ -129,8 +108,7 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
         should_connect_to,
         initiate,
     ):
-        self._connection_manager.send_data(
-            recipient.get_peer().get_public_address(),
+        io_data = self._gateway.generate_io_data(
             self._protocol_message_utils().serialize(SetupParameters(
                 session_id=str(session_id),
                 peer_id=str(should_connect_to.get_peer().get_id()),
@@ -138,12 +116,15 @@ class AgentRendezvousProtocolHandler(AddressedHandler):
                 public=should_connect_to.get_peer().get_public_address(),
                 private=should_connect_to.get_peer().get_private_address(),
             )),
+            recipient.get_peer().get_public_address(),
         )
+        self._gateway.write_io_data(io_data)
 
     def _send_error_message(self, address, message):
-        self._connection_manager.send_data(
-            address,
+        io_data = self._gateway.generate_io_data(
             self._protocol_message_utils().serialize(Error(
                 message=message,
             )),
+            address,
         )
+        self._gateway.write_io_data(io_data)

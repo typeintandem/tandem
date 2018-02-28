@@ -2,12 +2,13 @@ import logging
 import uuid
 from tandem.agent.io.document import Document
 from tandem.agent.io.std_streams import STDStreams
-from tandem.agent.io.fragmented_udp_gateway import FragmentedUDPGateway
+from tandem.shared.io.udp_gateway import UDPGateway
 from tandem.agent.protocol.handlers.editor import EditorProtocolHandler
 from tandem.agent.protocol.handlers.interagent import InteragentProtocolHandler
 from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
 from tandem.shared.protocol.handlers.multi import MultiProtocolHandler
 from tandem.shared.utils.time_scheduler import TimeScheduler
+from tandem.shared.io.proxies.fragment import FragmentProxy
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -21,10 +22,11 @@ class TandemAgent:
         self._time_scheduler = TimeScheduler(self._main_executor)
         self._document = Document()
         self._std_streams = STDStreams(self._on_std_input)
-        self._interagent_gateway = FragmentedUDPGateway(
+        self._interagent_gateway = UDPGateway(
             self._requested_host,
             self._requested_port,
             self._gateway_message_handler,
+            [FragmentProxy()],
         )
         self._editor_protocol = EditorProtocolHandler(
             self._id,

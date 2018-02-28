@@ -1,5 +1,5 @@
-from tandem.agent.stores.fragment import FragmentStore
-from tandem.agent.models.fragment import Fragment
+from tandem.shared.stores.fragment import FragmentStore
+from tandem.shared.models.fragment import Fragment
 
 
 class FragmentUtils(object):
@@ -18,8 +18,8 @@ class FragmentUtils(object):
         )
 
     @staticmethod
-    def should_fragment(message, max_payload_length=512):
-        return len(message) > max_payload_length
+    def should_fragment(message, max_message_length):
+        return len(message) > max_message_length
 
     @classmethod
     def get_next_sequence_number(cls):
@@ -56,7 +56,7 @@ class FragmentUtils(object):
         return new_fragment, sequence_number
 
     @classmethod
-    def fragment(cls, payload, max_message_length=512):
+    def fragment(cls, payload, max_message_length):
         if type(payload) is str:
             payload = payload.encode("utf-8")
 
