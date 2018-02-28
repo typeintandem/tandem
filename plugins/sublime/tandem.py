@@ -62,7 +62,7 @@ def show_message(msg, show_gui):
 class TandemCommand(sublime_plugin.TextCommand):
     def run(self, edit, host_ip=None, host_port=None, show_gui=False):
         global tandem_agent
-        tandem_agent.start(self.view, host_ip, host_port, show_gui)
+        tandem_agent.start(self.view, show_gui=show_gui)
 
     def is_enabled(self):
         global is_active
@@ -72,8 +72,7 @@ class TandemCommand(sublime_plugin.TextCommand):
 class TandemConnectCommand(sublime_plugin.TextCommand):
     def _start(self, args):
         global tandem_agent
-        host_ip, host_port = args.split(" ")
-        tandem_agent.start(self.view, host_ip, host_port, show_gui=True)
+        tandem_agent.start(self.view, session_id=args, show_gui=True)
 
     def run(self, edit):
         global is_active
@@ -84,7 +83,7 @@ class TandemConnectCommand(sublime_plugin.TextCommand):
             show_message(msg, True)
             return
         sublime.active_window().show_input_panel(
-            caption="Enter IP address and port (space-separated)",
+            caption="Enter Session ID",
             initial_text="",
             on_done=self._start,
             on_change=None,
@@ -106,6 +105,17 @@ class TandemStopCommand(sublime_plugin.TextCommand):
         return is_active
 
 
+class TandemSessionCommand(sublime_plugin.TextCommand):
+    def run(self, edit, show_gui=False):
+        global tandem_agent
+        tandem_agent.show_session_id(show_gui)
+
+    def is_enabled(self):
+        global is_active
+        return is_active
+
+
+
 class TandemPlugin:
 
     @property
@@ -123,8 +133,9 @@ class TandemPlugin:
         self._output_checker = Thread(target=self._check_message)
 
         self._text_applied = Event()
+        self._session_id = None
 
-    def _start_agent(self, show_gui):
+    def _start_agent(self):
         self._agent_port = get_string_port()
         self._agent = spawn_agent([
             "--port",
@@ -134,14 +145,12 @@ class TandemPlugin:
         ])
 
         if self._connect_to is not None:
-            host_ip, host_port = self._connect_to
-            message = m.ConnectTo(host_ip, int(host_port))
-            self._agent.stdin.write(m.serialize(message).encode("utf-8"))
-            self._agent.stdin.write("\n".encode("utf-8"))
-            self._agent.stdin.flush()
-
-        msg = "Bound agent to port: {}".format(self._agent_port)
-        show_message(msg, show_gui)
+            message = m.JoinSession(self._connect_to)
+        else:
+            message = m.HostSession()
+        self._agent.stdin.write(m.serialize(message).encode("utf-8"))
+        self._agent.stdin.write("\n".encode("utf-8"))
+        self._agent.stdin.flush()
 
         self._agent_stdout_iter = iter(self._agent.stdout.readline, b"")
 
@@ -270,7 +279,7 @@ class TandemPlugin:
                         length_buffer[start_rc[0] + 1: end_rc[0] + 1] = []
 
                 patches.extend(
-                  self._create_patch(start_rc, end_rc, text)
+                    self._create_patch(start_rc, end_rc, text)
                 )
 
             patches = [p for p in patches if p is not None]
@@ -362,6 +371,9 @@ class TandemPlugin:
             elif isinstance(message, m.ApplyPatches):
                 raise ValueError("Invalid message. ApplyPatches must be "
                                  "preceeded by a WriteRequest.")
+            elif isinstance(message, m.SessionInfo):
+                self._session_id = message.session_id
+                show_message("Session ID: {}".format(message.session_id), True)
             else:
                 raise ValueError("Unsupported message.")
         except ValueError as v:
@@ -370,7 +382,7 @@ class TandemPlugin:
             is_processing = False
             self._text_applied.set()
 
-    def start(self, view, host_ip=None, host_port=None, show_gui=False):
+    def start(self, view, session_id=None, show_gui=False):
         global is_active
         if is_active:
             msg = "Cannot start. An instance is already running on :{}".format(
@@ -379,20 +391,14 @@ class TandemPlugin:
             show_message(msg, show_gui)
             return
 
-        if host_ip is not None and host_port is None:
-            msg = "Cannot start. IP specified. You must also provide a port",
-            show_message(msg, show_gui)
-            return
-
-        self._connect_to = (host_ip, host_port) if host_ip is not None \
-            else None
+        self._connect_to = session_id
 
         if self._connect_to is not None:
             view = sublime.active_window().new_file()
 
         self._initialize(view)
 
-        self._start_agent(show_gui)
+        self._start_agent()
         is_active = True
 
         if self._connect_to is None:
@@ -414,6 +420,20 @@ class TandemPlugin:
 
         msg = "Tandem instance shut down."
         show_message(msg, show_gui)
+
+    def show_session_id(self, show_gui):
+        global is_active
+        if not is_active:
+            msg = "No Tandem instance running."
+            show_message(msg, show_gui)
+            return
+
+        if self._session_id is not None:
+            message = "Session ID: {}".format(self._session_id)
+        else:
+            message = "Error: No Session ID assigned."
+
+        show_message(message, show_gui)
 
 
 class TandemTextChangedListener(sublime_plugin.EventListener):

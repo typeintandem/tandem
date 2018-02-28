@@ -41,7 +41,7 @@ mkdir $INSTALL_PATH/plugin/tandem_lib/crdt/
 # Agent
 $(
   cd $SCRIPT_PATH/../../agent/;
-  rm **/*.pyc
+  rm -f **/*.pyc
 )
 cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/plugin/tandem_lib/agent/
 

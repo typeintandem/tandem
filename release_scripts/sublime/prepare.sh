@@ -41,7 +41,7 @@ mkdir $INSTALL_PATH/crdt/
 # Agent
 $(
   cd $SCRIPT_PATH/../../agent/;
-  rm **/*.pyc
+  rm -f **/*.pyc
 )
 cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/agent/
 

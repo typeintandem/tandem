@@ -7,6 +7,7 @@
         [
             { "caption": "Start Session", "mnemonic": "S", "command": "tandem", "args": { "show_gui": "True" } },
             { "caption": "Join Existing Session", "mnemonic": "J", "command": "tandem_connect" },
+            { "caption": "Show Session ID", "mnemonic": "S", "command": "tandem_session", "args": { "show_gui": "True" } },
             { "caption": "Leave Session", "mnemonic": "L", "command": "tandem_stop", "args": { "show_gui": "True" } }
         ]
     }
