@@ -46,7 +46,7 @@ $(
   cd $SCRIPT_PATH/../../crdt/;
   npm run clean;
   rm -rf node_modules;
-  npm install;
+  npm install --production;
   npm run build
 )
 cp -r $SCRIPT_PATH/../../crdt/ $INSTALL_PATH/crdt/
