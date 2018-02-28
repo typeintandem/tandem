@@ -18,4 +18,4 @@ cd $REPO_PATH
 HASH=$( git rev-parse master )
 
 cd $SCRIPT_PATH
-python ../common/release.py sublime $HASH
+python ../common/release.py vim $HASH

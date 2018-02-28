@@ -29,36 +29,32 @@ git pull origin master
 cd $SCRIPT_PATH
 
 # Clean existing items in plugin path
-rm -rf $INSTALL_PATH/agent
-rm -rf $INSTALL_PATH/crdt
-rm -rf $INSTALL_PATH/enum-dist
+rm -rf $INSTALL_PATH/plugin
 rm -f $INSTALL_PATH/*
 
-# Create agent and crdt subdirectories
-mkdir $INSTALL_PATH/agent/
-mkdir $INSTALL_PATH/crdt/
+# Create plugin, lib, agent and crdt subdirectories
+mkdir $INSTALL_PATH/plugin/
+mkdir $INSTALL_PATH/plugin/tandem_lib/
+mkdir $INSTALL_PATH/plugin/tandem_lib/agent/
+mkdir $INSTALL_PATH/plugin/tandem_lib/crdt/
 
 # Agent
-cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/agent/
+cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/plugin/tandem_lib/agent/
 
 # CRDT
 $(
   cd $SCRIPT_PATH/../../crdt/;
   npm run clean;
   rm -rf node_modules;
-  npm install --production;
+  npm install;
   npm run build
 )
-cp -r $SCRIPT_PATH/../../crdt/ $INSTALL_PATH/crdt/
+cp -r $SCRIPT_PATH/../../crdt/ $INSTALL_PATH/plugin/tandem_lib/crdt/
 
 # Sublime specific files
-cd $SCRIPT_PATH/../../plugins/sublime/
-cp -r enum-dist/ $INSTALL_PATH/enum-dist/
-cp *.py $INSTALL_PATH
-cp *.sublime-* $INSTALL_PATH
-cp README.md $INSTALL_PATH
-
-# Required by Package Control
-touch $INSTALL_PATH/.no-sublime-package
+cd $SCRIPT_PATH/../../plugins/vim/
+cp tandem_lib/*.py $INSTALL_PATH/plugin/tandem_lib/
+cp tandem_vim.vim $INSTALL_PATH/plugin/
+cp README_vim.md $INSTALL_PATH/README.md
 
 echo "Release succesfully prepared."
