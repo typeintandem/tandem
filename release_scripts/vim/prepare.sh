@@ -53,12 +53,7 @@ $(
   npm install;
   npm run build
 )
-cp -r $SCRIPT_PATH/../../crdt/api/ $INSTALL_PATH/plugin/tandem_lib/crdt/api/
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
-cp -r $SCRIPT_PATH/../../crdt/io/ $INSTALL_PATH/plugin/tandem_lib/crdt/io/
-cp -r $SCRIPT_PATH/../../crdt/stores/ $INSTALL_PATH/plugin/tandem_lib/crdt/stores/
-cp -r $SCRIPT_PATH/../../crdt/utils/ $INSTALL_PATH/plugin/tandem_lib/crdt/utils/
-cp -r $SCRIPT_PATH/../../crdt/index.js $INSTALL_PATH/plugin/tandem_lib/crdt/
 
 # Sublime specific files
 cd $SCRIPT_PATH/../../plugins/vim/
