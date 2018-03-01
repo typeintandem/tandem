@@ -1,3 +1,4 @@
+import select
 import socket
 import logging
 from tandem.shared.io.base import InterfaceDataBase, InterfaceBase
@@ -17,6 +18,7 @@ class UDPData(InterfaceDataBase):
 
 class UDPGateway(InterfaceBase):
     data_class = UDPData
+    SELECT_TIMEOUT = 0.5
 
     def __init__(self, host, port, handler_function, proxies=[]):
         super(UDPGateway, self).__init__(handler_function, proxies)
@@ -26,6 +28,7 @@ class UDPGateway(InterfaceBase):
             socket.AF_INET,
             socket.SOCK_DGRAM,
         )
+        self._shutdown_requested = False
 
     def start(self):
         self._socket.bind((self._host, self._port))
@@ -36,8 +39,12 @@ class UDPGateway(InterfaceBase):
         )))
 
     def stop(self):
-        self._socket.close()
+        self._shutdown_requested = True
+        # We need to ensure the reader thread has been joined before closing
+        # the socket to make sure we don't call select() on an invalid file
+        # descriptor.
         super(UDPGateway, self).stop()
+        self._socket.close()
 
     def get_port(self):
         return self._socket.getsockname()[1]
@@ -76,14 +83,24 @@ class UDPGateway(InterfaceBase):
                 )
 
     def _read_data(self):
-        try:
-            while True:
-                raw_data, address = self._socket.recvfrom(4096)
-                host, port = address
-                logging.debug("Received data from {}:{}.".format(host, port))
-                self._received_data(raw_data, address)
-        except:
-            logging.info(
-                "Tandem has closed the UDP gateway on port {}."
-                .format(self._port),
+        while not self._shutdown_requested:
+            ready_to_read, _, _ = select.select(
+                [self._socket],
+                [],
+                [],
+                UDPGateway.SELECT_TIMEOUT,
             )
+            if len(ready_to_read) == 0:
+                # If no descriptors are ready to read, it means the select()
+                # call timed out. So check if we should exit and, if not, wait
+                # for data again.
+                continue
+
+            raw_data, address = self._socket.recvfrom(4096)
+            logging.debug("Received data from {}:{}.".format(*address))
+            self._received_data(raw_data, address)
+
+        logging.info(
+            "Tandem has closed the UDP gateway on port {}."
+            .format(self._port),
+        )
