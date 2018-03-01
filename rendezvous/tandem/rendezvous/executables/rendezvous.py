@@ -1,6 +1,7 @@
 import logging
 from tandem.shared.io.udp_gateway import UDPGateway
 from tandem.shared.io.proxies.fragment import FragmentProxy
+from tandem.shared.io.proxies.list_parameters import ListParametersProxy
 from tandem.rendezvous.protocol.handlers.agent import (
     AgentRendezvousProtocolHandler
 )
@@ -13,7 +14,10 @@ class TandemRendezvous(object):
             host,
             port,
             self._on_receive_message,
-            [FragmentProxy()],
+            [
+                ListParametersProxy(),
+                FragmentProxy(),
+            ],
         )
         self._rendezvous_protocol = AgentRendezvousProtocolHandler(
             self._udp_gateway,

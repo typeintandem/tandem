@@ -35,13 +35,18 @@ class InterfaceBase(object):
         )
         return self._generate_io_data(*new_args, **new_kwargs)
 
-    def write_io_data(self, io_data):
-        return self._write_io_data(io_data)
+    def write_io_data(self, *args, **kwargs):
+        new_args, new_kwargs = ProxyUtils.run(
+            self._proxies,
+            'pre_write_io_data',
+            (args, kwargs),
+        )
+        return self._write_io_data(*new_args, **new_kwargs)
 
     def _generate_io_data(self, *args, **kwargs):
-        return InterfaceDataBase(*args, **kwargs)
+        return self.data_class(*args, **kwargs)
 
-    def _write_io_data(self, io_data):
+    def _write_io_data(self, *args, **kwargs):
         raise
 
     def _read_data(self):
