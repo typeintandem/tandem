@@ -31,7 +31,7 @@ def main():
     )
     parser.add_argument(
         "--host",
-        default="localhost",
+        default="",
         help="The host address to bind to.",
     )
     parser.add_argument(
