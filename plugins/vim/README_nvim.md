@@ -10,6 +10,11 @@ and copying it to the nvim plugins:
 $HOME/.config/nvim/
 ```
 
+You will also need to install Neovim's Python 2 client.
+```
+pip install neovim
+```
+
 ## Setup
 Regardless of how you download the plugin, you'll need to perform a one-time setup.  
 Launch `nvim` run `:UpdateRemotePlugins`, and quit.  

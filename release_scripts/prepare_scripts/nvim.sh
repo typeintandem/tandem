@@ -45,7 +45,7 @@ $(
 )
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/rplugin/python/tandem_lib/crdt/build/
 
-# Sublime specific files
+# Neovim specific files
 cd $SCRIPT_PATH/../../plugins/vim/
 cp tandem_lib/*.py $INSTALL_PATH/rplugin/python/tandem_lib/
 cp tandem_neovim.py $INSTALL_PATH/rplugin/python
