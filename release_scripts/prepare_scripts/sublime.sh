@@ -14,14 +14,11 @@ INSTALL_PATH="$1"
 
 # Make sure the path is up-to-date
 cd $INSTALL_PATH
-git checkout master
 git pull origin master
 cd $SCRIPT_PATH
 
 # Clean existing items in plugin path
-rm -rf $INSTALL_PATH/agent
-rm -rf $INSTALL_PATH/crdt
-rm -rf $INSTALL_PATH/enum-dist
+rm -rf $INSTALL_PATH/*/
 rm -f $INSTALL_PATH/*
 
 # Create agent and crdt subdirectories

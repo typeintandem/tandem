@@ -56,12 +56,14 @@ if [ -n "$CHANGED" ]; then
   echo "Release $MONOREPO_HASH authored and pushed."
 else
   echo "There were no changes to the repository and nothing was committed."
+  # Does not exit - there might have been an error in releasing the last commit.
+  # Allows the script to be used to retry the release.
 fi
 
 # =======================================
 #                Release
 # =======================================
-echo -n "Are you sure you want to continue releasing (y/n)? "
+echo -n "Are you sure you want to continue releasing (y/N)? "
 read answer
 if [[ $answer != "y" ]] && [[ $answer != "Y" ]] ;then
   exit 1

@@ -14,26 +14,26 @@ INSTALL_PATH="$1"
 
 # Make sure the path is up-to-date
 cd $INSTALL_PATH
-git checkout master
 git pull origin master
 cd $SCRIPT_PATH
 
 # Clean existing items in plugin path
-rm -rf $INSTALL_PATH/plugin
+rm -rf $INSTALL_PATH/*/
 rm -f $INSTALL_PATH/*
 
 # Create plugin, lib, agent and crdt subdirectories
-mkdir $INSTALL_PATH/plugin/
-mkdir $INSTALL_PATH/plugin/tandem_lib/
-mkdir $INSTALL_PATH/plugin/tandem_lib/agent/
-mkdir $INSTALL_PATH/plugin/tandem_lib/crdt/
+mkdir $INSTALL_PATH/rplugin/
+mkdir $INSTALL_PATH/rplugin/python/
+mkdir $INSTALL_PATH/rplugin/python/tandem_lib/
+mkdir $INSTALL_PATH/rplugin/python/tandem_lib/agent/
+mkdir $INSTALL_PATH/rplugin/python/tandem_lib/crdt/
 
 # Agent
 $(
   cd $SCRIPT_PATH/../../agent/;
   rm -f **/*.pyc
 )
-cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/plugin/tandem_lib/agent/
+cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/rplugin/python/tandem_lib/agent/
 
 # CRDT
 $(
@@ -43,10 +43,10 @@ $(
   npm install;
   npm run build
 )
-cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
+cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/rplugin/python/tandem_lib/crdt/build/
 
 # Sublime specific files
 cd $SCRIPT_PATH/../../plugins/vim/
-cp tandem_lib/*.py $INSTALL_PATH/plugin/tandem_lib/
-cp tandem_neovim.py $INSTALL_PATH/plugin/
+cp tandem_lib/*.py $INSTALL_PATH/rplugin/python/tandem_lib/
+cp tandem_neovim.py $INSTALL_PATH/rplugin/python
 cp README_nvim.md $INSTALL_PATH/README.md
