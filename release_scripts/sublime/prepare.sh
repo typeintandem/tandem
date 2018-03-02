@@ -4,22 +4,12 @@
 # at the destination. The destination supplied should be a local copy of the
 # plugin repository.
 
-SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
-
-cd $SCRIPT_PATH
-MASTER_HASH=$( git rev-parse master )
-HASH=$( git rev-parse HEAD )
-
-if [[ $MASTER_HASH != $HASH ]]; then
-  echo "ERROR: You must be on master when preparing a release."
-  exit 1
-fi
-
 if [[ "$1" == "" ]]; then
   echo "ERROR: Please supply a path to the plugin target destination."
   exit 1
 fi
 
+SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
 INSTALL_PATH="$1"
 
 # Make sure the path is up-to-date
