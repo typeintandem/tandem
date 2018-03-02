@@ -3,28 +3,36 @@ import sys
 import semver
 from github import Github
 
-# Test repo. Replace with final production repository
+PLUGIN_TYPES = "[vim | nvim | sublime]"
+
+# Test repos. Replace with final production URLs
 SUBLIME_REPO = "https://github.com/rageandqq/tandem"
 VIM_REPO = "https://github.com/rageandqq/tandem_vim"
+NVIM_REPO = "https://github.com/rageandqq/tandem_nvim"
+
+
+def error(msg):
+    print("ERROR: {}.".format(msg))
+    exit(1)
 
 
 def main():
     if len(sys.argv) < 2:
-        print("ERROR: Pass in repo as the first argument. "
-              "Choose from: [sublime | vim]")
-        sys.exit(1)
+        error("Pass in plugin type as the first argument. "
+              "Choose from: {}".format(PLUGIN_TYPES))
     elif len(sys.argv) < 3:
-        print("ERROR: You must also pass in repository SHA as the argument.")
-        sys.exit(1)
+        error("You must also pass in repository SHA as the argument")
 
     repo_type = sys.argv[1].lower()
     if repo_type == "sublime":
         repo_url = SUBLIME_REPO
     elif repo_type == "vim":
         repo_url = VIM_REPO
+    elif repo_type == "nvim":
+        repo_url = NVIM_REPO
     else:
-        print("ERROR: Please pass in one of [sublime | vim] as the repo.")
-        sys.exit(1)
+        error("ERROR: Please pass in one of {} as the plugin type"
+              .format(PLUGIN_TYPES))
 
     master_SHA = sys.argv[2]
 
@@ -40,7 +48,7 @@ def main():
             break
 
     if release_repo is None:
-        print("ERROR: {} repo not found".format(repo_type))
+        error("{} repo not found".format(repo_type))
 
     tags = release_repo.get_tags()
     last_tag = None
@@ -52,8 +60,7 @@ def main():
         last_tag = '0.0.0'
     else:
         if last_tag.commit.sha == master_SHA:
-            print("ERROR: Cannot create release with same SHA")
-            sys.exit(1)
+            error("ERROR: Cannot create release with same SHA")
         last_tag = last_tag.name
 
     tag = semver.bump_minor(last_tag)

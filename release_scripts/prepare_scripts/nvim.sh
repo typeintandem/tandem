@@ -21,16 +21,19 @@ cd $SCRIPT_PATH
 rm -rf $INSTALL_PATH/*/
 rm -f $INSTALL_PATH/*
 
-# Create agent and crdt subdirectories
-mkdir $INSTALL_PATH/agent/
-mkdir $INSTALL_PATH/crdt/
+# Create plugin, lib, agent and crdt subdirectories
+mkdir $INSTALL_PATH/rplugin/
+mkdir $INSTALL_PATH/rplugin/python/
+mkdir $INSTALL_PATH/rplugin/python/tandem_lib/
+mkdir $INSTALL_PATH/rplugin/python/tandem_lib/agent/
+mkdir $INSTALL_PATH/rplugin/python/tandem_lib/crdt/
 
 # Agent
 $(
   cd $SCRIPT_PATH/../../agent/;
   rm -f **/*.pyc
 )
-cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/agent/
+cp -r $SCRIPT_PATH/../../agent/ $INSTALL_PATH/rplugin/python/tandem_lib/agent/
 
 # CRDT
 $(
@@ -40,14 +43,10 @@ $(
   npm install;
   npm run build
 )
-cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/crdt/build/
+cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/rplugin/python/tandem_lib/crdt/build/
 
-# Plugin specific files
-cd $SCRIPT_PATH/../../plugins/sublime/
-cp -r enum-dist/ $INSTALL_PATH/enum-dist/
-cp *.py $INSTALL_PATH
-cp *.sublime-* $INSTALL_PATH
-cp README.md $INSTALL_PATH
-
-# Required by Package Control
-touch $INSTALL_PATH/.no-sublime-package
+# Neovim specific files
+cd $SCRIPT_PATH/../../plugins/vim/
+cp tandem_lib/*.py $INSTALL_PATH/rplugin/python/tandem_lib/
+cp tandem_neovim.py $INSTALL_PATH/rplugin/python
+cp README_nvim.md $INSTALL_PATH/README.md

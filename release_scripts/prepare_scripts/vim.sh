@@ -14,12 +14,11 @@ INSTALL_PATH="$1"
 
 # Make sure the path is up-to-date
 cd $INSTALL_PATH
-git checkout master
 git pull origin master
 cd $SCRIPT_PATH
 
 # Clean existing items in plugin path
-rm -rf $INSTALL_PATH/plugin
+rm -rf $INSTALL_PATH/*/
 rm -f $INSTALL_PATH/*
 
 # Create plugin, lib, agent and crdt subdirectories
@@ -45,10 +44,8 @@ $(
 )
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
 
-# Sublime specific files
+# Plugin specific files
 cd $SCRIPT_PATH/../../plugins/vim/
 cp tandem_lib/*.py $INSTALL_PATH/plugin/tandem_lib/
 cp tandem_vim.vim $INSTALL_PATH/plugin/
 cp README_vim.md $INSTALL_PATH/README.md
-
-echo "Release succesfully prepared."
