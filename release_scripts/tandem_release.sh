@@ -27,7 +27,7 @@ HASH=$( git rev-parse HEAD )
 
 if [[ $MASTER_HASH != $HASH ]]; then
   echo "ERROR: You must be on master when releasing."
-  # exit 1
+  exit 1
 fi
 
 PLUGIN_TYPE="$1"
@@ -37,8 +37,8 @@ TARGET_REPOSITORY_PATH="$2"
 # =======================================
 #                Prepare
 # =======================================
-cd $PLUGIN_TYPE_PATH
-./prepare.sh "../$TARGET_REPOSITORY_PATH"
+cd ./prepare_scripts
+./$PLUGIN_TYPE.sh "../$TARGET_REPOSITORY_PATH"
 
 # =======================================
 #                Commit
