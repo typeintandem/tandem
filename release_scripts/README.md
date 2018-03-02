@@ -7,7 +7,7 @@ You should create a `.env` file locally with the credentials for the Tandem
 bot.  Contact the Tandem maintainers for access.
 
 ## Usage
-The only script you'll need to run is the `tandem_release.sh` script It takes
+The only script you'll need to run is the `tandem_release.sh` script. It takes
 in the type of plugin to build, and the path to (a clone of) the plugin
 repository as arguments.
 
