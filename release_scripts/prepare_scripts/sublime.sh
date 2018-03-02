@@ -45,7 +45,7 @@ $(
 )
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/crdt/build/
 
-# Sublime specific files
+# Plugin specific files
 cd $SCRIPT_PATH/../../plugins/sublime/
 cp -r enum-dist/ $INSTALL_PATH/enum-dist/
 cp *.py $INSTALL_PATH
@@ -54,5 +54,3 @@ cp README.md $INSTALL_PATH
 
 # Required by Package Control
 touch $INSTALL_PATH/.no-sublime-package
-
-echo "Release succesfully prepared."

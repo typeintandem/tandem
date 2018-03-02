@@ -45,8 +45,8 @@ $(
 )
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
 
-# Plugin specific files
+# Sublime specific files
 cd $SCRIPT_PATH/../../plugins/vim/
 cp tandem_lib/*.py $INSTALL_PATH/plugin/tandem_lib/
-cp tandem_vim.vim $INSTALL_PATH/plugin/
-cp README_vim.md $INSTALL_PATH/README.md
+cp tandem_neovim.py $INSTALL_PATH/plugin/
+cp README_nvim.md $INSTALL_PATH/README.md
