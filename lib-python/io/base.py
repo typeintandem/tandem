@@ -20,6 +20,8 @@ class InterfaceBase(object):
         self._incoming_data_handler = incoming_data_handler
         self._reader = Thread(target=self._read_data)
         self._proxies = proxies
+        for proxy in proxies:
+            proxy.attach_interface(self)
 
     def start(self):
         self._reader.start()
@@ -55,7 +57,7 @@ class InterfaceBase(object):
     def _received_data(self, *args, **kwargs):
         def retrieve_io_data():
             new_args, new_kwargs = ProxyUtils.run(
-                self._proxies,
+                self._proxies[::-1],
                 'on_retrieve_io_data',
                 (args, kwargs),
             )

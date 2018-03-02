@@ -17,7 +17,7 @@ class ConnectionStore(StoreBase):
 
     def get_connection_by_address(self, address):
         for _, connection in self._connections.items():
-            if connection.get_active_address() == address:
+            if address in connection.get_peer().get_addresses():
                 return connection
         return None
 
