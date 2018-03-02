@@ -1,1 +1,0 @@
-../common/tandem_release.sh
