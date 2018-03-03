@@ -1,11 +1,11 @@
 from tandem.shared.models.base import ModelBase
 from tandem.agent.models.connection_state import ConnectionState
+import logging
 
 
 class Connection(ModelBase):
     def __init__(self, peer):
         self._peer = peer
-        self._relayed = False
 
     def get_id(self):
         return self._peer.get_id()
@@ -20,7 +20,7 @@ class Connection(ModelBase):
         raise NotImplementedError
 
     def is_relayed(self):
-        return self._relayed
+        return self.get_connection_state() == ConnectionState.RELAY
 
     def get_peer(self):
         return self._peer
@@ -89,6 +89,9 @@ class HolePunchedConnection(Connection):
         return self._initiated_connection
 
     def _compute_active_address(self):
+        if self.is_relayed():
+            return self.get_peer().get_public_address()
+
         private_address = self.get_peer().get_private_address()
         private_address_count = (
             self._address_ping_counts[private_address]

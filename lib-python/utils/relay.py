@@ -1,6 +1,6 @@
 class RelayUtils(object):
     HEADER = b"\x54\x01"
-    RELAY_HEADER = b"\x52\45"
+    RELAY_HEADER = b"\x52\x45"
 
     @classmethod
     def is_relay(cls, raw_data):
@@ -13,7 +13,7 @@ class RelayUtils(object):
     def serialize(payload, address):
         result = []
         ip, port = address
-        ip_hex = map(
+        ip_binary = map(
             lambda x: (int(x)).to_bytes(1, byteorder="big"),
             ip.split("."),
         )
@@ -23,7 +23,7 @@ class RelayUtils(object):
 
         result.append(RelayUtils.HEADER)
         result.append(RelayUtils.RELAY_HEADER)
-        result.extend(ip_hex)
+        result.extend(ip_binary)
         result.append(port.to_bytes(2, byteorder="big"))
         result.append(payload)
 

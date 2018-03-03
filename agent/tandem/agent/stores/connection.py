@@ -17,12 +17,15 @@ class ConnectionStore(StoreBase):
 
     def get_connection_by_address(self, address):
         for _, connection in self._connections.items():
-            if address in connection.get_peer().get_addresses():
+            if connection.get_active_address() == address:
                 return connection
         return None
 
     def get_open_connections(self):
         return [
             connection for _, connection in self._connections.items()
-            if connection.get_connection_state() == ConnectionState.OPEN
+            if (
+                connection.get_connection_state() == ConnectionState.OPEN or
+                connection.get_connection_state() == ConnectionState.RELAY
+            )
         ]

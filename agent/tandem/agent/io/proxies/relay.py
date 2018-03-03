@@ -5,14 +5,14 @@ from tandem.agent.stores.connection import ConnectionStore
 
 
 class AgentRelayProxy(ProxyBase):
-    def __init__(self, proxy_address):
-        self._proxy_address = proxy_address
+    def __init__(self, relay_server_address):
+        self._relay_server_address = relay_server_address
 
     def should_relay(self, address):
         connection_store = ConnectionStore.get_instance()
         connection = connection_store.get_connection_by_address(address)
         return (
-            self._proxy_address is not address and
+            self._relay_server_address != address and
             connection and connection.is_relayed()
         )
 
@@ -26,11 +26,11 @@ class AgentRelayProxy(ProxyBase):
             if self.should_relay(io_data.get_address()):
                 new_raw_data = RelayUtils.serialize(
                     io_data.get_data(),
-                    io_data.get_address()
+                    io_data.get_address(),
                 )
                 new_io_data = UDPGateway.data_class(
                     new_raw_data,
-                    self._proxy_address
+                    self._relay_server_address,
                 )
             new_io_datas.append(new_io_data)
 
