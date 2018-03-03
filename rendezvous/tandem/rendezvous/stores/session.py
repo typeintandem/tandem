@@ -16,7 +16,7 @@ class SessionStore(StoreBase):
     def get_session_from_address(self, address):
         for _, session in self._sessions.items():
             addresses = [
-                connection.get_peer().get_private_address()
+                connection.get_peer().get_public_address()
                 for connection in session.get_connections()
             ]
             if address in addresses:
