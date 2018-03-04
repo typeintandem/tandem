@@ -9,7 +9,11 @@ from tandem.agent.protocol.handlers.rendezvous import RendezvousProtocolHandler
 from tandem.shared.protocol.handlers.multi import MultiProtocolHandler
 from tandem.shared.utils.time_scheduler import TimeScheduler
 from tandem.shared.io.proxies.fragment import FragmentProxy
+from tandem.shared.io.proxies.list_parameters import ListParametersProxy
+from tandem.shared.io.proxies.unicode import UnicodeProxy
+from tandem.agent.io.proxies.relay import AgentRelayProxy
 from concurrent.futures import ThreadPoolExecutor
+from tandem.agent.configuration import RENDEZVOUS_ADDRESS
 
 
 class TandemAgent:
@@ -26,7 +30,12 @@ class TandemAgent:
             self._requested_host,
             self._requested_port,
             self._gateway_message_handler,
-            [FragmentProxy()],
+            [
+                ListParametersProxy(),
+                UnicodeProxy(),
+                FragmentProxy(),
+                AgentRelayProxy(RENDEZVOUS_ADDRESS),
+            ],
         )
         self._editor_protocol = EditorProtocolHandler(
             self._id,

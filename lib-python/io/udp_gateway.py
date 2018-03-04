@@ -52,24 +52,15 @@ class UDPGateway(InterfaceBase):
     def _generate_io_data(self, *args, **kwargs):
         messages, addresses = args
 
-        if type(messages) is not list:
-            messages = [messages]
-
-        if type(addresses) is not list:
-            addresses = [addresses]
-
         data = []
         for address in addresses:
             for message in messages:
-                if type(message) is str:
-                    message = message.encode("utf-8")
                 data.append(UDPData(message, address))
 
         return data
 
-    def write_io_data(self, io_datas):
-        if type(io_datas) is not list:
-            io_datas = [io_datas]
+    def _write_io_data(self, *args, **kwargs):
+        io_datas, = args
 
         for io_data in io_datas:
             message = io_data.get_data()

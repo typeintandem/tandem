@@ -24,5 +24,8 @@ class ConnectionStore(StoreBase):
     def get_open_connections(self):
         return [
             connection for _, connection in self._connections.items()
-            if connection.get_connection_state() == ConnectionState.OPEN
+            if (
+                connection.get_connection_state() == ConnectionState.OPEN or
+                connection.get_connection_state() == ConnectionState.RELAY
+            )
         ]

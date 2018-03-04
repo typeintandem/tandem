@@ -17,7 +17,9 @@ class STDStreams(InterfaceBase):
         super(STDStreams, self).stop()
         sys.stdout.close()
 
-    def write_io_data(self, io_data):
+    def write_io_data(self, *args, **kwargs):
+        io_data, = args
+
         sys.stdout.write(io_data.get_data())
         sys.stdout.write("\n")
         sys.stdout.flush()

@@ -57,9 +57,6 @@ class FragmentUtils(object):
 
     @classmethod
     def fragment(cls, payload, max_message_length):
-        if type(payload) is str:
-            payload = payload.encode("utf-8")
-
         max_payload_length = max_message_length - cls.FRAGMENT_HEADER_LENGTH
 
         payloads = [

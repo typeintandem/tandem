@@ -14,11 +14,11 @@ class ProtocolHandlerBase(object):
         return []
 
     def handle_raw_data(self, retrieve_io_data):
-        io_data = retrieve_io_data()
-        if io_data is None or io_data.is_empty():
-            return
-
         try:
+            io_data = retrieve_io_data()
+            if io_data is None or io_data.is_empty():
+                return
+
             data_as_dict = json.loads(io_data.get_data())
             handled = self.handle_message(data_as_dict, io_data)
 

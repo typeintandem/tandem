@@ -20,6 +20,8 @@ class InterfaceBase(object):
         self._incoming_data_handler = incoming_data_handler
         self._reader = Thread(target=self._read_data)
         self._proxies = proxies
+        for proxy in proxies:
+            proxy.attach_interface(self)
 
     def start(self):
         self._reader.start()
@@ -35,13 +37,18 @@ class InterfaceBase(object):
         )
         return self._generate_io_data(*new_args, **new_kwargs)
 
-    def write_io_data(self, io_data):
-        return self._write_io_data(io_data)
+    def write_io_data(self, *args, **kwargs):
+        new_args, new_kwargs = ProxyUtils.run(
+            self._proxies,
+            'pre_write_io_data',
+            (args, kwargs),
+        )
+        return self._write_io_data(*new_args, **new_kwargs)
 
     def _generate_io_data(self, *args, **kwargs):
-        return InterfaceDataBase(*args, **kwargs)
+        return self.data_class(*args, **kwargs)
 
-    def _write_io_data(self, io_data):
+    def _write_io_data(self, *args, **kwargs):
         raise
 
     def _read_data(self):
@@ -50,10 +57,13 @@ class InterfaceBase(object):
     def _received_data(self, *args, **kwargs):
         def retrieve_io_data():
             new_args, new_kwargs = ProxyUtils.run(
-                self._proxies,
+                self._proxies[::-1],
                 'on_retrieve_io_data',
                 (args, kwargs),
             )
-            return self.data_class(*new_args, **new_kwargs)
+            if new_args is not None and new_kwargs is not None:
+                return self.data_class(*new_args, **new_kwargs)
+            else:
+                return None
 
         self._incoming_data_handler(retrieve_io_data)
