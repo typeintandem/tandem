@@ -5,10 +5,9 @@ from github import Github
 
 PLUGIN_TYPES = "[vim | nvim | sublime]"
 
-# Test repos. Replace with final production URLs
-SUBLIME_REPO = "https://github.com/rageandqq/tandem"
-VIM_REPO = "https://github.com/rageandqq/tandem_vim"
-NVIM_REPO = "https://github.com/rageandqq/tandem_nvim"
+VIM_REPO = "https://github.com/typeintandem/vim"
+NVIM_REPO = "https://github.com/typeintandem/nvim"
+SUBLIME_REPO = "https://github.com/typeintandem/sublime"
 
 
 def error(msg):
