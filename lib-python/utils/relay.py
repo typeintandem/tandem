@@ -18,9 +18,6 @@ class RelayUtils(object):
             ip.split("."),
         )
 
-        if type(payload) is str:
-            payload = payload.encode('utf-8')
-
         result.append(RelayUtils.HEADER)
         result.append(RelayUtils.RELAY_HEADER)
         result.extend(ip_binary)
@@ -40,6 +37,6 @@ class RelayUtils(object):
         port = int.from_bytes(raw_data[8:10], byteorder="big")
 
         address = (ip, port)
-        payload = raw_data[10:].decode("utf-8")
+        payload = raw_data[10:]
 
         return payload, address

@@ -37,5 +37,4 @@ class FragmentGroup(ModelBase):
         return len(non_empty_fragments) >= self._total_fragments
 
     def defragment(self):
-        return b"".join(self._buffer).decode('utf-8') \
-            if self.is_complete() else None
+        return b"".join(self._buffer) if self.is_complete() else None

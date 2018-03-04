@@ -10,7 +10,6 @@ class RendezvousRelayProxy(ProxyBase):
 
         if RelayUtils.is_relay(raw_data):
             payload, out_address = RelayUtils.deserialize(raw_data)
-            new_data = RelayUtils.serialize(payload, in_address)
 
             # Check that the peers belong in the same session
             session_store = SessionStore.get_instance()
@@ -19,8 +18,12 @@ class RendezvousRelayProxy(ProxyBase):
             if in_session != out_session:
                 return (None, None)
 
-            io_data = self._interface.generate_io_data(new_data, out_address)
-            self._interface.write_io_data(io_data)
+            new_data = RelayUtils.serialize(payload, in_address)
+
+            # HACK: Write the data directly
+            self._interface.write_io_data([
+                self._interface.data_class(new_data, out_address),
+            ])
 
             return (None, None)
         else:

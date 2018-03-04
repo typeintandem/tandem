@@ -32,6 +32,9 @@ class FragmentProxy(ProxyBase):
 
     def on_retrieve_io_data(self, params):
         args, kwargs = params
+        if args is None:
+            return params
+
         raw_data, address = args
 
         if FragmentUtils.is_fragment(raw_data):

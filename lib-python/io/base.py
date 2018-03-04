@@ -61,6 +61,9 @@ class InterfaceBase(object):
                 'on_retrieve_io_data',
                 (args, kwargs),
             )
-            return self.data_class(*new_args, **new_kwargs)
+            if new_args is not None and new_kwargs is not None:
+                return self.data_class(*new_args, **new_kwargs)
+            else:
+                return None
 
         self._incoming_data_handler(retrieve_io_data)

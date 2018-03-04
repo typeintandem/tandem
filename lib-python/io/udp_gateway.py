@@ -55,8 +55,6 @@ class UDPGateway(InterfaceBase):
         data = []
         for address in addresses:
             for message in messages:
-                if type(message) is str:
-                    message = message.encode("utf-8")
                 data.append(UDPData(message, address))
 
         return data
