@@ -24,33 +24,45 @@ class TimeScheduler:
         """
         Schedules the specified function on the executor after delay_seconds.
 
-        This returns a handle that can be used with the cancel()
-        function to cancel the request to run this function.
+        This returns a handle that has a cancel() method to cancel the
+        request to run this function.
         """
-        return _Handle(
-            self,
-            self._schedule_after(delay_seconds, function, *args, **kwargs),
-        )
+        handle = _Handle(self)
+        handle.set_event_handle(self._schedule_after(
+            delay_seconds,
+            function,
+            handle,
+            lambda: None,
+            *args,
+            **kwargs,
+        ))
+        return handle
 
     def run_every(self, interval_seconds, function, *args, **kwargs):
         """
         Schedules the specified function at least every interval_seconds.
 
-        This returns a handle that can be used with the cancel()
-        function to cancel this interval.
+        This returns a handle that has a cancel() method to cancel the
+        request to run this function.
 
         This only guarantees that at least interval_seconds elapses
         between each invocation of the function. It does not guarantee
         that the function runs exactly every interval_seconds.
         """
-        interval_handle = _IntervalHandle(self, interval_seconds)
-        self._schedule_interval(
-            function,
-            interval_handle,
-            *args,
-            **kwargs,
-        )
-        return interval_handle
+        handle = _Handle(self)
+
+        def reschedule():
+            handle.set_event_handle(self._schedule_after(
+                interval_seconds,
+                function,
+                handle,
+                reschedule,
+                *args,
+                **kwargs,
+            ))
+
+        reschedule()
+        return handle
 
     def start(self):
         """
@@ -79,31 +91,37 @@ class TimeScheduler:
         except ValueError:
             pass
 
-    def _schedule_after(self, delay_seconds, function, *args, **kwargs):
+    def _schedule_after(
+        self,
+        delay_seconds,
+        function,
+        handle,
+        epilogue,
+        *args,
+        **kwargs,
+    ):
         return self._scheduler.enter(
             delay_seconds,
             0,
             self._executor.submit,
-            (function, *args),
+            (self._run_if_not_cancelled, function, handle, epilogue, *args),
             kwargs,
         )
 
-    def _schedule_interval(self, function, interval_handle, *args, **kwargs):
-        event_handle = self._schedule_after(
-            interval_handle.get_interval_seconds(),
-            self._run_interval,
-            function,
-            interval_handle,
-            *args,
-            **kwargs,
-        )
-        interval_handle.set_event_handle(event_handle)
-
-    def _run_interval(self, function, interval_handle, *args, **kwargs):
+    def _run_if_not_cancelled(
+        self,
+        function,
+        handle,
+        epilogue,
+        *args,
+        **kwargs,
+    ):
+        if handle.is_cancelled():
+            return
         try:
             function(*args, **kwargs)
         finally:
-            self._schedule_interval(function, interval_handle, *args, **kwargs)
+            epilogue()
 
     def _run_scheduler(self):
         while not self._shutting_down:
@@ -112,21 +130,17 @@ class TimeScheduler:
 
 
 class _Handle:
-    def __init__(self, scheduler, event_handle):
+    def __init__(self, scheduler):
         self._scheduler = scheduler
-        self._event_handle = event_handle
+        self._event_handle = None
+        self._cancelled = False
 
     def cancel(self):
+        self._cancelled = True
         self._scheduler._cancel(self._event_handle)
 
-
-class _IntervalHandle(_Handle):
-    def __init__(self, scheduler, interval_seconds):
-        super(_IntervalHandle, self).__init__(scheduler, None)
-        self._interval_seconds = interval_seconds
-
-    def get_interval_seconds(self):
-        return self._interval_seconds
+    def is_cancelled(self):
+        return self._cancelled
 
     def set_event_handle(self, new_handle):
         self._event_handle = new_handle
