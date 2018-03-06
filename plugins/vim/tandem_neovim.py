@@ -26,10 +26,24 @@ class TandemNeovimPlugin(object):
     def start(self, args):
         session_id = args[0] if len(args) >= 1 else None
         self._tandem.start(session_id)
+        self._session_id = session_id
 
     @neovim.command("TandemStop", nargs="*", sync=True)
     def stop(self, args):
         self._tandem.stop(invoked_from_autocmd=False)
+        self._session_id = None
+
+    @neovim.command("TandemSession", nargs="*", sync=True)
+    def session(self, args):
+        if not plugin.is_active:
+            self._vim.async_call(
+                lambda: self._vim.command('echom "No instance running."'),
+            )
+            return
+        self._vim.async_call(
+            lambda: self._vim.command('echom "Session ID: {}"'
+                                      .format(self._session_id)),
+        )
 
     @neovim.autocmd("VimLeave", sync=True)
     def on_vim_leave(self):
@@ -63,6 +77,7 @@ class TandemNeovimPlugin(object):
             )
             self._text_applied.wait()
         elif isinstance(message, m.SessionInfo):
+            self._session_id = message.session_id
             self._vim.async_call(
                 lambda: self._vim.command('echom "Session ID: {}"'
                                           .format(message.session_id)),

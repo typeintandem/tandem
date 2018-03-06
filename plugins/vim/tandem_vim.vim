@@ -19,6 +19,9 @@ com! -nargs=* Tandem py tandem_plugin.start(<f-args>)
 " Stop agent (and disconnect from network) with `:TandemStop`
 com! TandemStop py tandem_plugin.stop(False)
 
+" Show Session ID for active session
+com! TandemSession py tandem_plugin.show_session_id()
+
 " Get the absolute path to the folder this script resides in, respecting
 " symlinks
 let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
@@ -54,6 +57,7 @@ class TandemVimPlugin:
             vim.command(":doautocmd User TandemWriteRequest")
         elif isinstance(message, m.SessionInfo):
             vim.command('echom "Session ID: {}"'.format(message.session_id))
+            self._session_id = message.session_id
 
     def _handle_apply_text(self):
         self._tandem.handle_apply_text(self._message)
@@ -76,9 +80,18 @@ class TandemVimPlugin:
 
     def start(self, session_id=None):
         self._tandem.start(session_id)
+        self._session_id = session_id
 
     def stop(self, invoked_from_autocmd=True):
         self._tandem.stop(invoked_from_autocmd)
+        self._session_id = None
+
+    def show_session_id(self):
+        if not plugin.is_active:
+            vim.command(':echom "No instance running."')
+            return
+        vim.command('echom "Session ID: {}"'.format(self._session_id))
+
 
 tandem_plugin = TandemVimPlugin()
 
