@@ -56,6 +56,11 @@ class RendezvousProtocolHandler(AddressedHandler):
                 self._id,
             ),
         ))
+
+        self._time_scheduler.run_after(
+            HolePunchingUtils.TIMEOUT,
+            lambda: new_connection.handle_hole_punching_timeout()
+        )
         ConnectionStore.get_instance().add_connection(new_connection)
 
     def _handle_error(self, message, sender_address):
