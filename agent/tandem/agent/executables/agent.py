@@ -54,6 +54,7 @@ class TandemAgent:
             self._id,
             self._interagent_gateway,
             self._time_scheduler,
+            self._document,
         )
         self._gateway_handlers = MultiProtocolHandler(
             self._interagent_protocol,

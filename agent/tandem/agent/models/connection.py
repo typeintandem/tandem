@@ -70,13 +70,6 @@ class HolePunchedConnection(Connection):
     def get_connection_state(self):
         return self._connection_state
 
-    def handle_hole_punching_timeout(self):
-        if self._connection_state != ConnectionState.OPEN:
-            logging.info("Switching connection {} to RELAY".format(
-                self.get_peer().get_public_address()
-            ))
-            self.set_connection_state(ConnectionState.RELAY)
-
     def set_connection_state(self, state):
         if self._connection_state == state:
             return
