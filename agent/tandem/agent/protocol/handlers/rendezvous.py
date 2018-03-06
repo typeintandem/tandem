@@ -1,4 +1,5 @@
 import logging
+import json
 import uuid
 from tandem.agent.models.connection import HolePunchedConnection
 from tandem.agent.stores.connection import ConnectionStore
@@ -9,7 +10,12 @@ from tandem.shared.protocol.messages.rendezvous import (
     RendezvousProtocolUtils,
     RendezvousProtocolMessageType,
 )
+from tandem.agent.protocol.messages.interagent import (
+    InteragentProtocolUtils,
+    NewOperations,
+)
 from tandem.shared.utils.static_value import static_value as staticvalue
+from tandem.agent.models.connection_state import ConnectionState
 
 
 class RendezvousProtocolHandler(AddressedHandler):
@@ -26,10 +32,11 @@ class RendezvousProtocolHandler(AddressedHandler):
                 self._handle_error,
         }
 
-    def __init__(self, id, gateway, time_scheduler):
+    def __init__(self, id, gateway, time_scheduler, document):
         self._id = id
         self._gateway = gateway
         self._time_scheduler = time_scheduler
+        self._document = document
 
     def _handle_setup_parameters(self, message, sender_address):
         public_address = (message.public[0], message.public[1])
@@ -56,6 +63,30 @@ class RendezvousProtocolHandler(AddressedHandler):
                 self._id,
             ),
         ))
+
+        def handle_hole_punching_timeout(connection):
+            if connection.get_connection_state() != ConnectionState.OPEN:
+                logging.info("Switching connection {} to RELAY".format(
+                    connection.get_peer().get_public_address()
+                ))
+
+                connection.set_connection_state(ConnectionState.RELAY)
+
+                operations = self._document.get_document_operations()
+                payload = InteragentProtocolUtils.serialize(NewOperations(
+                    operations_list=json.dumps(operations)
+                ))
+                io_data = self._gateway.generate_io_data(
+                    payload,
+                    connection.get_peer().get_public_address(),
+                )
+                self._gateway.write_io_data(io_data)
+
+        self._time_scheduler.run_after(
+            HolePunchingUtils.TIMEOUT,
+            handle_hole_punching_timeout,
+            new_connection
+        )
         ConnectionStore.get_instance().add_connection(new_connection)
 
     def _handle_error(self, message, sender_address):

@@ -8,6 +8,7 @@ from tandem.agent.protocol.messages.interagent import (
 class HolePunchingUtils:
     PING_INTERVAL = 0.15
     SYN_INTERVAL = 0.15
+    TIMEOUT = 3
 
     @staticmethod
     def generate_send_ping(gateway, addresses, id):
