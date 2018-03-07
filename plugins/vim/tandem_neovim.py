@@ -33,7 +33,7 @@ class TandemNeovimPlugin(object):
         self._tandem.stop(invoked_from_autocmd=False)
         self._session_id = None
 
-    @neovim.command("TandemSession", nargs="*", sync=True)
+    @neovim.command("TandemSession", nargs="*", sync=False)
     def session(self, args):
         if not plugin.is_active:
             self._vim.async_call(
