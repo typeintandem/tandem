@@ -7,3 +7,4 @@ class ConnectionState(enum.Enum):
     WAIT_FOR_SYN = "wait"
     OPEN = "open"
     RELAY = "relay"
+    UNREACHABLE = "unreachable"
