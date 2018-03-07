@@ -44,6 +44,10 @@ $(
 )
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
 
+# License
+cd $SCRIPT_PATH/../../
+cp LICENSE.txt $INSTALL_PATH
+
 # Plugin specific files
 cd $SCRIPT_PATH/../../plugins/vim/
 cp tandem_lib/*.py $INSTALL_PATH/plugin/tandem_lib/
