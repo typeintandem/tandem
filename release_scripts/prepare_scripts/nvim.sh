@@ -46,8 +46,7 @@ $(
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/rplugin/python/tandem_lib/crdt/build/
 
 # License
-cd $SCRIPT_PATH/../../
-cp LICENSE.txt $INSTALL_PATH
+cp $SCRIPT_PATH/../../LICENSE.txt $INSTALL_PATH
 
 # Neovim specific files
 cd $SCRIPT_PATH/../../plugins/vim/

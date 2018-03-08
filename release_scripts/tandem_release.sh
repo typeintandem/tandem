@@ -30,6 +30,10 @@ if [[ $MASTER_HASH != $HASH ]]; then
   exit 1
 fi
 
+# Clean all .pyc files and __pycache__ directories
+find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
+
+
 PLUGIN_TYPE="$1"
 PLUGIN_TYPE_PATH="./$1/"
 TARGET_REPOSITORY_PATH="$2"
@@ -49,7 +53,15 @@ MONOREPO_HASH=$( git rev-parse master )
 
 cd $TARGET_REPOSITORY_PATH
 git add .
-CHANGED=$(git diff-index --name-only HEAD --)
+
+# Prevent an error if HEAD doesn't exist
+NUM_COMMITS=$( git rev-list --count --all )
+if [[ $NUM_COMMITS != "0" ]]; then
+  CHANGED=$(git diff-index --name-only HEAD --)
+else
+  CHANGED=1
+fi
+
 if [ -n "$CHANGED" ]; then
   git commit -m "Cut release from $MONOREPO_HASH" --author="Team Lightly <teamlightly@gmail.com>"
   git push origin master  # Repository should have the main remote set to "origin"
