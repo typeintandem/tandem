@@ -45,8 +45,7 @@ $(
 cp -r $SCRIPT_PATH/../../crdt/build/ $INSTALL_PATH/plugin/tandem_lib/crdt/build/
 
 # License
-cd $SCRIPT_PATH/../../
-cp LICENSE.txt $INSTALL_PATH
+cp $SCRIPT_PATH/../../LICENSE.txt $INSTALL_PATH
 
 # Plugin specific files
 cd $SCRIPT_PATH/../../plugins/vim/
