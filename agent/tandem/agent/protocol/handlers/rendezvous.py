@@ -1,6 +1,7 @@
 import logging
 import json
 import uuid
+from tandem.agent.configuration import USE_RELAY
 from tandem.agent.models.connection import HolePunchedConnection
 from tandem.agent.stores.connection import ConnectionStore
 from tandem.agent.utils.hole_punching import HolePunchingUtils
@@ -65,22 +66,33 @@ class RendezvousProtocolHandler(AddressedHandler):
         ))
 
         def handle_hole_punching_timeout(connection):
-            if connection.get_connection_state() != ConnectionState.OPEN:
-                logging.info("Switching connection {} to RELAY".format(
-                    connection.get_peer().get_public_address()
-                ))
+            if connection.get_connection_state() == ConnectionState.OPEN:
+                return
 
-                connection.set_connection_state(ConnectionState.RELAY)
-
-                operations = self._document.get_document_operations()
-                payload = InteragentProtocolUtils.serialize(NewOperations(
-                    operations_list=json.dumps(operations)
-                ))
-                io_data = self._gateway.generate_io_data(
-                    payload,
-                    connection.get_peer().get_public_address(),
+            if not USE_RELAY:
+                logging.info(
+                    "Connection {} is unreachable. Not switching to RELAY "
+                    "because it was disabled."
+                    .format(connection.get_peer().get_public_address()),
                 )
-                self._gateway.write_io_data(io_data)
+                connection.set_connection_state(ConnectionState.UNREACHABLE)
+                return
+
+            logging.info("Switching connection {} to RELAY".format(
+                connection.get_peer().get_public_address()
+            ))
+
+            connection.set_connection_state(ConnectionState.RELAY)
+
+            operations = self._document.get_document_operations()
+            payload = InteragentProtocolUtils.serialize(NewOperations(
+                operations_list=json.dumps(operations)
+            ))
+            io_data = self._gateway.generate_io_data(
+                payload,
+                connection.get_peer().get_public_address(),
+            )
+            self._gateway.write_io_data(io_data)
 
         self._time_scheduler.run_after(
             HolePunchingUtils.TIMEOUT,
