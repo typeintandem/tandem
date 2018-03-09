@@ -92,7 +92,10 @@ class RendezvousProtocolHandler(AddressedHandler):
                 payload,
                 connection.get_peer().get_public_address(),
             )
-            self._gateway.write_io_data(io_data)
+            self._gateway.write_io_data(
+                io_data,
+                reliability=True,
+            )
 
         self._time_scheduler.run_after(
             HolePunchingUtils.TIMEOUT,

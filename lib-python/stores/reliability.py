@@ -12,4 +12,5 @@ class ReliabilityStore(StoreBase):
         return self._payloads.get(payload_id, None)
 
     def remove_payload(self, payload_id):
-        del self._payloads[payload_id]
+        if payload_id in self._payloads:
+            del self._payloads[payload_id]

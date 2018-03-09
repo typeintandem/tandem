@@ -10,7 +10,7 @@ class ReliabilityProxy(ProxyBase):
 
     def _handle_ack_timeout(self, ack_id, io_data):
         if ReliabilityUtils.should_resend_payload(ack_id):
-            self._interface._write_io_data(io_data)
+            self._interface._write_io_data([io_data])
             self._time_scheduler.run_after(
                 ReliabilityUtils.ACK_TIMEOUT,
                 self._handle_ack_timeout,
@@ -21,7 +21,7 @@ class ReliabilityProxy(ProxyBase):
     def pre_write_io_data(self, params):
         args, kwargs = params
         io_datas, = args
-        should_ack = kwargs.get('reliable', False)
+        should_ack = kwargs.get('reliability', False)
 
         if not should_ack:
             return params
@@ -68,5 +68,6 @@ class ReliabilityProxy(ProxyBase):
 
             new_args = new_raw_data, address
             return (new_args, kwargs)
+
         else:
             return params

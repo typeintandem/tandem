@@ -3,7 +3,7 @@ from tandem.shared.stores.reliability import ReliabilityStore
 
 class ReliabilityUtils(object):
     HEADER = b"\x54\x01"
-    RELIABILITY_HEADER = b"\x41\x43"
+    RELIABILITY_HEADER = b"\x52\x4C"
     ACK_HEADER = b"\x41\x43"
     ACK_TIMEOUT = 3
 
@@ -13,7 +13,7 @@ class ReliabilityUtils(object):
     @classmethod
     def get_next_ack_number(cls):
         cls.next_ack_number += 1
-        cls.next_ack_number %= cls.MAX_SEQUENCE_NUMBER + 1
+        cls.next_ack_number %= cls.MAX_ACK_NUMBER + 1
 
         return cls.next_ack_number
 
@@ -45,22 +45,20 @@ class ReliabilityUtils(object):
 
     @staticmethod
     def parse_ack(raw_data):
-        return int.from_bytes(raw_data[2:4], byteorder="big")
+        return int.from_bytes(raw_data[4:6], byteorder="big")
 
     @staticmethod
     def serialize(payload):
         result = []
+        ack_number = ReliabilityUtils.get_next_ack_number()
         result.append(ReliabilityUtils.HEADER)
         result.append(ReliabilityUtils.RELIABILITY_HEADER)
-        result.append(ReliabilityUtils.get_next_ack_number().to_bytes(
-            2,
-            byteorder="big",
-        ))
+        result.append(ack_number.to_bytes(2, byteorder="big"))
         result.append(payload)
-        return b"".join(result)
+        return b"".join(result), ack_number
 
     @staticmethod
     def deserialize(raw_data):
-        ack_id = raw_data[2:4]
-        payload = raw_data[4:]
+        ack_id = int.from_bytes(raw_data[4:6], byteorder="big")
+        payload = raw_data[6:]
         return payload, ack_id

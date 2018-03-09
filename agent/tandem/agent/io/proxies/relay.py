@@ -39,6 +39,9 @@ class AgentRelayProxy(ProxyBase):
 
     def on_retrieve_io_data(self, params):
         args, kwargs = params
+        if args is None or args is (None, None):
+            return params
+
         raw_data, address = args
 
         if RelayUtils.is_relay(raw_data):

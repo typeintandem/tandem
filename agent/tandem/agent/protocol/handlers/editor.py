@@ -103,7 +103,10 @@ class EditorProtocolHandler:
             operations_list=json.dumps(operations)
         ))
         io_data = self._gateway.generate_io_data(payload, addresses)
-        self._gateway.write_io_data(io_data)
+        self._gateway.write_io_data(
+            io_data,
+            reliability=True,
+        )
 
     def _handle_check_document_sync(self, message):
         document_text_content = self._document.get_document_text()
