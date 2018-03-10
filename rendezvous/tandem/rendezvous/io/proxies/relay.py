@@ -6,6 +6,9 @@ from tandem.rendezvous.stores.session import SessionStore
 class RendezvousRelayProxy(ProxyBase):
     def on_retrieve_io_data(self, params):
         args, kwargs = params
+        if args is None or args is (None, None):
+            return params
+
         raw_data, in_address = args
 
         if RelayUtils.is_relay(raw_data):
@@ -21,9 +24,10 @@ class RendezvousRelayProxy(ProxyBase):
             new_data = RelayUtils.serialize(payload, in_address)
 
             # HACK: Write the data directly
-            self._interface.write_io_data([
-                self._interface.data_class(new_data, out_address),
-            ])
+            self._interface.write_io_data(
+                [self._interface.data_class(new_data, out_address)],
+                reliability=True,
+            )
 
             return (None, None)
         else:

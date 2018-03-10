@@ -4,14 +4,18 @@ from tandem.shared.io.proxies.fragment import FragmentProxy
 from tandem.shared.io.proxies.list_parameters import ListParametersProxy
 from tandem.shared.io.proxies.unicode import UnicodeProxy
 from tandem.rendezvous.io.proxies.relay import RendezvousRelayProxy
+from tandem.shared.io.proxies.reliability import ReliabilityProxy
 from tandem.rendezvous.protocol.handlers.agent import (
     AgentRendezvousProtocolHandler
 )
+from tandem.shared.utils.time_scheduler import TimeScheduler
 from concurrent.futures import ThreadPoolExecutor
 
 
 class TandemRendezvous(object):
     def __init__(self, host, port):
+        self._main_executor = ThreadPoolExecutor(max_workers=1)
+        self._time_scheduler = TimeScheduler(self._main_executor)
         self._udp_gateway = UDPGateway(
             host,
             port,
@@ -21,12 +25,12 @@ class TandemRendezvous(object):
                 UnicodeProxy(),
                 FragmentProxy(),
                 RendezvousRelayProxy(),
+                ReliabilityProxy(self._time_scheduler),
             ],
         )
         self._rendezvous_protocol = AgentRendezvousProtocolHandler(
             self._udp_gateway,
         )
-        self._main_executor = ThreadPoolExecutor(max_workers=1)
 
     def __enter__(self):
         self.start()

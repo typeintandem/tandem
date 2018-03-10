@@ -205,7 +205,10 @@ class InteragentProtocolHandler(AddressedHandler):
             payload,
             connection.get_active_address(),
         )
-        self._gateway.write_io_data(io_data)
+        self._gateway.write_io_data(
+            io_data,
+            reliability=True,
+        )
 
     def stop(self):
         connections = ConnectionStore.get_instance().get_open_connections()
