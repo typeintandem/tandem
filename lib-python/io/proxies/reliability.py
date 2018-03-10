@@ -2,6 +2,7 @@ from tandem.shared.io.udp_gateway import UDPGateway
 from tandem.shared.io.proxies.base import ProxyBase
 from tandem.shared.utils.reliability import ReliabilityUtils
 from tandem.shared.stores.reliability import ReliabilityStore
+import logging
 
 
 class ReliabilityProxy(ProxyBase):
@@ -10,6 +11,7 @@ class ReliabilityProxy(ProxyBase):
 
     def _handle_ack_timeout(self, ack_id, io_data):
         if ReliabilityUtils.should_resend_payload(ack_id):
+            logging.info("Timeout on ack {}, resending".format(ack_id))
             self._interface._write_io_data([io_data])
             self._time_scheduler.run_after(
                 ReliabilityUtils.ACK_TIMEOUT,
