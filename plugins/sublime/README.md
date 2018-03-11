@@ -9,11 +9,14 @@ To install, you must have a copy of Sublime Text 3 installed. Older versions of 
 You must also have `python3` and `node.js` installed.
 
 Sublime Text 3 users have the option of installing in one of three ways:
-- **[Recommended]** Using Package Control, searching for Tandem in the global package list.  
-This is the simplest and easiest way to install Tandem.
-- Using Package Control, adding this repository as a source. You will then need to install the Tandem package from this repository. Due to name conflicts, you will need to navigate to the default package installation directory (e.g. `~/Library/Application\ Support/Sublime\ Text\ 3/Packages`) and rename the directory from `sublime` to `tandem`.  
+-  Using Package Control, searching for Tandem in the global package list.  
+This is the simplest and easiest way to install Tandem.  
+*Note: This option doesn't work yet as we're [waiting to be accepted into the
+official package control
+repository](https://github.com/wbond/package_control_channel/pull/6986)*
+- **[Recommended]** Using Package Control, adding this repository as a source. You will then need to install the Tandem package from this repository. Due to name conflicts, you will need to navigate to the default package installation directory (e.g. `~/Library/Application\ Support/Sublime\ Text\ 3/Packages`) and rename the directory from `sublime` to `tandem`.  
 Installing from the official source will remove the need to do this.
-- Installing manually. Download the code to the Sublime Text 3 packages directory, and place it in a folder called `tandem`.
+- Installing manually. Clone the repository to the Sublime Text 3 packages directory, and place it in a folder called `tandem`.
 
 ## Usage
 Tandem users can choose either start a collaborative session or join an existing one.
