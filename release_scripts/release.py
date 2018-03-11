@@ -5,9 +5,11 @@ from github import Github
 
 PLUGIN_TYPES = "[vim | nvim | sublime]"
 
-VIM_REPO = "https://github.com/typeintandem/vim"
-NVIM_REPO = "https://github.com/typeintandem/nvim"
-SUBLIME_REPO = "https://github.com/typeintandem/sublime"
+ORG_NAME = "typeintandem"
+
+VIM_REPO = "https://github.com/{}/vim".format(ORG_NAME)
+NVIM_REPO = "https://github.com/{}/nvim".format(ORG_NAME)
+SUBLIME_REPO = "https://github.com/{}/sublime".format(ORG_NAME)
 
 
 def error(msg):
@@ -30,18 +32,18 @@ def main():
     elif repo_type == "nvim":
         repo_url = NVIM_REPO
     else:
-        error("ERROR: Please pass in one of {} as the plugin type"
+        error("Please pass in one of {} as the plugin type"
               .format(PLUGIN_TYPES))
 
     master_SHA = sys.argv[2]
 
-    bot_username = os.environ.get('RELEASE_BOT_USERNAME')
-    bot_password = os.environ.get('RELEASE_BOT_PASSWORD')
+    bot_username = os.environ.get("RELEASE_BOT_USERNAME")
+    bot_password = os.environ.get("RELEASE_BOT_PASSWORD")
 
     g = Github(bot_username, bot_password)
 
     release_repo = None
-    for repo in g.get_user().get_repos():
+    for repo in g.get_organization(ORG_NAME).get_repos():
         if repo.html_url == repo_url:
             release_repo = repo
             break
@@ -59,7 +61,7 @@ def main():
         last_tag = '0.0.0'
     else:
         if last_tag.commit.sha == master_SHA:
-            error("ERROR: Cannot create release with same SHA")
+            error("Cannot create release with same SHA")
         last_tag = last_tag.name
 
     tag = semver.bump_minor(last_tag)
