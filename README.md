@@ -15,7 +15,8 @@ Tandem Session. Invite other people to your session, and get typing in tandem!
 ### Requirements
 Tandem is currently supported on Mac OS X - it may work on Linux, but use at
 your own risk.  
-To use Tandem, your environment must have `python3.6+` and `node.js` installed.  
+To use Tandem, your environment must have `python3.6+` and `node.js` installed
+(tested and confirmed working on `node.js v7.7.4`).  
 `python3.6+` is a requirement for our agent code and `node.js` is required by
 our CRDT.
 
