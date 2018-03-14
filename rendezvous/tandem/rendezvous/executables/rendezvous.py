@@ -40,11 +40,13 @@ class TandemRendezvous(object):
         self.stop()
 
     def start(self):
+        self._time_scheduler.start()
         self._udp_gateway.start()
         logging.info("Tandem Rendezvous has started.")
 
     def stop(self):
         self._udp_gateway.stop()
+        self._time_scheduler.stop()
         self._main_executor.shutdown()
         logging.info("Tandem Rendezvous has shut down.")
 
