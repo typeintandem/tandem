@@ -15,7 +15,10 @@ Tandem Session. Invite other people to your session, and get typing in tandem!
 ### Requirements
 Tandem is currently supported on Mac OS X - it may work on Linux, but use at
 your own risk.  
-To use Tandem, your environment must have `python3` and `node.js` installed.
+To use Tandem, your environment must have `python3.6+` and `node.js` installed
+(tested and confirmed working on `node.js v7.7.4`).  
+`python3.6+` is a requirement for our agent code and `node.js` is required by
+our CRDT.
 
 ### Plugins
 Please follow the installation guides for your plugin of choice:
@@ -43,6 +46,11 @@ remote changes to your local text buffer.
 The CRDT is used to represent the state of your local document, and transforms
 document edits into operations that can be applied remotely, without conflicts.
 We submit these conflict-free operations to other peers via the agent.
+
+*Instead of reinventing the wheel and writing the CRDT ourselves, we leveraged
+the work done by GitHub's team working on Teletype. We used [their
+CRDT](https://github.com/atom/teletype-crdt) under the hood and instead
+focussed our efforts on integrating the CRDT with different editors.*
 
 ### Rendezvous Server
 The rendezvous server is used to help establish peer-to-peer connections. It
