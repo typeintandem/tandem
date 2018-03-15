@@ -26,32 +26,38 @@ Tandem users can choose either start a collaborative session or join an existing
 - Any user can leave a session at any time - all other peers can continue working in the session. Simply use `Tandem > Leave Session` from the menu or command palette.
 - If you want to find your session ID again, select `Tandem > Show Session ID` to view your session ID.
 
-
 **Note: You MUST leave an active session before exiting Sublime Text! Due to editor limitations, failure to do so will cause the networking agent to remain alive and consume system resources.** 
 
 ### Advanced Usage
 While commands have GUI hooks (menu option, command palette shortcut), advanced users can also start, join and leave sessions using commands.
 
 Open the command palette (Ctrl + `). From there, use one of the following commands:
-- `view.run_command(“tandem”)` : starts a session and prints the session ID
-- `view.run_command(“tandem_connect”, “abcd-1234”)`: joins a tandem session with the specified session ID (in this case, “abcd-1234”)
-- `view.run_command(“tandem_stop”)`: leaves an existing Tandem session
-- `view.run_command(“tandem_session”)`: displays the current session ID
+- `view.run_command("tandem")` : starts a session and prints the session ID
+- `view.run_command("tandem_connect", "abcd-1234")`: joins a tandem session with the specified session ID (in this case, "abcd-1234")
+- `view.run_command("tandem_stop")`: leaves an existing Tandem session
+- `view.run_command("tandem_session")`: displays the current session ID
+
+## Terms of Service
+By using Tandem, you agree that any modified versions of Tandem will not use
+the rendezvous server hosted by the owners. You must host and use your own copy
+of the rendezvous server. We want to provide a good user experience for Tandem,
+and it would be difficult to do that with modified clients as well.
+
+You can launch the rendezvous server by running `python3 ./rendezvous/main.py`.
+Change the address of the rendezvous server used by the agent in the
+configuration file to point to your server's host. This file is located at:
+`agent/tandem/agent/configuration.py`
 
 ## License
 Copyright (c) 2018 Team Lightly
 
-Licensed under the "Lightly-Modified Apache License", a variant of the Apache
-License, Version 2.0 (the "License"); you may not use this file except in
-compliance with the License. 
-
 See [LICENSE.txt](LICENSE.txt)
 
-This license is essentially the Apache License 2.0, except for an added a
-clause that requires you to use your own servers instead of ours if you do
-modify Tandem.  
-You can also modify this in the configuration file at:
-`agent/tandem/agent/configuration.py`
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at:
+
+http://www.apache.org/licenses/LICENSE-2.0
 
 ## Authors
 Team Lightly  

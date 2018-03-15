@@ -1,13 +1,6 @@
-                       Copyright (c) [2018] [Team Lightly]
-
-                        "Lightly-Modified Apache License"
-                         A Variant of the Apache License
-
-                          View the Apache License at:
+                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
-
-                Our license adds clause 4.(e) to the Apache License
 
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
@@ -126,11 +119,6 @@
           or as an addendum to the NOTICE text from the Work, provided
           that such additional attribution notices cannot be construed
           as modifying the License.
-
-     (e) Any Derivative Works may not be configured to use the default server
-         provided by the Copyright holders. You must configure all Derivative
-         Works to use servers owned by You, or servers You are otherwise
-         authorized to use.
 
       You may add Your own copyright statement to Your modifications and
       may provide additional or different license terms and conditions
