@@ -14,18 +14,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@atom/teletype-crdt": "0.8.1",
+    "@atom/teletype-crdt": "0.9.0",
     "uuid": "^3.1.0",
     "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "eslint": "^4.15.0",
-    "eslint-config-airbnb": "^16.1.0",
+    "babel-loader": "^8.0.6",
+    "eslint": "^6.2.2",
+    "eslint-config-airbnb": "^18.0.1",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.5.1",
-    "webpack": "^3.10.0"
+    "webpack": "^4.39.2"
   }
 }
