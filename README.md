@@ -1,5 +1,7 @@
 # Tandem
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/typeintandem/tandem.svg)](https://greenkeeper.io/)
+
 Tandem is a decentralized, collaborative text-editing solution. Tandem works
 with native text editors, works across different editors, and uses peer-to-peer
 connections to facilitate communication.
